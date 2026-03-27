@@ -1,5 +1,6 @@
 export type Asset = "Gold" | "Silver" | "Oil";
 export type Direction = "bullish" | "bearish" | "neutral";
+export type Strength = "strong" | "medium" | "weak";
 
 // Shared across signal-feed, message-list, discord components
 export interface DiscordMessage {
@@ -11,9 +12,17 @@ export interface DiscordMessage {
   processed: boolean;
 }
 
+// Signal tag attached to a message
+export interface SignalTag {
+  asset: Asset;
+  direction: Direction;
+  strength?: Strength;
+  interpretation?: string;
+}
+
 // Signal Feed message with matched commodity tags
 export interface FeedMessage extends DiscordMessage {
-  assets: Array<{ asset: Asset; direction: Direction }>;
+  assets: SignalTag[];
 }
 
 export interface Database {
@@ -42,6 +51,8 @@ export interface Database {
           asset: Asset;
           direction: Direction;
           confidence: number;
+          strength: Strength;
+          interpretation: string | null;
           model_used: string;
           created_at: string;
         };

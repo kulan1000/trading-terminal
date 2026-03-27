@@ -1,15 +1,5 @@
 import type { FeedMessage } from "@/lib/types";
-
-const TAG_COLORS: Record<string, string> = {
-  Gold: "bg-yellow-500/20 text-yellow-400",
-  Silver: "bg-gray-400/20 text-gray-300",
-  Oil: "bg-orange-500/20 text-orange-400",
-};
-
-const DIR_ICON: Record<string, string> = {
-  bullish: "▲",
-  bearish: "▼",
-};
+import { ASSET_TAG_COLORS, DIRECTION_ICON } from "@/lib/constants";
 
 export function MessageList({ messages }: { messages: FeedMessage[] }) {
   if (!messages.length) {
@@ -49,9 +39,10 @@ export function MessageList({ messages }: { messages: FeedMessage[] }) {
               {msg.assets.map((a, i) => (
                 <span
                   key={`${a.asset}-${i}`}
-                  className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${TAG_COLORS[a.asset] ?? "bg-terminal-border text-terminal-muted"}`}
+                  className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${ASSET_TAG_COLORS[a.asset] ?? "bg-terminal-border text-terminal-muted"} ${a.strength === "weak" ? "opacity-60" : ""}`}
+                  title={a.interpretation ?? undefined}
                 >
-                  {DIR_ICON[a.direction] ?? ""} {a.asset}
+                  {DIRECTION_ICON[a.direction] ?? ""} {a.asset}
                 </span>
               ))}
               {msg.processed ? (

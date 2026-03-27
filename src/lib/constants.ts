@@ -22,3 +22,15 @@ export const DIRECTION_BG: Record<Direction, string> = {
   bearish: "bg-terminal-red/10 border-terminal-red/20",
   neutral: "bg-terminal-yellow/10 border-terminal-yellow/20",
 };
+
+// Asset tag colors for signal feed & message list
+export const ASSET_TAG_COLORS: Record<string, string> = {
+  Gold: "bg-yellow-500/20 text-yellow-400",
+  Silver: "bg-gray-400/20 text-gray-300",
+  Oil: "bg-orange-500/20 text-orange-400",
+};
+
+export const DIRECTION_ICON: Record<string, string> = {
+  bullish: "▲",
+  bearish: "▼",
+};

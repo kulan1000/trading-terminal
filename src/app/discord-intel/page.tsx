@@ -1,4 +1,5 @@
-import { getFilteredFeed, getMessageStats } from "@/lib/queries";
+import { getFilteredFeed } from "@/lib/queries";
+import { getMessageStats } from "@/lib/queries-stats";
 import { TerminalCard } from "@/components/ui/terminal-card";
 import { MessageSearch } from "@/components/discord/message-search";
 import { MessageList } from "@/components/discord/message-list";

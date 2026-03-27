@@ -1,14 +1,16 @@
 import type { FeedMessage } from "@/lib/types";
+import { ASSET_TAG_COLORS, DIRECTION_ICON } from "@/lib/constants";
 
-const TAG_COLORS: Record<string, string> = {
-  Gold: "bg-yellow-500/20 text-yellow-400",
-  Silver: "bg-gray-400/20 text-gray-300",
-  Oil: "bg-orange-500/20 text-orange-400",
+const STRENGTH_STYLE: Record<string, string> = {
+  strong: "border-l-2 border-terminal-accent",
+  medium: "border-l-2 border-terminal-muted",
+  weak: "border-l border-terminal-border opacity-80",
 };
 
-const DIR_ICON: Record<string, string> = {
-  bullish: "▲",
-  bearish: "▼",
+const STRENGTH_LABEL: Record<string, string> = {
+  strong: "S",
+  medium: "M",
+  weak: "W",
 };
 
 export function SignalFeed({ messages }: { messages: FeedMessage[] }) {
@@ -18,34 +20,47 @@ export function SignalFeed({ messages }: { messages: FeedMessage[] }) {
         Signal Feed
       </h3>
       <div className="space-y-3">
-        {messages.map((m) => (
-          <div key={m.id} className="border-b border-terminal-border pb-2 last:border-0">
-            <div className="flex items-center gap-2 text-xs">
-              <span className="font-bold text-terminal-accent">{m.author}</span>
-              <span className="text-terminal-muted">#{m.channel}</span>
-              {m.assets.map((a, i) => (
-                <span
-                  key={`${a.asset}-${i}`}
-                  className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${TAG_COLORS[a.asset] ?? "bg-terminal-border text-terminal-muted"}`}
-                >
-                  {DIR_ICON[a.direction] ?? ""} {a.asset}
+        {messages.map((m) => {
+          const topStrength = m.assets[0]?.strength ?? "medium";
+          return (
+            <div
+              key={m.id}
+              className={`border-b border-terminal-border pb-2 pl-2 last:border-0 ${STRENGTH_STYLE[topStrength] ?? ""}`}
+            >
+              <div className="flex items-center gap-2 text-xs">
+                <span className="font-bold text-terminal-accent">{m.author}</span>
+                <span className="text-terminal-muted">#{m.channel}</span>
+                {m.assets.map((a, i) => (
+                  <span
+                    key={`${a.asset}-${i}`}
+                    className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${ASSET_TAG_COLORS[a.asset] ?? "bg-terminal-border text-terminal-muted"}`}
+                    title={a.interpretation ?? undefined}
+                  >
+                    {DIRECTION_ICON[a.direction] ?? ""} {a.asset}
+                    {a.strength ? ` [${STRENGTH_LABEL[a.strength] ?? ""}]` : ""}
+                  </span>
+                ))}
+                <span className="ml-auto text-terminal-muted">
+                  {new Date(m.timestamp).toLocaleTimeString("sv-SE", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    timeZone: "Europe/Stockholm",
+                  })}
                 </span>
-              ))}
-              <span className="ml-auto text-terminal-muted">
-                {new Date(m.timestamp).toLocaleTimeString("sv-SE", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  timeZone: "Europe/Stockholm",
-                })}
-              </span>
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-terminal-text">
+                {m.content}
+              </p>
+              {m.assets[0]?.interpretation && (
+                <p className="mt-0.5 text-[10px] italic text-terminal-muted">
+                  {m.assets[0].interpretation}
+                </p>
+              )}
             </div>
-            <p className="mt-1 text-xs leading-relaxed text-terminal-text">
-              {m.content}
-            </p>
-          </div>
-        ))}
+          );
+        })}
         {!messages.length && (
-          <p className="text-xs italic text-terminal-muted">No messages yet</p>
+          <p className="text-xs italic text-terminal-muted">No signals yet</p>
         )}
       </div>
     </div>
