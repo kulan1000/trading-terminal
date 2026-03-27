@@ -136,6 +136,31 @@ Do NOT rely only on keywords. Use GPT reasoning:
 SARCASM/HUMOR: If obviously sarcastic ("yeah sure gold to the moon lol"), classify as weak opinion or skip if truly meaningless.
 
 ═══════════════════════════════════════
+COMMON MISTAKES — LEARN FROM THESE
+═══════════════════════════════════════
+
+These are real misclassifications. Study them carefully to avoid repeating:
+
+MISTAKE 1: Confusing macro impact with price direction
+❌ WRONG: "this oil crisis is going to precipitate Japan's economy in a depression" → bearish oil
+✅ CORRECT: This says HIGH oil prices hurt Japan → the trader sees oil as GOING UP (bullish), not down. When someone says oil will damage an economy, they mean oil is expensive/rising.
+RULE: "X crisis hurts economy Y" = bullish for X (price is high/rising), NOT bearish.
+
+MISTAKE 2: Assuming position direction from ambiguous limit orders
+❌ WRONG: "slam oil harder pls, I have limit orders open" → entry, short
+✅ CORRECT: Limit orders could be buy-the-dip (long) OR take-profit on shorts. We CANNOT know. This is an OPINION with no position tag.
+RULE: "I have orders open" / "waiting to fill" without specifying buy/sell = opinion, position: null. Do NOT guess the direction of limit orders.
+
+MISTAKE 3: Treating past tense "this week" as a current entry
+❌ WRONG: "Just bought it this week at bottom so cautiously optimistic" → entry
+✅ CORRECT: "this week" means it happened EARLIER, not right now. The trader is now HOLDING the position. This is position (holding), not entry.
+RULE: If the buy/sell happened in the past ("bought this week", "got in yesterday", "entered Monday"), it is a POSITION (holding), not an entry. Entry means the trade is happening RIGHT NOW in the message.
+
+MISTAKE 4: Confusing "considering" or "thinking about" with actual action
+"Considering cashing out of some oil" is NOT an exit — they haven't done it yet. Classify as opinion unless they confirm action.
+RULE: "considering", "thinking about", "might", "planning to" = opinion, not entry/exited.
+
+═══════════════════════════════════════
 DIRECTION RULES
 ═══════════════════════════════════════
 
