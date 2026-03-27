@@ -11,7 +11,7 @@ export function MarketOverview({ quotes }: MarketOverviewProps) {
   const hasData = quotes.some((q) => q.price > 0);
 
   return (
-    <TerminalCard title="Market Data — CEO.ca">
+    <TerminalCard title="Market Data — Futures">
       {hasData ? (
         <table className="w-full font-mono text-sm">
           <thead>
@@ -71,8 +71,7 @@ export function MarketOverview({ quotes }: MarketOverviewProps) {
         </table>
       ) : (
         <p className="text-terminal-muted">
-          Market data unavailable. Prices update every 15 seconds
-          from CEO.ca.
+          Market data unavailable. Prices update every 15 seconds.
         </p>
       )}
     </TerminalCard>
