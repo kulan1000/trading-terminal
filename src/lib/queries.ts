@@ -66,6 +66,45 @@ export async function getSignalFeed(limit = 20) {
   }>;
 }
 
+export async function searchMessages(query: string, limit = 50) {
+  const { data } = await supabase
+    .from("discord_messages")
+    .select("id, author, content, channel, timestamp, processed")
+    .ilike("content", `%${query}%`)
+    .order("timestamp", { ascending: false })
+    .limit(limit);
+
+  return (data ?? []) as Array<{
+    id: number;
+    author: string;
+    content: string;
+    channel: string;
+    timestamp: string;
+    processed: boolean;
+  }>;
+}
+
+export async function getMessageStats() {
+  const { count: total } = await supabase
+    .from("discord_messages")
+    .select("id", { count: "exact", head: true });
+
+  const { count: processed } = await supabase
+    .from("discord_messages")
+    .select("id", { count: "exact", head: true })
+    .eq("processed", true);
+
+  const { count: signalCount } = await supabase
+    .from("signals")
+    .select("id", { count: "exact", head: true });
+
+  return {
+    total: total ?? 0,
+    processed: processed ?? 0,
+    signals: signalCount ?? 0,
+  };
+}
+
 export async function getTopTraders(limit = 5) {
   const { data } = await supabase
     .from("user_credibility")
