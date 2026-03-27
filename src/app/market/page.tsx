@@ -5,6 +5,7 @@ import { ASSET_PAIRS } from "@/lib/constants";
 import { useMarketData } from "@/hooks/use-market-data";
 import { PriceCard } from "@/components/market/price-card";
 import { MarketOverview } from "@/components/market/market-overview";
+import { MarketStatus } from "@/components/market/market-status";
 
 function useSecondsAgo(date: Date | null) {
   const [seconds, setSeconds] = useState(0);
@@ -56,6 +57,8 @@ export default function MarketPage() {
       </div>
 
       {!loading && <MarketOverview quotes={quotes} />}
+
+      <MarketStatus />
     </div>
   );
 }
