@@ -74,7 +74,8 @@ export async function getSignalFeed(limit = 20): Promise<FeedMessage[]> {
     .order("created_at", { ascending: false })
     .limit(limit * 2);
 
-  const msgIds = [...new Set((signalRows ?? []).map((r) => r.message_id))].slice(0, limit);
+  const rows = (signalRows ?? []) as Array<{ message_id: number }>;
+  const msgIds = [...new Set(rows.map((r) => r.message_id))].slice(0, limit);
   if (!msgIds.length) return [];
 
   const { data } = await supabase
