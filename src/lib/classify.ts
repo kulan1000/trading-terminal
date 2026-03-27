@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import { CLASSIFY_SYSTEM_PROMPT } from "@/lib/prompts";
+import { FEW_SHOT_EXAMPLES } from "@/lib/few-shot";
 import { sanitizeResult, deriveStrength } from "@/lib/classify-sanitize";
 import type { ClassifyResult } from "@/lib/classify-sanitize";
 
@@ -15,20 +16,44 @@ function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
+/** Strip Discord custom emojis, role mentions, channel mentions */
+function cleanDiscordContent(text: string): string {
+  return text
+    .replace(/<a?:\w+:\d+>/g, "")          // custom emojis <:name:id> / <a:name:id>
+    .replace(/<@!?\d+>/g, "@user")          // user mentions <@123> / <@!123>
+    .replace(/<@&\d+>/g, "@role")           // role mentions <@&123>
+    .replace(/<#\d+>/g, "#channel")         // channel mentions <#123>
+    .replace(/https?:\/\/\S+/g, "[link]")   // URLs (rarely useful for classification)
+    .replace(/\s{2,}/g, " ")               // collapse whitespace
+    .trim();
+}
+
 export async function classifyMessage(
   content: string,
-  channel?: string
+  channel?: string,
+  contextMessages?: string[]
 ): Promise<ClassifyResult[]> {
-  const userContent = channel
-    ? `[Channel: #${channel}]\n${content}`
-    : content;
+  const cleaned = cleanDiscordContent(content);
+
+  // Build user message with optional conversation context
+  let userContent = "";
+  if (contextMessages?.length) {
+    userContent += "RECENT CONTEXT (previous messages in channel):\n";
+    userContent += contextMessages.map((m) => `- ${cleanDiscordContent(m)}`).join("\n");
+    userContent += "\n\nMESSAGE TO CLASSIFY:\n";
+  }
+  if (channel) userContent += `[Channel: #${channel}]\n`;
+  userContent += cleaned;
+
+  const messages: OpenAI.ChatCompletionMessageParam[] = [
+    { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
+    ...FEW_SHOT_EXAMPLES,
+    { role: "user", content: userContent },
+  ];
 
   const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
-      { role: "user", content: userContent },
-    ],
+    messages,
     temperature: 0.15,
     max_tokens: 600,
   });
@@ -59,7 +84,7 @@ export async function processUnclassified(limit = 50) {
 
   const { data: messages } = await supabase
     .from("discord_messages")
-    .select("id, content, channel")
+    .select("id, content, channel, timestamp")
     .eq("processed", false)
     .order("timestamp", { ascending: true })
     .limit(limit);
@@ -69,7 +94,24 @@ export async function processUnclassified(limit = 50) {
   let signalCount = 0;
 
   for (const msg of messages) {
-    const results = await classifyMessage(msg.content, msg.channel);
+    // Fetch 3 previous messages in same channel for context
+    let contextMessages: string[] = [];
+    if (msg.channel && msg.timestamp) {
+      const { data: ctx } = await supabase
+        .from("discord_messages")
+        .select("author, content")
+        .eq("channel", msg.channel)
+        .lt("timestamp", msg.timestamp)
+        .order("timestamp", { ascending: false })
+        .limit(3);
+      if (ctx?.length) {
+        contextMessages = ctx
+          .reverse()
+          .map((c: { author: string; content: string }) => `${c.author}: ${c.content}`);
+      }
+    }
+
+    const results = await classifyMessage(msg.content, msg.channel, contextMessages);
 
     for (const result of results) {
       if (result.asset && result.direction && result.confidence) {
