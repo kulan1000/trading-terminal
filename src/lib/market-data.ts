@@ -1,5 +1,6 @@
 import type { Asset } from "@/lib/types";
 import { ASSETS } from "@/lib/constants";
+import { fetchYahoo } from "@/lib/data-yahoo";
 
 // Symbol mapping: [Yahoo Finance futures, CEO.ca chart]
 const SYMBOLS: Record<Asset, { yahoo: string; ceo: string }> = {
@@ -19,7 +20,7 @@ export interface MarketQuote {
   timestamp: string;
   source: "ceo.ca";
   sparkline: number[];
-  sparklineTs: number[]; // epoch seconds for each sparkline point
+  sparklineTs: number[];
 }
 
 interface ChartDataPoint {
@@ -29,60 +30,6 @@ interface ChartDataPoint {
   open: number;
   date: number;
   volume: number;
-}
-
-// --- Yahoo Finance: real-time price + intraday chart ---
-
-interface YahooResult {
-  price: number;
-  prevClose: number;
-  volume: number;
-  dayHigh: number;
-  dayLow: number;
-  intraday: number[];
-  intradayTs: number[]; // epoch seconds matching intraday prices
-}
-
-async function fetchYahoo(asset: Asset): Promise<YahooResult | null> {
-  const symbol = SYMBOLS[asset].yahoo;
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=2m&range=1d`;
-
-  try {
-    const res = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0" },
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    const result = json?.chart?.result?.[0];
-    const meta = result?.meta;
-    if (!meta?.regularMarketPrice) return null;
-
-    // Extract intraday close prices + timestamps, filter nulls in sync
-    const closes: (number | null)[] =
-      result?.indicators?.quote?.[0]?.close ?? [];
-    const timestamps: number[] = result?.timestamp ?? [];
-    const intraday: number[] = [];
-    const intradayTs: number[] = [];
-    for (let i = 0; i < closes.length; i++) {
-      if (closes[i] != null) {
-        intraday.push(closes[i] as number);
-        intradayTs.push(timestamps[i] ?? 0);
-      }
-    }
-
-    return {
-      price: meta.regularMarketPrice,
-      prevClose: meta.chartPreviousClose,
-      volume: meta.regularMarketVolume ?? 0,
-      dayHigh: meta.regularMarketDayHigh ?? meta.regularMarketPrice,
-      dayLow: meta.regularMarketDayLow ?? meta.regularMarketPrice,
-      intraday,
-      intradayTs,
-    };
-  } catch {
-    return null;
-  }
 }
 
 // --- CEO.ca: daily H/L, volume, sparkline ---
@@ -109,23 +56,14 @@ async function fetchCeoDailyRef(asset: Asset): Promise<DailyRef> {
 
     const json = await res.json();
     const points: ChartDataPoint[] = json.data ?? json;
-    if (!points || points.length < 2)
-      return EMPTY_DAILY;
+    if (!points || points.length < 2) return EMPTY_DAILY;
 
     const today = points[0];
-    const sparkline = points
-      .slice(0, 30)
-      .map((p) => p.close)
-      .reverse();
+    const sparkline = points.slice(0, 30).map((p) => p.close).reverse();
 
-    return {
-      high: today.high,
-      low: today.low,
-      volume: today.volume,
-      sparkline,
-    };
+    return { high: today.high, low: today.low, volume: today.volume, sparkline };
   } catch {
-    return { high: 0, low: 0, volume: 0, sparkline: [] };
+    return EMPTY_DAILY;
   }
 }
 
@@ -133,15 +71,14 @@ async function fetchCeoDailyRef(asset: Asset): Promise<DailyRef> {
 
 async function fetchQuote(asset: Asset): Promise<MarketQuote | null> {
   const [yahoo, ceoRef] = await Promise.all([
-    fetchYahoo(asset),
+    fetchYahoo(asset, SYMBOLS[asset].yahoo),
     fetchCeoDailyRef(asset),
   ]);
 
   if (!yahoo) return null;
 
   const change = yahoo.price - yahoo.prevClose;
-  const changePercent =
-    yahoo.prevClose > 0 ? (change / yahoo.prevClose) * 100 : 0;
+  const changePercent = yahoo.prevClose > 0 ? (change / yahoo.prevClose) * 100 : 0;
 
   return {
     asset,
