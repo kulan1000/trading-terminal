@@ -1,12 +1,27 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { ASSET_PAIRS } from "@/lib/constants";
 import { useMarketData } from "@/hooks/use-market-data";
 import { PriceCard } from "@/components/market/price-card";
 import { MarketOverview } from "@/components/market/market-overview";
 
+function useSecondsAgo(date: Date | null) {
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    if (!date) return;
+    setSeconds(Math.floor((Date.now() - date.getTime()) / 1000));
+    const id = setInterval(() => {
+      setSeconds(Math.floor((Date.now() - date.getTime()) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [date]);
+  return seconds;
+}
+
 export default function MarketPage() {
   const { quotes, loading, lastUpdated } = useMarketData();
+  const secondsAgo = useSecondsAgo(lastUpdated);
 
   return (
     <div className="space-y-4">
@@ -18,7 +33,7 @@ export default function MarketPage() {
           {loading
             ? "Loading…"
             : lastUpdated
-              ? `Updated ${lastUpdated.toLocaleTimeString()} · CEO.ca`
+              ? `Updated ${secondsAgo}s ago · ${lastUpdated.toLocaleTimeString()}`
               : ""}
         </span>
       </div>
