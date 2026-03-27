@@ -81,15 +81,17 @@ async function fetchYahooFinance(): Promise<MarketQuote[] | null> {
           const meta = data?.chart?.result?.[0]?.meta;
           if (!meta) return fallbackQuote(asset);
 
+          const price = meta.regularMarketPrice ?? 0;
+          const prevClose =
+            meta.chartPreviousClose ?? meta.previousClose ?? price;
+          const change = price - prevClose;
+          const changePct = prevClose ? (change / prevClose) * 100 : 0;
+
           return {
             asset,
-            price: meta.regularMarketPrice ?? 0,
-            change: (meta.regularMarketPrice ?? 0) - (meta.previousClose ?? 0),
-            changePercent: meta.previousClose
-              ? (((meta.regularMarketPrice - meta.previousClose) /
-                  meta.previousClose) *
-                  100)
-              : 0,
+            price,
+            change,
+            changePercent: changePct,
             high: meta.regularMarketDayHigh ?? 0,
             low: meta.regularMarketDayLow ?? 0,
             volume: meta.regularMarketVolume ?? 0,
