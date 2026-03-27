@@ -19,6 +19,7 @@ export interface MarketQuote {
   timestamp: string;
   source: "ceo.ca";
   sparkline: number[];
+  sparklineTs: number[]; // epoch seconds for each sparkline point
 }
 
 interface ChartDataPoint {
@@ -38,7 +39,8 @@ interface YahooResult {
   volume: number;
   dayHigh: number;
   dayLow: number;
-  intraday: number[]; // minute-by-minute closes for sparkline
+  intraday: number[];
+  intradayTs: number[]; // epoch seconds matching intraday prices
 }
 
 async function fetchYahoo(asset: Asset): Promise<YahooResult | null> {
@@ -56,10 +58,18 @@ async function fetchYahoo(asset: Asset): Promise<YahooResult | null> {
     const meta = result?.meta;
     if (!meta?.regularMarketPrice) return null;
 
-    // Extract intraday close prices, filter nulls
+    // Extract intraday close prices + timestamps, filter nulls in sync
     const closes: (number | null)[] =
       result?.indicators?.quote?.[0]?.close ?? [];
-    const intraday = closes.filter((c): c is number => c != null);
+    const timestamps: number[] = result?.timestamp ?? [];
+    const intraday: number[] = [];
+    const intradayTs: number[] = [];
+    for (let i = 0; i < closes.length; i++) {
+      if (closes[i] != null) {
+        intraday.push(closes[i] as number);
+        intradayTs.push(timestamps[i] ?? 0);
+      }
+    }
 
     return {
       price: meta.regularMarketPrice,
@@ -68,6 +78,7 @@ async function fetchYahoo(asset: Asset): Promise<YahooResult | null> {
       dayHigh: meta.regularMarketDayHigh ?? meta.regularMarketPrice,
       dayLow: meta.regularMarketDayLow ?? meta.regularMarketPrice,
       intraday,
+      intradayTs,
     };
   } catch {
     return null;
@@ -143,6 +154,7 @@ async function fetchQuote(asset: Asset): Promise<MarketQuote | null> {
     timestamp: new Date().toISOString(),
     source: "ceo.ca",
     sparkline: yahoo.intraday.length > 2 ? yahoo.intraday : ceoRef.sparkline,
+    sparklineTs: yahoo.intradayTs,
   };
 }
 
@@ -154,5 +166,5 @@ export async function getMarketQuotes(): Promise<MarketQuote[]> {
 const fallbackQuote = (asset: Asset): MarketQuote => ({
   asset, price: 0, change: 0, changePercent: 0,
   high: 0, low: 0, volume: 0,
-  timestamp: new Date().toISOString(), source: "ceo.ca", sparkline: [],
+  timestamp: new Date().toISOString(), source: "ceo.ca", sparkline: [], sparklineTs: [],
 });

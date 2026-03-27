@@ -72,7 +72,11 @@ export function PriceCard({ quote, pair }: PriceCardProps) {
       {/* Intraday chart — full width at bottom */}
       {quote.sparkline && quote.sparkline.length > 2 && (
         <div className="mt-2 px-1 pb-1">
-          <Sparkline data={quote.sparkline} height={56} />
+          <Sparkline
+            data={quote.sparkline}
+            timestamps={quote.sparklineTs}
+            height={56}
+          />
         </div>
       )}
     </div>
