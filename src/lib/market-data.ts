@@ -35,6 +35,13 @@ interface ChartDataPoint {
   volume: number;
 }
 
+// CEO.ca API wraps chart data in an object
+interface ChartApiResponse {
+  current_quote: unknown;
+  time_period: string;
+  data: ChartDataPoint[];
+}
+
 // Fetch from CEO.ca public chart API (no auth needed)
 async function fetchCeoChartData(
   asset: Asset
@@ -49,13 +56,15 @@ async function fetchCeoChartData(
     });
     if (!res.ok) return null;
 
-    const data: ChartDataPoint[] = await res.json();
-    if (!data || data.length === 0) return null;
+    const json = await res.json();
 
-    // Last data point = today's candle (updates during trading)
-    const latest = data[data.length - 1];
-    // Previous day's close for change calculation
-    const prev = data.length > 1 ? data[data.length - 2] : null;
+    // Response is { current_quote, time_period, data: [...] }
+    const points: ChartDataPoint[] = json.data ?? json;
+    if (!points || points.length === 0) return null;
+
+    // Data is sorted newest first — first entry is today
+    const latest = points[0];
+    const prev = points.length > 1 ? points[1] : null;
 
     const price = latest.close;
     const prevClose = prev?.close ?? latest.open;
