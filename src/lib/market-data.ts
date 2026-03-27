@@ -36,62 +36,68 @@ interface ChartApiResponse {
   data: ChartDataPoint[];
 }
 
-// Fetch 1-minute candles for near-realtime pricing
+// CEO.ca time_period naming is inverted:
+//   "1d" = last 24h of 1-MINUTE candles (live, updates every ~minute)
+//   "1m" = last 1 MONTH of daily candles
+// We use "1d" for live prices, "1m" for 30-day sparkline
+
 async function fetchCeoRealtimeData(
   asset: Asset
 ): Promise<MarketQuote | null> {
   const symbol = CEO_CA_SYMBOLS[asset];
-  const realtimeUrl = `https://new-api.ceo.ca/api/quotes/get_us_chart?symbol=${symbol}&time_period=1m`;
-  const dailyUrl = `https://new-api.ceo.ca/api/quotes/get_us_chart?symbol=${symbol}`;
+  // "1d" gives ~1440 one-minute candles for today — LIVE data
+  const liveUrl = `https://new-api.ceo.ca/api/quotes/get_us_chart?symbol=${symbol}&time_period=1d`;
+  // "1m" gives ~27 daily candles — for sparkline
+  const monthUrl = `https://new-api.ceo.ca/api/quotes/get_us_chart?symbol=${symbol}&time_period=1m`;
 
   try {
-    // Fetch 1m candles (realtime) and daily candles (sparkline) in parallel
-    const [realtimeRes, dailyRes] = await Promise.all([
-      fetch(realtimeUrl, {
+    const [liveRes, monthRes] = await Promise.all([
+      fetch(liveUrl, {
         headers: { "User-Agent": "TradingTerminal/1.0" },
         cache: "no-store",
       }),
-      fetch(dailyUrl, {
+      fetch(monthUrl, {
         headers: { "User-Agent": "TradingTerminal/1.0" },
         cache: "no-store",
       }),
     ]);
 
-    if (!realtimeRes.ok) return null;
+    if (!liveRes.ok) return null;
 
-    const realtimeJson = await realtimeRes.json();
-    const points: ChartDataPoint[] = realtimeJson.data ?? realtimeJson;
+    const liveJson = await liveRes.json();
+    const points: ChartDataPoint[] = liveJson.data ?? liveJson;
     if (!points || points.length === 0) return null;
 
-    // 1m data sorted newest first — index 0 is the most recent minute
+    // Sorted newest first — index 0 is the most recent minute
     const latest = points[0];
 
-    // Use daily data for day change and sparkline
-    let prevDayClose = latest.open;
-    let sparkline: number[] = [];
+    // The oldest candle in the 1d set is roughly today's open
+    const oldest = points[points.length - 1];
+    const dayOpen = oldest.open;
 
-    if (dailyRes.ok) {
-      const dailyJson = await dailyRes.json();
-      const dailyPoints: ChartDataPoint[] = dailyJson.data ?? dailyJson;
+    const price = latest.close;
+    const change = price - dayOpen;
+    const changePercent = dayOpen > 0 ? (change / dayOpen) * 100 : 0;
+
+    // Intraday high/low from all today's minute candles
+    const intradayHigh = Math.max(...points.map((p) => p.high));
+    const intradayLow = Math.min(...points.map((p) => p.low));
+
+    // Sum volume across all minute candles
+    const totalVolume = points.reduce((sum, p) => sum + (p.volume || 0), 0);
+
+    // Build 30-day sparkline from monthly data
+    let sparkline: number[] = [];
+    if (monthRes.ok) {
+      const monthJson = await monthRes.json();
+      const dailyPoints: ChartDataPoint[] = monthJson.data ?? monthJson;
       if (dailyPoints && dailyPoints.length > 1) {
-        // Yesterday's close for accurate daily change
-        prevDayClose = dailyPoints[1].close;
-        // Last 30 days for sparkline (oldest → newest)
         sparkline = dailyPoints
           .slice(0, 30)
           .map((p) => p.close)
           .reverse();
       }
     }
-
-    const price = latest.close;
-    const change = price - prevDayClose;
-    const changePercent =
-      prevDayClose > 0 ? (change / prevDayClose) * 100 : 0;
-
-    // Intraday high/low from all 1m candles
-    const intradayHigh = Math.max(...points.map((p) => p.high));
-    const intradayLow = Math.min(...points.map((p) => p.low));
 
     return {
       asset,
@@ -100,7 +106,7 @@ async function fetchCeoRealtimeData(
       changePercent,
       high: intradayHigh,
       low: intradayLow,
-      volume: latest.volume,
+      volume: totalVolume,
       timestamp: new Date(latest.date).toISOString(),
       source: "ceo.ca",
       sparkline,
