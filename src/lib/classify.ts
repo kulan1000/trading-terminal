@@ -42,7 +42,14 @@ export async function classifyMessage(
     const results: ClassifyResult[] = Array.isArray(parsed)
       ? parsed
       : [parsed];
-    return results;
+    // Deduplicate by asset+direction (GPT sometimes returns duplicates)
+    const seen = new Set<string>();
+    return results.filter((r) => {
+      const key = `${r.asset}-${r.direction}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   } catch {
     return [
       {
@@ -81,13 +88,16 @@ export async function processUnclassified(limit = 50) {
         result.confidence &&
         result.confidence >= 0.25
       ) {
-        await supabase.from("signals").insert({
-          message_id: msg.id,
-          asset: result.asset,
-          direction: result.direction,
-          confidence: result.confidence,
-          model_used: "gpt-4o-mini",
-        });
+        await supabase.from("signals").upsert(
+          {
+            message_id: msg.id,
+            asset: result.asset,
+            direction: result.direction,
+            confidence: result.confidence,
+            model_used: "gpt-4o-mini",
+          },
+          { onConflict: "message_id,asset,direction" }
+        );
         signalCount++;
       }
     }
