@@ -1,15 +1,27 @@
-import { getSignalFeed, getMessageStats } from "@/lib/queries";
+import { getFilteredFeed, getMessageStats } from "@/lib/queries";
 import { TerminalCard } from "@/components/ui/terminal-card";
 import { MessageSearch } from "@/components/discord/message-search";
 import { MessageList } from "@/components/discord/message-list";
+import { ChannelFilter } from "@/components/discord/channel-filter";
+import { Suspense } from "react";
 
 export const revalidate = 30;
 
-export default async function DiscordIntelPage() {
+interface Props {
+  searchParams: Promise<{ channel?: string; asset?: string; q?: string }>;
+}
+
+export default async function DiscordIntelPage({ searchParams }: Props) {
+  const { channel, asset, q } = await searchParams;
+
   const [messages, stats] = await Promise.all([
-    getSignalFeed(50),
+    getFilteredFeed({ channel, asset, query: q, limit: 50 }),
     getMessageStats(),
   ]);
+
+  const title = q
+    ? `Search: "${q}" (${messages.length})`
+    : `Raw Feed (${messages.length})`;
 
   return (
     <div className="space-y-4">
@@ -34,7 +46,11 @@ export default async function DiscordIntelPage() {
 
       <MessageSearch />
 
-      <TerminalCard title="Raw Message Feed">
+      <Suspense>
+        <ChannelFilter />
+      </Suspense>
+
+      <TerminalCard title={title}>
         <MessageList messages={messages} />
       </TerminalCard>
     </div>

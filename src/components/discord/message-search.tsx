@@ -1,17 +1,23 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export function MessageSearch() {
   const router = useRouter();
-  const [query, setQuery] = useState("");
+  const params = useSearchParams();
+  const [query, setQuery] = useState(params.get("q") ?? "");
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
+    const sp = new URLSearchParams(params.toString());
     if (query.trim()) {
-      router.push(`/discord-intel/search?q=${encodeURIComponent(query.trim())}`);
+      sp.set("q", query.trim());
+    } else {
+      sp.delete("q");
     }
+    const qs = sp.toString();
+    router.push(`/discord-intel${qs ? `?${qs}` : ""}`);
   }
 
   return (

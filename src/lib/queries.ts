@@ -80,6 +80,37 @@ export async function getSignalFeed(limit = 20): Promise<FeedMessage[]> {
 
 export const searchMessages = (query: string, limit = 50) => getMessages({ query, limit });
 
+// Filtered signal feed for Discord Intel (channel + asset filters)
+export async function getFilteredFeed(options?: {
+  channel?: string;
+  asset?: string;
+  query?: string;
+  limit?: number;
+}): Promise<FeedMessage[]> {
+  const { channel, asset, query, limit = 50 } = options ?? {};
+
+  let q = supabase
+    .from("discord_messages")
+    .select("id, author, content, channel, timestamp, processed, signals(asset, direction)")
+    .order("timestamp", { ascending: false })
+    .limit(limit);
+
+  if (channel && channel !== "all") q = q.eq("channel", channel);
+  if (query) q = q.ilike("content", `%${query}%`);
+
+  const { data } = await q;
+
+  const feed = ((data ?? []) as Array<DiscordMessage & { signals: Array<{ asset: Asset; direction: Direction }> }>).map(
+    ({ signals: sigs, ...msg }) => ({ ...msg, assets: sigs ?? [] })
+  );
+
+  if (asset && asset !== "all") {
+    return feed.filter((m) => m.assets.some((a) => a.asset === asset));
+  }
+
+  return feed;
+}
+
 export async function getMessageStats() {
   const { count: total } = await supabase
     .from("discord_messages")
