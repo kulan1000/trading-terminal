@@ -1,10 +1,17 @@
 import type { Asset } from "@/lib/types";
 
-// Twelve Data symbols for commodities
-const TWELVE_DATA_SYMBOLS: Record<Asset, string> = {
-  Gold: "XAU/USD",
-  Silver: "XAG/USD",
-  Oil: "CL",
+// CEO.ca symbols for commodities
+const CEO_CA_SYMBOLS: Record<Asset, string> = {
+  Gold: "GCUSD",
+  Silver: "SIUSD",
+  Oil: "CLUSD",
+};
+
+// CEO.ca channel slugs
+const CEO_CA_CHANNELS: Record<Asset, string> = {
+  Gold: "gold",
+  Silver: "silver",
+  Oil: "oil",
 };
 
 export interface MarketQuote {
@@ -16,108 +23,72 @@ export interface MarketQuote {
   low: number;
   volume: number;
   timestamp: string;
+  source: "ceo.ca";
 }
 
-// Primary: Twelve Data API (free tier, 800 req/day)
-async function fetchTwelveData(): Promise<MarketQuote[] | null> {
-  const apiKey = process.env.TWELVE_DATA_API_KEY;
-  if (!apiKey) return null;
+interface ChartDataPoint {
+  close: number;
+  high: number;
+  low: number;
+  open: number;
+  date: number;
+  volume: number;
+}
 
-  const symbols = Object.values(TWELVE_DATA_SYMBOLS).join(",");
-  const url = `https://api.twelvedata.com/quote?symbol=${symbols}&apikey=${apiKey}`;
+// Fetch from CEO.ca public chart API (no auth needed)
+async function fetchCeoChartData(
+  asset: Asset
+): Promise<MarketQuote | null> {
+  const symbol = CEO_CA_SYMBOLS[asset];
+  const url = `https://new-api.ceo.ca/api/quotes/get_us_chart?symbol=${symbol}`;
 
   try {
-    const res = await fetch(url, { next: { revalidate: 60 } });
+    const res = await fetch(url, {
+      headers: { "User-Agent": "TradingTerminal/1.0" },
+      cache: "no-store",
+    });
     if (!res.ok) return null;
 
-    const data = await res.json();
+    const data: ChartDataPoint[] = await res.json();
+    if (!data || data.length === 0) return null;
 
-    // Twelve Data returns object keyed by symbol when multiple symbols
-    return (Object.entries(TWELVE_DATA_SYMBOLS) as [Asset, string][]).map(
-      ([asset, symbol]) => {
-        const q = data[symbol] ?? data;
-        // Single symbol returns flat object, multi returns nested
-        const quote = Object.keys(TWELVE_DATA_SYMBOLS).length === 1 ? data : q;
+    // Last data point = today's candle (updates during trading)
+    const latest = data[data.length - 1];
+    // Previous day's close for change calculation
+    const prev = data.length > 1 ? data[data.length - 2] : null;
 
-        if (!quote || quote.status === "error") return fallbackQuote(asset);
+    const price = latest.close;
+    const prevClose = prev?.close ?? latest.open;
+    const change = price - prevClose;
+    const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
 
-        return {
-          asset,
-          price: parseFloat(quote.close) || 0,
-          change: parseFloat(quote.change) || 0,
-          changePercent: parseFloat(quote.percent_change) || 0,
-          high: parseFloat(quote.high) || 0,
-          low: parseFloat(quote.low) || 0,
-          volume: parseInt(quote.volume) || 0,
-          timestamp: quote.datetime ?? new Date().toISOString(),
-        };
-      }
-    );
+    return {
+      asset,
+      price,
+      change,
+      changePercent,
+      high: latest.high,
+      low: latest.low,
+      volume: latest.volume,
+      timestamp: new Date(latest.date).toISOString(),
+      source: "ceo.ca",
+    };
   } catch {
     return null;
   }
 }
 
-// Fallback: Yahoo Finance v8 chart endpoint (less blocked than v7)
-async function fetchYahooFinance(): Promise<MarketQuote[] | null> {
-  const tickers: Record<Asset, string> = {
-    Gold: "GC=F",
-    Silver: "SI=F",
-    Oil: "CL=F",
-  };
-
-  try {
-    const quotes = await Promise.all(
-      (Object.entries(tickers) as [Asset, string][]).map(
-        async ([asset, ticker]) => {
-          const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`;
-          const res = await fetch(url, {
-            headers: { "User-Agent": "Mozilla/5.0" },
-            next: { revalidate: 60 },
-          });
-          if (!res.ok) return fallbackQuote(asset);
-
-          const data = await res.json();
-          const meta = data?.chart?.result?.[0]?.meta;
-          if (!meta) return fallbackQuote(asset);
-
-          const price = meta.regularMarketPrice ?? 0;
-          const prevClose =
-            meta.chartPreviousClose ?? meta.previousClose ?? price;
-          const change = price - prevClose;
-          const changePct = prevClose ? (change / prevClose) * 100 : 0;
-
-          return {
-            asset,
-            price,
-            change,
-            changePercent: changePct,
-            high: meta.regularMarketDayHigh ?? 0,
-            low: meta.regularMarketDayLow ?? 0,
-            volume: meta.regularMarketVolume ?? 0,
-            timestamp: new Date().toISOString(),
-          };
-        }
-      )
-    );
-
-    // Only return if we got at least one real price
-    const hasData = quotes.some((q) => q.price > 0);
-    return hasData ? quotes : null;
-  } catch {
-    return null;
-  }
-}
-
+// Fetch all three commodity quotes from CEO.ca
 export async function getMarketQuotes(): Promise<MarketQuote[]> {
-  // Try Twelve Data first, then Yahoo Finance fallback
-  const twelve = await fetchTwelveData();
-  if (twelve && twelve.some((q) => q.price > 0)) return twelve;
+  const assets: Asset[] = ["Gold", "Silver", "Oil"];
 
-  const yahoo = await fetchYahooFinance();
-  if (yahoo) return yahoo;
+  const results = await Promise.all(
+    assets.map((asset) => fetchCeoChartData(asset))
+  );
 
-  return getFallbackQuotes();
+  return results.map(
+    (result, i) => result ?? fallbackQuote(assets[i])
+  );
 }
 
 function fallbackQuote(asset: Asset): MarketQuote {
@@ -130,9 +101,6 @@ function fallbackQuote(asset: Asset): MarketQuote {
     low: 0,
     volume: 0,
     timestamp: new Date().toISOString(),
+    source: "ceo.ca",
   };
-}
-
-function getFallbackQuotes(): MarketQuote[] {
-  return (["Gold", "Silver", "Oil"] as Asset[]).map(fallbackQuote);
 }
