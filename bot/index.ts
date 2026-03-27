@@ -26,7 +26,15 @@ const client = new Client({
 client.once("ready", () => {
   console.log(`[BOT] Logged in as ${client.user?.tag}`);
   console.log(`[BOT] Watching FoftyTrades: ${WATCHED_CHANNELS.join(", ")}`);
+  console.log(`[BOT] Guilds: ${client.guilds.cache.map((g) => g.name).join(", ") || "NONE"}`);
 });
+
+// Connection health logging
+client.on("warn", (msg) => console.warn(`[BOT WARN] ${msg}`));
+client.on("error", (err) => console.error(`[BOT ERROR] ${err.message}`));
+client.on("shardDisconnect", (_, id) => console.log(`[BOT] Shard ${id} disconnected`));
+client.on("shardReconnecting", (id) => console.log(`[BOT] Shard ${id} reconnecting...`));
+client.on("shardResume", (id) => console.log(`[BOT] Shard ${id} resumed`));
 
 client.on("messageCreate", async (message: Message) => {
   if (message.author.bot || !message.channel.isTextBased()) return;

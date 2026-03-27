@@ -65,13 +65,23 @@ export async function getMessages(options?: { query?: string; limit?: number }):
   return (data ?? []) as DiscordMessage[];
 }
 
-// Signal feed with commodity tags from signals table
+// Signal feed — ONLY messages that have commodity signals
 export async function getSignalFeed(limit = 20): Promise<FeedMessage[]> {
+  // Get message IDs that have signals, then fetch those messages
+  const { data: signalRows } = await supabase
+    .from("signals")
+    .select("message_id")
+    .order("created_at", { ascending: false })
+    .limit(limit * 2);
+
+  const msgIds = [...new Set((signalRows ?? []).map((r) => r.message_id))].slice(0, limit);
+  if (!msgIds.length) return [];
+
   const { data } = await supabase
     .from("discord_messages")
     .select("id, author, content, channel, timestamp, processed, signals(asset, direction)")
-    .order("timestamp", { ascending: false })
-    .limit(limit);
+    .in("id", msgIds)
+    .order("timestamp", { ascending: false });
 
   return ((data ?? []) as Array<DiscordMessage & { signals: Array<{ asset: Asset; direction: Direction }> }>).map(
     ({ signals: sigs, ...msg }) => ({ ...msg, assets: sigs ?? [] })
