@@ -1,6 +1,21 @@
 export type Asset = "Gold" | "Silver" | "Oil";
 export type Direction = "bullish" | "bearish" | "neutral";
 
+// Shared across signal-feed, message-list, discord components
+export interface DiscordMessage {
+  id: number;
+  author: string;
+  content: string;
+  channel: string;
+  timestamp: string;
+  processed: boolean;
+}
+
+// Signal Feed message with matched commodity tags
+export interface FeedMessage extends DiscordMessage {
+  assets: Array<{ asset: Asset; direction: Direction }>;
+}
+
 export interface Database {
   public: {
     Tables: {

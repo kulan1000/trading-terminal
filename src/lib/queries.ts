@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type { Asset, Direction } from "@/lib/types";
+import type { Asset, Direction, DiscordMessage, FeedMessage } from "@/lib/types";
 
 interface SignalRow {
   direction: Direction;
@@ -49,40 +49,36 @@ export async function getRecentSignals(limit = 10) {
   }>;
 }
 
-export async function getSignalFeed(limit = 20) {
-  const { data } = await supabase
+// Combined feed + search — pass query to filter, omit for full feed
+export async function getMessages(options?: { query?: string; limit?: number }): Promise<DiscordMessage[]> {
+  const { query, limit = 20 } = options ?? {};
+
+  let q = supabase
     .from("discord_messages")
     .select("id, author, content, channel, timestamp, processed")
     .order("timestamp", { ascending: false })
     .limit(limit);
 
-  return (data ?? []) as Array<{
-    id: number;
-    author: string;
-    content: string;
-    channel: string;
-    timestamp: string;
-    processed: boolean;
-  }>;
+  if (query) q = q.ilike("content", `%${query}%`);
+
+  const { data } = await q;
+  return (data ?? []) as DiscordMessage[];
 }
 
-export async function searchMessages(query: string, limit = 50) {
+// Signal feed with commodity tags from signals table
+export async function getSignalFeed(limit = 20): Promise<FeedMessage[]> {
   const { data } = await supabase
     .from("discord_messages")
-    .select("id, author, content, channel, timestamp, processed")
-    .ilike("content", `%${query}%`)
+    .select("id, author, content, channel, timestamp, processed, signals(asset, direction)")
     .order("timestamp", { ascending: false })
     .limit(limit);
 
-  return (data ?? []) as Array<{
-    id: number;
-    author: string;
-    content: string;
-    channel: string;
-    timestamp: string;
-    processed: boolean;
-  }>;
+  return ((data ?? []) as Array<DiscordMessage & { signals: Array<{ asset: Asset; direction: Direction }> }>).map(
+    ({ signals: sigs, ...msg }) => ({ ...msg, assets: sigs ?? [] })
+  );
 }
+
+export const searchMessages = (query: string, limit = 50) => getMessages({ query, limit });
 
 export async function getMessageStats() {
   const { count: total } = await supabase
@@ -118,57 +114,4 @@ export async function getTopTraders(limit = 5) {
     correct_signals: number;
     score: number;
   }>;
-}
-
-// --- Trades ---
-
-export interface TradeRow {
-  id: number;
-  asset: string;
-  direction: string;
-  entry_price: number;
-  exit_price: number | null;
-  quantity: number;
-  status: string;
-  notes: string | null;
-  opened_at: string;
-  closed_at: string | null;
-  pnl: number | null;
-}
-
-export async function getTrades(status?: "open" | "closed", limit = 50) {
-  let query = supabase
-    .from("trades")
-    .select("id, asset, direction, entry_price, exit_price, quantity, status, notes, opened_at, closed_at, pnl")
-    .order("opened_at", { ascending: false })
-    .limit(limit);
-
-  if (status) query = query.eq("status", status);
-
-  const { data } = await query;
-  return (data ?? []) as TradeRow[];
-}
-
-export async function getTradeStats() {
-  const { data: all } = await supabase
-    .from("trades")
-    .select("status, pnl, direction");
-
-  const trades = (all ?? []) as Array<{ status: string; pnl: number | null; direction: string }>;
-
-  const open = trades.filter((t) => t.status === "open");
-  const closed = trades.filter((t) => t.status === "closed");
-  const totalPnl = closed.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
-  const wins = closed.filter((t) => (t.pnl ?? 0) > 0).length;
-  const losses = closed.filter((t) => (t.pnl ?? 0) < 0).length;
-  const winRate = closed.length > 0 ? (wins / closed.length) * 100 : 0;
-
-  return {
-    openCount: open.length,
-    closedCount: closed.length,
-    totalPnl,
-    wins,
-    losses,
-    winRate,
-  };
 }
