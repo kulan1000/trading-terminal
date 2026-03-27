@@ -4,7 +4,7 @@ import { TerminalNav } from "@/components/terminal-nav";
 
 export const metadata: Metadata = {
   title: "Trading Terminal",
-  description: "Bloomberg-lite trading terminal for commodities",
+  description: "Bloomberg-lite trading terminal for Gold, Silver & Oil",
 };
 
 export default function RootLayout({
