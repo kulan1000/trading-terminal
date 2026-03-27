@@ -2,12 +2,17 @@ import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import type { Asset, Direction } from "@/lib/types";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy init — avoid crashing at build time when env vars are missing
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function getOpenAI() {
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
 
 const SYSTEM_PROMPT = `You are a trading signal classifier for commodities (Gold, Silver, Oil).
 Analyze the Discord message and extract trading signals.
@@ -35,7 +40,7 @@ interface ClassifyResult {
 }
 
 export async function classifyMessage(content: string): Promise<ClassifyResult> {
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
@@ -54,6 +59,7 @@ export async function classifyMessage(content: string): Promise<ClassifyResult> 
 }
 
 export async function processUnclassified(limit = 20) {
+  const supabase = getSupabase();
   // Fetch unprocessed messages
   const { data: messages } = await supabase
     .from("discord_messages")
