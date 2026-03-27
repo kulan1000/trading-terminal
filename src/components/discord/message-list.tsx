@@ -1,17 +1,6 @@
-interface Message {
-  id: number;
-  author: string;
-  content: string;
-  channel: string;
-  timestamp: string;
-  processed: boolean;
-}
+import type { DiscordMessage } from "@/lib/types";
 
-interface MessageListProps {
-  messages: Message[];
-}
-
-export function MessageList({ messages }: MessageListProps) {
+export function MessageList({ messages }: { messages: DiscordMessage[] }) {
   if (!messages.length) {
     return <p className="text-terminal-muted">No messages found.</p>;
   }

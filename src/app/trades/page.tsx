@@ -1,4 +1,4 @@
-import { getTrades, getTradeStats } from "@/lib/queries";
+import { getTrades, getTradeStats } from "@/lib/queries-trades";
 import { TradeStats } from "@/components/trades/trade-stats";
 import { TradeTable } from "@/components/trades/trade-table";
 

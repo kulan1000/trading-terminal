@@ -1,3 +1,5 @@
+import { DIRECTION_COLOR } from "@/lib/constants";
+
 interface Signal {
   id: number;
   asset: string;
@@ -6,12 +8,6 @@ interface Signal {
   created_at: string;
   discord_messages: { author: string; content: string } | null;
 }
-
-const dirColor: Record<string, string> = {
-  bullish: "text-terminal-green",
-  bearish: "text-terminal-red",
-  neutral: "text-terminal-yellow",
-};
 
 export function RecentSignals({ signals }: { signals: Signal[] }) {
   return (
@@ -25,7 +21,7 @@ export function RecentSignals({ signals }: { signals: Signal[] }) {
             <span className="w-12 shrink-0 font-bold text-terminal-text">
               {s.asset}
             </span>
-            <span className={`w-16 shrink-0 font-medium ${dirColor[s.direction]}`}>
+            <span className={`w-16 shrink-0 font-medium ${DIRECTION_COLOR[s.direction as keyof typeof DIRECTION_COLOR] ?? "text-terminal-muted"}`}>
               {s.direction.toUpperCase()}
             </span>
             <span className="w-10 shrink-0 text-terminal-muted">

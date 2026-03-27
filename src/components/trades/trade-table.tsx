@@ -1,4 +1,4 @@
-import type { TradeRow } from "@/lib/queries";
+import type { TradeRow } from "@/lib/queries-trades";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-GB", {
