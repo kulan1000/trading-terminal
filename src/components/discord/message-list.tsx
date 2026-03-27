@@ -1,5 +1,5 @@
 import type { FeedMessage } from "@/lib/types";
-import { ASSET_TAG_COLORS, DIRECTION_ICON } from "@/lib/constants";
+import { ASSET_TAG_COLORS } from "@/lib/constants";
 
 export function MessageList({ messages }: { messages: FeedMessage[] }) {
   if (!messages.length) {
@@ -42,7 +42,7 @@ export function MessageList({ messages }: { messages: FeedMessage[] }) {
                   className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${ASSET_TAG_COLORS[a.asset] ?? "bg-terminal-border text-terminal-muted"} ${a.strength === "weak" ? "opacity-60" : ""}`}
                   title={a.interpretation ?? undefined}
                 >
-                  {DIRECTION_ICON[a.direction] ?? ""} {a.asset}
+                  {a.asset}
                 </span>
               ))}
               {msg.processed ? (

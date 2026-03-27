@@ -1,5 +1,5 @@
-import type { FeedMessage } from "@/lib/types";
-import { ASSET_TAG_COLORS, DIRECTION_ICON } from "@/lib/constants";
+import type { FeedMessage, SignalTag } from "@/lib/types";
+import { ASSET_TAG_COLORS } from "@/lib/constants";
 
 const STRENGTH_STYLE: Record<string, string> = {
   strong: "border-l-2 border-terminal-accent",
@@ -24,6 +24,42 @@ const POS_TAG: Record<string, { label: string; cls: string }> = {
   short: { label: "SHORT", cls: "bg-red-600/30 text-red-300 ring-1 ring-red-500/30" },
 };
 
+function SignalRow({ signal, index }: { signal: SignalTag; index: number }) {
+  const dir = DIR_TAG[signal.direction];
+  const typ = signal.signal_type ? TYPE_TAG[signal.signal_type] : null;
+  const pos = signal.position ? POS_TAG[signal.position] : null;
+
+  return (
+    <div key={index} className="flex flex-wrap items-center gap-1 mt-1">
+      <span
+        className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${ASSET_TAG_COLORS[signal.asset] ?? "bg-terminal-border text-terminal-muted"}`}
+      >
+        {signal.asset}
+      </span>
+      {dir && (
+        <span className={`rounded px-1 py-0.5 text-[9px] font-bold ${dir.cls}`}>
+          {dir.label}
+        </span>
+      )}
+      {typ && (
+        <span className={`rounded px-1 py-0.5 text-[9px] font-bold ${typ.cls}`}>
+          {typ.label}
+        </span>
+      )}
+      {pos && (
+        <span className={`rounded px-1 py-0.5 text-[9px] font-bold ${pos.cls}`}>
+          {pos.label}
+        </span>
+      )}
+      {signal.interpretation && (
+        <span className="text-[10px] italic text-terminal-muted ml-1 truncate max-w-[60%]">
+          {signal.interpretation}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function SignalFeed({ messages }: { messages: FeedMessage[] }) {
   return (
     <div className="rounded-md border border-terminal-border bg-terminal-surface p-4">
@@ -38,39 +74,9 @@ export function SignalFeed({ messages }: { messages: FeedMessage[] }) {
               key={m.id}
               className={`border-b border-terminal-border pb-2 pl-2 last:border-0 ${STRENGTH_STYLE[topStrength] ?? ""}`}
             >
-              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+              <div className="flex items-center gap-1.5 text-xs">
                 <span className="font-bold text-terminal-accent">{m.author}</span>
                 <span className="text-terminal-muted">#{m.channel}</span>
-                {m.assets.map((a, i) => {
-                  const dir = DIR_TAG[a.direction];
-                  const typ = a.signal_type ? TYPE_TAG[a.signal_type] : null;
-                  const pos = a.position ? POS_TAG[a.position] : null;
-                  return (
-                    <span key={`${a.asset}-${i}`} className="inline-flex items-center gap-1">
-                      <span
-                        className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${ASSET_TAG_COLORS[a.asset] ?? "bg-terminal-border text-terminal-muted"}`}
-                        title={a.interpretation ?? undefined}
-                      >
-                        {DIRECTION_ICON[a.direction] ?? ""} {a.asset}
-                      </span>
-                      {dir && (
-                        <span className={`rounded px-1 py-0.5 text-[9px] font-bold ${dir.cls}`}>
-                          {dir.label}
-                        </span>
-                      )}
-                      {typ && (
-                        <span className={`rounded px-1 py-0.5 text-[9px] font-bold ${typ.cls}`}>
-                          {typ.label}
-                        </span>
-                      )}
-                      {pos && (
-                        <span className={`rounded px-1 py-0.5 text-[9px] font-bold ${pos.cls}`}>
-                          {pos.label}
-                        </span>
-                      )}
-                    </span>
-                  );
-                })}
                 <span className="ml-auto text-terminal-muted">
                   {new Date(m.timestamp).toLocaleTimeString("sv-SE", {
                     hour: "2-digit",
@@ -82,11 +88,9 @@ export function SignalFeed({ messages }: { messages: FeedMessage[] }) {
               <p className="mt-1 text-xs leading-relaxed text-terminal-text">
                 {m.content}
               </p>
-              {m.assets[0]?.interpretation && (
-                <p className="mt-0.5 text-[10px] italic text-terminal-muted">
-                  {m.assets[0].interpretation}
-                </p>
-              )}
+              {m.assets.map((a, i) => (
+                <SignalRow key={`${a.asset}-${i}`} signal={a} index={i} />
+              ))}
             </div>
           );
         })}
