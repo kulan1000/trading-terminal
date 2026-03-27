@@ -70,28 +70,26 @@ async function fetchCeoRealtimeData(
 
     // Sorted newest first — index 0 is the most recent minute
     const latest = points[0];
-
-    // The oldest candle in the 1d set is roughly today's open
-    const oldest = points[points.length - 1];
-    const dayOpen = oldest.open;
-
     const price = latest.close;
-    const change = price - dayOpen;
-    const changePercent = dayOpen > 0 ? (change / dayOpen) * 100 : 0;
 
-    // Intraday high/low from all today's minute candles
-    const intradayHigh = Math.max(...points.map((p) => p.high));
-    const intradayLow = Math.min(...points.map((p) => p.low));
-
-    // Sum volume across all minute candles
-    const totalVolume = points.reduce((sum, p) => sum + (p.volume || 0), 0);
-
-    // Build 30-day sparkline from monthly data
+    // Daily data for: yesterday's close, today's H/L, volume, sparkline
+    let prevClose = price; // fallback
+    let dayHigh = price;
+    let dayLow = price;
+    let dayVolume = 0;
     let sparkline: number[] = [];
+
     if (monthRes.ok) {
       const monthJson = await monthRes.json();
       const dailyPoints: ChartDataPoint[] = monthJson.data ?? monthJson;
       if (dailyPoints && dailyPoints.length > 1) {
+        // dailyPoints[0] = today, dailyPoints[1] = yesterday
+        const today = dailyPoints[0];
+        prevClose = dailyPoints[1].close;
+        dayHigh = today.high;
+        dayLow = today.low;
+        dayVolume = today.volume;
+        // 30-day sparkline (oldest → newest)
         sparkline = dailyPoints
           .slice(0, 30)
           .map((p) => p.close)
@@ -99,14 +97,19 @@ async function fetchCeoRealtimeData(
       }
     }
 
+    // Change calculated from yesterday's close (matches CEO.ca)
+    const change = price - prevClose;
+    const changePercent =
+      prevClose > 0 ? (change / prevClose) * 100 : 0;
+
     return {
       asset,
       price,
       change,
       changePercent,
-      high: intradayHigh,
-      low: intradayLow,
-      volume: totalVolume,
+      high: dayHigh,
+      low: dayLow,
+      volume: dayVolume,
       timestamp: new Date(latest.date).toISOString(),
       source: "ceo.ca",
       sparkline,
