@@ -1,5 +1,6 @@
-export const ASSETS = ["Gold", "Silver", "Oil"] as const;
-export type Asset = (typeof ASSETS)[number];
+import type { Asset } from "@/lib/types";
+
+export const ASSETS: readonly Asset[] = ["Gold", "Silver", "Oil"];
 
 export const ASSET_PAIRS: Record<Asset, string> = {
   Gold: "XAUUSD",
