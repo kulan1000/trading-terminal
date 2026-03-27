@@ -19,9 +19,10 @@ export function PriceCard({ quote, pair }: PriceCardProps) {
 
   return (
     <div
-      className={`rounded-lg border ${borderColor} bg-terminal-surface p-4 font-mono`}
+      className={`rounded-lg border ${borderColor} bg-terminal-surface font-mono`}
     >
-      <div className="mb-1 flex items-baseline justify-between">
+      {/* Header: asset name + volume */}
+      <div className="flex items-baseline justify-between px-4 pt-3">
         <span className="text-xs text-terminal-muted">
           {quote.asset} — {pair}
         </span>
@@ -32,7 +33,8 @@ export function PriceCard({ quote, pair }: PriceCardProps) {
         </span>
       </div>
 
-      <div className="flex items-baseline gap-3">
+      {/* Price + change */}
+      <div className="flex items-baseline gap-3 px-4 pt-1">
         <AnimatedPrice
           value={quote.price}
           className="text-3xl font-bold text-terminal-text"
@@ -49,27 +51,30 @@ export function PriceCard({ quote, pair }: PriceCardProps) {
         </span>
       </div>
 
-      <div className="mt-3 flex items-end justify-between">
-        <div className="flex gap-4 text-xs text-terminal-muted">
-          <span>
-            H:{" "}
-            <AnimatedPrice
-              value={quote.high}
-              className="text-terminal-text"
-            />
-          </span>
-          <span>
-            L:{" "}
-            <AnimatedPrice
-              value={quote.low}
-              className="text-terminal-text"
-            />
-          </span>
-        </div>
-        {quote.sparkline && quote.sparkline.length > 1 && (
-          <Sparkline data={quote.sparkline} width={100} height={28} />
-        )}
+      {/* High / Low */}
+      <div className="flex gap-4 px-4 pt-1 text-xs text-terminal-muted">
+        <span>
+          H:{" "}
+          <AnimatedPrice
+            value={quote.high}
+            className="text-terminal-text"
+          />
+        </span>
+        <span>
+          L:{" "}
+          <AnimatedPrice
+            value={quote.low}
+            className="text-terminal-text"
+          />
+        </span>
       </div>
+
+      {/* Intraday chart — full width at bottom */}
+      {quote.sparkline && quote.sparkline.length > 2 && (
+        <div className="mt-2 px-1 pb-1">
+          <Sparkline data={quote.sparkline} height={56} />
+        </div>
+      )}
     </div>
   );
 }
