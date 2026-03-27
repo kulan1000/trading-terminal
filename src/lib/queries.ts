@@ -8,7 +8,7 @@ interface SignalRow {
 }
 
 // Shared mapping: raw Supabase row with joined signals → FeedMessage
-type RawSignal = { asset: Asset; direction: Direction; strength?: Strength; position?: string | null; interpretation?: string };
+type RawSignal = { asset: Asset; direction: Direction; strength?: Strength; signal_type?: string; position?: string | null; interpretation?: string };
 type RawMessageWithSignals = DiscordMessage & { signals: RawSignal[] };
 
 function toFeedMessages(rows: RawMessageWithSignals[]): FeedMessage[] {
@@ -18,6 +18,7 @@ function toFeedMessages(rows: RawMessageWithSignals[]): FeedMessage[] {
       asset: s.asset,
       direction: s.direction,
       strength: s.strength,
+      signal_type: s.signal_type as "entry" | "position" | "exited" | "opinion" | undefined,
       position: s.position as "long" | "short" | undefined,
       interpretation: s.interpretation,
     })),
@@ -99,7 +100,7 @@ export async function getSignalFeed(limit = 20): Promise<FeedMessage[]> {
 
   const { data } = await supabase
     .from("discord_messages")
-    .select("id, author, content, channel, timestamp, processed, signals(asset, direction, strength, position, interpretation)")
+    .select("id, author, content, channel, timestamp, processed, signals(asset, direction, strength, signal_type, position, interpretation)")
     .in("id", msgIds)
     .order("timestamp", { ascending: false });
 
@@ -119,7 +120,7 @@ export async function getFilteredFeed(options?: {
 
   let q = supabase
     .from("discord_messages")
-    .select("id, author, content, channel, timestamp, processed, signals(asset, direction, strength, position, interpretation)")
+    .select("id, author, content, channel, timestamp, processed, signals(asset, direction, strength, signal_type, position, interpretation)")
     .order("timestamp", { ascending: false })
     .limit(limit);
 

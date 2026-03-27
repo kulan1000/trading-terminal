@@ -13,6 +13,12 @@ const DIR_TAG: Record<string, { label: string; cls: string }> = {
   neutral: { label: "NEUTRAL", cls: "bg-yellow-500/20 text-yellow-400" },
 };
 
+const TYPE_TAG: Record<string, { label: string; cls: string }> = {
+  entry: { label: "ENTRY", cls: "bg-blue-500/25 text-blue-300 ring-1 ring-blue-400/40" },
+  position: { label: "HOLDING", cls: "bg-purple-500/20 text-purple-300 ring-1 ring-purple-400/30" },
+  exited: { label: "EXITED", cls: "bg-zinc-500/25 text-zinc-300 ring-1 ring-zinc-400/30" },
+};
+
 const POS_TAG: Record<string, { label: string; cls: string }> = {
   long: { label: "LONG", cls: "bg-green-600/30 text-green-300 ring-1 ring-green-500/30" },
   short: { label: "SHORT", cls: "bg-red-600/30 text-red-300 ring-1 ring-red-500/30" },
@@ -37,6 +43,7 @@ export function SignalFeed({ messages }: { messages: FeedMessage[] }) {
                 <span className="text-terminal-muted">#{m.channel}</span>
                 {m.assets.map((a, i) => {
                   const dir = DIR_TAG[a.direction];
+                  const typ = a.signal_type ? TYPE_TAG[a.signal_type] : null;
                   const pos = a.position ? POS_TAG[a.position] : null;
                   return (
                     <span key={`${a.asset}-${i}`} className="inline-flex items-center gap-1">
@@ -49,6 +56,11 @@ export function SignalFeed({ messages }: { messages: FeedMessage[] }) {
                       {dir && (
                         <span className={`rounded px-1 py-0.5 text-[9px] font-bold ${dir.cls}`}>
                           {dir.label}
+                        </span>
+                      )}
+                      {typ && (
+                        <span className={`rounded px-1 py-0.5 text-[9px] font-bold ${typ.cls}`}>
+                          {typ.label}
                         </span>
                       )}
                       {pos && (

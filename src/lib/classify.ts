@@ -1,9 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
-import type { Asset, Direction } from "@/lib/types";
+import type { Asset, Direction, Strength, SignalType } from "@/lib/types";
 import { CLASSIFY_SYSTEM_PROMPT } from "@/lib/prompts";
-
-type Strength = "strong" | "medium" | "weak";
 
 function getSupabase() {
   return createClient(
@@ -22,6 +20,7 @@ interface ClassifyResult {
   direction: Direction | null;
   strength: Strength | null;
   confidence: number | null;
+  signal_type: SignalType | null;
   position: "long" | "short" | null;
   interpretation: string | null;
 }
@@ -29,6 +28,7 @@ interface ClassifyResult {
 const VALID_ASSETS = new Set(["Gold", "Silver", "Oil"]);
 const VALID_DIRECTIONS = new Set(["bullish", "bearish", "neutral"]);
 const VALID_STRENGTHS = new Set(["strong", "medium", "weak"]);
+const VALID_SIGNAL_TYPES = new Set(["entry", "position", "exited", "opinion"]);
 
 function deriveStrength(confidence: number): Strength {
   if (confidence >= 0.7) return "strong";
@@ -46,18 +46,37 @@ function sanitizeResult(r: ClassifyResult): ClassifyResult | null {
   }
 
   // Ensure confidence is valid
-  r.confidence = typeof r.confidence === "number" ? Math.max(0.1, Math.min(1.0, r.confidence)) : 0.2;
+  r.confidence = typeof r.confidence === "number"
+    ? Math.max(0.1, Math.min(1.0, r.confidence))
+    : 0.2;
 
   // Derive or validate strength
   if (!r.strength || !VALID_STRENGTHS.has(r.strength)) {
     r.strength = deriveStrength(r.confidence);
   }
 
+  // Validate signal_type — default to "opinion"
+  if (!r.signal_type || !VALID_SIGNAL_TYPES.has(r.signal_type)) {
+    r.signal_type = "opinion";
+  }
+
   // Validate position
   if (r.position && r.position !== "long" && r.position !== "short") {
     r.position = null;
   }
-  r.position = r.position ?? null;
+
+  // Enforce position rules based on signal_type
+  if (r.signal_type === "entry" && !r.position) {
+    // Entry must have a position — derive from direction
+    r.position = r.direction === "bearish" ? "short" : "long";
+  }
+  if (r.signal_type === "position" && !r.position) {
+    r.position = r.direction === "bearish" ? "short" : "long";
+  }
+  if (r.signal_type === "opinion") {
+    r.position = null;
+  }
+
   r.interpretation = r.interpretation ?? null;
 
   return r;
@@ -78,7 +97,7 @@ export async function classifyMessage(
       { role: "user", content: userContent },
     ],
     temperature: 0.15,
-    max_tokens: 500,
+    max_tokens: 600,
   });
 
   const text = response.choices[0]?.message?.content ?? "";
@@ -86,13 +105,13 @@ export async function classifyMessage(
     const parsed = JSON.parse(text);
     const results: ClassifyResult[] = Array.isArray(parsed) ? parsed : [parsed];
 
-    // Sanitize, deduplicate by asset+direction
+    // Sanitize, deduplicate by asset+direction+signal_type
     const seen = new Set<string>();
     return results
       .map(sanitizeResult)
       .filter((r): r is ClassifyResult => {
         if (!r) return false;
-        const key = `${r.asset}-${r.direction}`;
+        const key = `${r.asset}-${r.direction}-${r.signal_type}`;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
@@ -121,7 +140,6 @@ export async function processUnclassified(limit = 50) {
 
     for (const result of results) {
       if (result.asset && result.direction && result.confidence) {
-        // No minimum threshold — store ALL signals, even weak ones
         await supabase.from("signals").upsert(
           {
             message_id: msg.id,
@@ -129,6 +147,7 @@ export async function processUnclassified(limit = 50) {
             direction: result.direction,
             confidence: result.confidence,
             strength: result.strength ?? deriveStrength(result.confidence),
+            signal_type: result.signal_type ?? "opinion",
             position: result.position,
             interpretation: result.interpretation,
             model_used: "gpt-4o-mini",

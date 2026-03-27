@@ -13,12 +13,14 @@ export interface DiscordMessage {
 }
 
 export type Position = "long" | "short";
+export type SignalType = "entry" | "position" | "exited" | "opinion";
 
 // Signal tag attached to a message
 export interface SignalTag {
   asset: Asset;
   direction: Direction;
   strength?: Strength;
+  signal_type?: SignalType;
   position?: Position | null;
   interpretation?: string;
 }
