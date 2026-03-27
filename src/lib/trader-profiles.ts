@@ -1,7 +1,7 @@
 // Trader profile utilities — context enrichment for GPT classification
-import { createClient } from "@supabase/supabase-js";
 
-type Supabase = ReturnType<typeof createClient>;
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type Supabase = any;
 
 /** Build a one-line trader profile hint for GPT */
 export async function getTraderHint(
