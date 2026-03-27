@@ -22,6 +22,7 @@ interface ClassifyResult {
   direction: Direction | null;
   strength: Strength | null;
   confidence: number | null;
+  position: "long" | "short" | null;
   interpretation: string | null;
 }
 
@@ -52,6 +53,11 @@ function sanitizeResult(r: ClassifyResult): ClassifyResult | null {
     r.strength = deriveStrength(r.confidence);
   }
 
+  // Validate position
+  if (r.position && r.position !== "long" && r.position !== "short") {
+    r.position = null;
+  }
+  r.position = r.position ?? null;
   r.interpretation = r.interpretation ?? null;
 
   return r;
@@ -123,6 +129,7 @@ export async function processUnclassified(limit = 50) {
             direction: result.direction,
             confidence: result.confidence,
             strength: result.strength ?? deriveStrength(result.confidence),
+            position: result.position,
             interpretation: result.interpretation,
             model_used: "gpt-4o-mini",
           },

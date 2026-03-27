@@ -78,6 +78,7 @@ Return a JSON array. Each signal must include ALL fields:
     "direction": "bullish" | "bearish" | "neutral",
     "strength": "strong" | "medium" | "weak",
     "confidence": 0.10-1.0,
+    "position": "long" | "short" | null,
     "interpretation": "1-2 sentence explanation of what the trader means and why you classified it this way"
   }
 ]
@@ -86,6 +87,23 @@ If truly no commodity relevance: [{"has_signal": false}]
 
 MULTI-COMMODITY: If a message references multiple commodities, return SEPARATE entries for each.
 Example: "gold strong but oil weak" → two entries (Gold bullish + Oil bearish)
+
+═══════════════════════════════════════
+POSITION FIELD (long/short/null)
+═══════════════════════════════════════
+
+Set "position" ONLY when the trader has EXPLICITLY taken or is in a trade:
+- "long": "bought gold", "long oil", "loaded calls", "went long CL", "holding gold"
+- "short": "shorting silver", "short oil", "bought puts on GDX", "sold gold"
+- null: opinion/sentiment only, no explicit trade mentioned
+
+Examples:
+- "gold looks bullish" → position: null (opinion, no trade)
+- "just went long gold at 3050" → position: "long" (explicit trade)
+- "shorting oil here" → position: "short" (explicit trade)
+- "took profits on my gold short" → position: null (exited, no current position)
+- "loaded GDX puts" → position: "short" (puts = short)
+- "bought the silver dip" → position: "long" (explicit buy)
 
 ═══════════════════════════════════════
 DIRECTION RULES
