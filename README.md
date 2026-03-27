@@ -11,7 +11,7 @@ Bloomberg-lite trading terminal for commodities (Gold, Silver, Oil). Built with 
 ## Local Setup
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/trading-terminal.git
+git clone https://github.com/kulan1000/trading-terminal.git
 cd trading-terminal
 npm install
 cp .env.example .env.local
