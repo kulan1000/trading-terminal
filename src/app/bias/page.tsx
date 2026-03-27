@@ -1,6 +1,18 @@
-import { TerminalCard } from "@/components/ui/terminal-card";
+import { ASSETS, ASSET_PAIRS } from "@/lib/constants";
+import { getAssetBias, getRecentSignals, getSignalFeed } from "@/lib/queries";
+import { AssetBiasCard } from "@/components/bias/asset-bias-card";
+import { RecentSignals } from "@/components/bias/recent-signals";
+import { SignalFeed } from "@/components/bias/signal-feed";
 
-export default function BiasPage() {
+export const revalidate = 30; // Refresh data every 30 seconds
+
+export default async function BiasPage() {
+  const [biases, signals, messages] = await Promise.all([
+    Promise.all(ASSETS.map(async (asset) => ({ asset, ...(await getAssetBias(asset)) }))),
+    getRecentSignals(),
+    getSignalFeed(),
+  ]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -13,17 +25,22 @@ export default function BiasPage() {
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <TerminalCard title="Gold — XAUUSD" />
-        <TerminalCard title="Silver — XAGUSD" />
-        <TerminalCard title="Oil — WTI" />
+        {biases.map((b) => (
+          <AssetBiasCard
+            key={b.asset}
+            asset={b.asset}
+            pair={ASSET_PAIRS[b.asset]}
+            direction={b.direction}
+            score={b.score}
+            count={b.count}
+          />
+        ))}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <TerminalCard title="Sentiment Overview" className="col-span-1" />
-        <TerminalCard title="Recent Signals" className="col-span-1" />
+        <RecentSignals signals={signals} />
+        <SignalFeed messages={messages} />
       </div>
-
-      <TerminalCard title="Signal Feed" />
     </div>
   );
 }
