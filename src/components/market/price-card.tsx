@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { MarketQuote } from "@/lib/market-data";
+import { Sparkline } from "./sparkline";
 
 interface PriceCardProps {
   quote: MarketQuote;
@@ -103,21 +104,26 @@ export function PriceCard({ quote, pair }: PriceCardProps) {
         </span>
       </div>
 
-      <div className="mt-3 flex gap-4 text-xs text-terminal-muted">
-        <span>
-          H:{" "}
-          <AnimatedPrice
-            value={quote.high}
-            className="text-terminal-text"
-          />
-        </span>
-        <span>
-          L:{" "}
-          <AnimatedPrice
-            value={quote.low}
-            className="text-terminal-text"
-          />
-        </span>
+      <div className="mt-3 flex items-end justify-between">
+        <div className="flex gap-4 text-xs text-terminal-muted">
+          <span>
+            H:{" "}
+            <AnimatedPrice
+              value={quote.high}
+              className="text-terminal-text"
+            />
+          </span>
+          <span>
+            L:{" "}
+            <AnimatedPrice
+              value={quote.low}
+              className="text-terminal-text"
+            />
+          </span>
+        </div>
+        {quote.sparkline && quote.sparkline.length > 1 && (
+          <Sparkline data={quote.sparkline} width={100} height={28} />
+        )}
       </div>
     </div>
   );

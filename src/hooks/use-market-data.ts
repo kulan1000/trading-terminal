@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { MarketQuote } from "@/lib/market-data";
 
-const POLL_INTERVAL = 30_000; // 30 seconds
+const POLL_INTERVAL = 15_000; // 15 seconds (matches server cache TTL)
 
 export function useMarketData() {
   const [quotes, setQuotes] = useState<MarketQuote[]>([]);
@@ -32,7 +32,7 @@ export function useMarketData() {
     // Initial fetch
     fetchQuotes();
 
-    // Poll every 30 seconds
+    // Poll every 15 seconds
     intervalRef.current = setInterval(fetchQuotes, POLL_INTERVAL);
 
     return () => {

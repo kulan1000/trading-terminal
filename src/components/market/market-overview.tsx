@@ -71,7 +71,7 @@ export function MarketOverview({ quotes }: MarketOverviewProps) {
         </table>
       ) : (
         <p className="text-terminal-muted">
-          Market data unavailable. Prices update every 30 seconds
+          Market data unavailable. Prices update every 15 seconds
           from CEO.ca.
         </p>
       )}

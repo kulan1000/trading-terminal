@@ -7,13 +7,6 @@ const CEO_CA_SYMBOLS: Record<Asset, string> = {
   Oil: "CLUSD",
 };
 
-// CEO.ca channel slugs
-const CEO_CA_CHANNELS: Record<Asset, string> = {
-  Gold: "gold",
-  Silver: "silver",
-  Oil: "oil",
-};
-
 export interface MarketQuote {
   asset: Asset;
   price: number;
@@ -24,6 +17,7 @@ export interface MarketQuote {
   volume: number;
   timestamp: string;
   source: "ceo.ca";
+  sparkline: number[]; // last 30 days close prices (oldest→newest)
 }
 
 interface ChartDataPoint {
@@ -42,45 +36,74 @@ interface ChartApiResponse {
   data: ChartDataPoint[];
 }
 
-// Fetch from CEO.ca public chart API (no auth needed)
-async function fetchCeoChartData(
+// Fetch 1-minute candles for near-realtime pricing
+async function fetchCeoRealtimeData(
   asset: Asset
 ): Promise<MarketQuote | null> {
   const symbol = CEO_CA_SYMBOLS[asset];
-  const url = `https://new-api.ceo.ca/api/quotes/get_us_chart?symbol=${symbol}`;
+  const realtimeUrl = `https://new-api.ceo.ca/api/quotes/get_us_chart?symbol=${symbol}&time_period=1m`;
+  const dailyUrl = `https://new-api.ceo.ca/api/quotes/get_us_chart?symbol=${symbol}`;
 
   try {
-    const res = await fetch(url, {
-      headers: { "User-Agent": "TradingTerminal/1.0" },
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
+    // Fetch 1m candles (realtime) and daily candles (sparkline) in parallel
+    const [realtimeRes, dailyRes] = await Promise.all([
+      fetch(realtimeUrl, {
+        headers: { "User-Agent": "TradingTerminal/1.0" },
+        cache: "no-store",
+      }),
+      fetch(dailyUrl, {
+        headers: { "User-Agent": "TradingTerminal/1.0" },
+        cache: "no-store",
+      }),
+    ]);
 
-    const json = await res.json();
+    if (!realtimeRes.ok) return null;
 
-    // Response is { current_quote, time_period, data: [...] }
-    const points: ChartDataPoint[] = json.data ?? json;
+    const realtimeJson = await realtimeRes.json();
+    const points: ChartDataPoint[] = realtimeJson.data ?? realtimeJson;
     if (!points || points.length === 0) return null;
 
-    // Data is sorted newest first — first entry is today
+    // 1m data sorted newest first — index 0 is the most recent minute
     const latest = points[0];
-    const prev = points.length > 1 ? points[1] : null;
+
+    // Use daily data for day change and sparkline
+    let prevDayClose = latest.open;
+    let sparkline: number[] = [];
+
+    if (dailyRes.ok) {
+      const dailyJson = await dailyRes.json();
+      const dailyPoints: ChartDataPoint[] = dailyJson.data ?? dailyJson;
+      if (dailyPoints && dailyPoints.length > 1) {
+        // Yesterday's close for accurate daily change
+        prevDayClose = dailyPoints[1].close;
+        // Last 30 days for sparkline (oldest → newest)
+        sparkline = dailyPoints
+          .slice(0, 30)
+          .map((p) => p.close)
+          .reverse();
+      }
+    }
 
     const price = latest.close;
-    const prevClose = prev?.close ?? latest.open;
-    const change = price - prevClose;
-    const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
+    const change = price - prevDayClose;
+    const changePercent =
+      prevDayClose > 0 ? (change / prevDayClose) * 100 : 0;
+
+    // Intraday high/low from all 1m candles
+    const intradayHigh = Math.max(...points.map((p) => p.high));
+    const intradayLow = Math.min(...points.map((p) => p.low));
 
     return {
       asset,
       price,
       change,
       changePercent,
-      high: latest.high,
-      low: latest.low,
+      high: intradayHigh,
+      low: intradayLow,
       volume: latest.volume,
       timestamp: new Date(latest.date).toISOString(),
       source: "ceo.ca",
+      sparkline,
     };
   } catch {
     return null;
@@ -92,7 +115,7 @@ export async function getMarketQuotes(): Promise<MarketQuote[]> {
   const assets: Asset[] = ["Gold", "Silver", "Oil"];
 
   const results = await Promise.all(
-    assets.map((asset) => fetchCeoChartData(asset))
+    assets.map((asset) => fetchCeoRealtimeData(asset))
   );
 
   return results.map(
@@ -111,5 +134,6 @@ function fallbackQuote(asset: Asset): MarketQuote {
     volume: 0,
     timestamp: new Date().toISOString(),
     source: "ceo.ca",
+    sparkline: [],
   };
 }
