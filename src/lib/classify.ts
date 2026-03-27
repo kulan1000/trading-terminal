@@ -28,6 +28,42 @@ function cleanDiscordContent(text: string): string {
     .trim();
 }
 
+// ──────────────────────────────────────────────────────
+// STEP 1: Fast local pre-filter (zero API cost)
+// Skips messages that have no possible commodity relevance
+// ──────────────────────────────────────────────────────
+const COMMODITY_KEYWORDS = new RegExp(
+  [
+    // Gold
+    "gold", "xau", "xauusd", "\\bgc\\b", "gld", "gdx", "gdxj", "\\bau\\b",
+    "guld", "yellow metal", "miner", "precious metal",
+    // Silver
+    "silver", "xag", "xagusd", "\\bsi\\b", "slv", "\\bag\\b",
+    // Oil
+    "\\boil\\b", "crude", "wti", "brent", "\\bcl\\b", "uso", "uco", "sco",
+    "olja", "energy", "petroleum", "opec", "ukoil",
+    // General
+    "commodit", "metal", "long", "short", "bull", "bear",
+    "bought", "sold", "buying", "selling", "position", "trade",
+    "entry", "exit", "profit", "loss", "stop", "target",
+    "calls", "puts", "option",
+  ].join("|"),
+  "i"
+);
+
+const COMMODITY_CHANNELS = new Set([
+  "gold-commodities",
+  "traders-lounge",
+]);
+
+/** Returns true if message MIGHT contain a commodity signal (fast, cheap) */
+function maybeCommodityRelevant(content: string, channel?: string): boolean {
+  // Always process messages from commodity-focused channels
+  if (channel && COMMODITY_CHANNELS.has(channel)) return true;
+  // Check for keyword match
+  return COMMODITY_KEYWORDS.test(content);
+}
+
 export async function classifyMessage(
   content: string,
   channel?: string,
@@ -79,12 +115,36 @@ export async function classifyMessage(
   }
 }
 
+/** Build a one-line trader profile hint for GPT */
+async function getTraderHint(
+  supabase: ReturnType<typeof getSupabase>,
+  author: string
+): Promise<string | null> {
+  const { data } = await supabase
+    .from("trader_profiles")
+    .select("primary_asset, primary_direction, assets_traded, total_signals")
+    .eq("author", author)
+    .single();
+  if (!data || data.total_signals < 3) return null;
+  return `[Trader profile: ${author} primarily trades ${data.assets_traded?.join("/")} with ${data.primary_direction} bias on ${data.primary_asset}, ${data.total_signals} signals total]`;
+}
+
+/** Refresh a single trader's profile after new signals */
+async function refreshTraderProfile(
+  supabase: ReturnType<typeof getSupabase>,
+  author: string
+) {
+  await supabase.rpc("refresh_trader_profile", { p_author: author }).catch(() => {
+    // RPC doesn't exist yet — silently skip
+  });
+}
+
 export async function processUnclassified(limit = 50) {
   const supabase = getSupabase();
 
   const { data: messages } = await supabase
     .from("discord_messages")
-    .select("id, content, channel, timestamp")
+    .select("id, content, channel, timestamp, author")
     .eq("processed", false)
     .order("timestamp", { ascending: true })
     .limit(limit);
@@ -92,9 +152,20 @@ export async function processUnclassified(limit = 50) {
   if (!messages?.length) return { processed: 0, signals: 0 };
 
   let signalCount = 0;
+  let skipped = 0;
 
   for (const msg of messages) {
-    // Fetch 3 previous messages in same channel for context
+    // STEP 1: Fast local pre-filter — skip obviously irrelevant messages
+    if (!maybeCommodityRelevant(msg.content, msg.channel)) {
+      await supabase
+        .from("discord_messages")
+        .update({ processed: true })
+        .eq("id", msg.id);
+      skipped++;
+      continue;
+    }
+
+    // STEP 2: Fetch context + trader profile + full GPT classification
     let contextMessages: string[] = [];
     if (msg.channel && msg.timestamp) {
       const { data: ctx } = await supabase
@@ -109,6 +180,12 @@ export async function processUnclassified(limit = 50) {
           .reverse()
           .map((c: { author: string; content: string }) => `${c.author}: ${c.content}`);
       }
+    }
+
+    // Add trader profile hint as first context line
+    const traderHint = await getTraderHint(supabase, msg.author);
+    if (traderHint) {
+      contextMessages = [traderHint, ...contextMessages];
     }
 
     const results = await classifyMessage(msg.content, msg.channel, contextMessages);
@@ -133,11 +210,16 @@ export async function processUnclassified(limit = 50) {
       }
     }
 
+    // Refresh trader profile if we found signals
+    if (signalCount > 0 && msg.author) {
+      await refreshTraderProfile(supabase, msg.author);
+    }
+
     await supabase
       .from("discord_messages")
       .update({ processed: true })
       .eq("id", msg.id);
   }
 
-  return { processed: messages.length, signals: signalCount };
+  return { processed: messages.length, signals: signalCount, skipped };
 }
