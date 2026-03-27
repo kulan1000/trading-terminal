@@ -4,7 +4,7 @@ import { AssetBiasCard } from "@/components/bias/asset-bias-card";
 import { RecentSignals } from "@/components/bias/recent-signals";
 import { SignalFeed } from "@/components/bias/signal-feed";
 
-export const revalidate = 30; // Refresh data every 30 seconds
+export const revalidate = 30;
 
 export default async function BiasPage() {
   const [biases, signals, messages] = await Promise.all([
