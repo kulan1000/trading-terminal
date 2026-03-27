@@ -35,6 +35,7 @@ export function SignalFeed({ messages }: { messages: FeedMessage[] }) {
                 {new Date(m.timestamp).toLocaleTimeString("sv-SE", {
                   hour: "2-digit",
                   minute: "2-digit",
+                  timeZone: "Europe/Stockholm",
                 })}
               </span>
             </div>
