@@ -79,7 +79,7 @@ export async function processUnclassified(limit = 50) {
         result.asset &&
         result.direction &&
         result.confidence &&
-        result.confidence >= 0.15
+        result.confidence >= 0.25
       ) {
         await supabase.from("signals").insert({
           message_id: msg.id,
