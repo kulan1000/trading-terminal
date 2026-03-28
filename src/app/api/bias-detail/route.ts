@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { supabase } from "@/lib/supabase";
 import { ASSETS } from "@/lib/constants";
+import { getAssetPrice } from "@/lib/price-snapshot";
 import type { Asset } from "@/lib/types";
 
 export const revalidate = 60;
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const since6h = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
 
-  const [signalsRes, historyRes] = await Promise.all([
+  const [signalsRes, historyRes, price] = await Promise.all([
     supabase
       .from("signals")
       .select("id, direction, confidence, strength, signal_type, position, interpretation, author, created_at, discord_messages(content)")
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
       .eq("asset", asset)
       .gte("created_at", since24h)
       .order("created_at", { ascending: true }),
+    getAssetPrice(asset),
   ]);
 
   type RawSignal = {
@@ -75,8 +77,17 @@ Write a brief, factual summary. No fluff.`;
     }
   }
 
+  // Compute stats
+  const bullish = signals.filter((s) => s.direction === "bullish").length;
+  const bearish = signals.filter((s) => s.direction === "bearish").length;
+  const entries = signals.filter((s) => s.signal_type === "entry").length;
+  const exits = signals.filter((s) => s.signal_type === "exited").length;
+  const uniqueTraders = new Set(signals.map((s) => s.author)).size;
+
   return NextResponse.json({
     asset,
+    price,
+    stats: { bullish, bearish, entries, exits, uniqueTraders, total: signals.length },
     signals: signals.map((s) => ({
       id: s.id,
       direction: s.direction,
