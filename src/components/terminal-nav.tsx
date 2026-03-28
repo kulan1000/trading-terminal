@@ -9,6 +9,7 @@ const tabs = [
   { name: "Discord Intel", href: "/discord-intel" },
   { name: "Data", href: "/data" },
   { name: "Market", href: "/market" },
+  { name: "Stocks", href: "/stocks" },
   { name: "Trades", href: "/trades" },
 ] as const;
 

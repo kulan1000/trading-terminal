@@ -1,7 +1,10 @@
+"use client";
+
 import type { MarketQuote } from "@/lib/market-data";
 import { changeColor } from "@/lib/utils";
 import { AnimatedPrice } from "@/components/ui/animated-price";
 import { Sparkline } from "./sparkline";
+import { useTradeMarkers } from "@/hooks/use-trade-markers";
 
 interface PriceCardProps {
   quote: MarketQuote;
@@ -15,6 +18,8 @@ export function PriceCard({ quote, pair }: PriceCardProps) {
   const borderColor = isUp
     ? "border-terminal-green/30"
     : "border-terminal-red/30";
+
+  const markers = useTradeMarkers(quote.asset);
 
   return (
     <div
@@ -68,14 +73,22 @@ export function PriceCard({ quote, pair }: PriceCardProps) {
         </span>
       </div>
 
-      {/* Intraday chart — full width at bottom */}
+      {/* Intraday chart — full width at bottom, with trade markers */}
       {quote.sparkline && quote.sparkline.length > 2 && (
         <div className="mt-2 px-1 pb-1">
           <Sparkline
             data={quote.sparkline}
             timestamps={quote.sparklineTs}
             height={56}
+            markers={markers}
           />
+        </div>
+      )}
+
+      {/* Marker count badge */}
+      {markers.length > 0 && (
+        <div className="px-4 pb-2 text-[10px] text-terminal-muted">
+          {markers.length} trade signal{markers.length !== 1 ? "s" : ""} (24h)
         </div>
       )}
     </div>

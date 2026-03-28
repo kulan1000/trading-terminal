@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { processUnclassified } from "@/lib/classify";
+import { processUnclassified } from "@/lib/classify-batch";
 
 // POST /api/classify — process unclassified Discord messages
 export async function POST(request: Request) {

@@ -2,6 +2,17 @@
 
 import { useState, useCallback, useRef } from "react";
 import { SparklineTooltip } from "./sparkline-tooltip";
+import { TradeMarkersOverlay } from "./trade-markers-overlay";
+
+export interface TradeMarker {
+  id: number;
+  author: string;
+  signal_type: "entry" | "exited" | "position";
+  position: "long" | "short" | null;
+  direction: string;
+  price_at_signal: number;
+  created_at: string; // ISO timestamp
+}
 
 interface SparklineProps {
   data: number[];
@@ -9,15 +20,17 @@ interface SparklineProps {
   width?: number;
   height?: number;
   className?: string;
+  markers?: TradeMarker[];
 }
 
-/** Intraday SVG sparkline with hover tooltip */
+/** Intraday SVG sparkline with hover tooltip + trade markers */
 export function Sparkline({
   data,
   timestamps,
   width = 280,
   height = 64,
   className,
+  markers,
 }: SparklineProps) {
   const [hover, setHover] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -88,6 +101,16 @@ export function Sparkline({
           fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
 
         <circle cx={width} cy={toY(data[data.length - 1])} r="2.5" fill={color} />
+
+        {/* Trade heatmap + markers overlay */}
+        {markers?.length ? (
+          <TradeMarkersOverlay
+            markers={markers}
+            timestamps={timestamps ?? []}
+            toX={toX} toY={toY}
+            min={min} max={max} width={width}
+          />
+        ) : null}
 
         {hover !== null && (
           <>

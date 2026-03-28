@@ -3,6 +3,7 @@ import { getAssetBias, getRecentSignals, getSignalFeed } from "@/lib/queries";
 import { AssetBiasCard } from "@/components/bias/asset-bias-card";
 import { RecentSignals } from "@/components/bias/recent-signals";
 import { SignalFeed } from "@/components/bias/signal-feed";
+import { TraderLeaderboard } from "@/components/bias/trader-leaderboard";
 
 export const revalidate = 30;
 
@@ -41,6 +42,8 @@ export default async function BiasPage() {
         <RecentSignals signals={signals} />
         <SignalFeed messages={messages} />
       </div>
+
+      <TraderLeaderboard />
     </div>
   );
 }

@@ -1,24 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { ASSET_PAIRS } from "@/lib/constants";
 import { useMarketData } from "@/hooks/use-market-data";
+import { useSecondsAgo } from "@/hooks/use-seconds-ago";
 import { PriceCard } from "@/components/market/price-card";
 import { MarketOverview } from "@/components/market/market-overview";
 import { MarketStatus } from "@/components/market/market-status";
-
-function useSecondsAgo(date: Date | null) {
-  const [seconds, setSeconds] = useState(0);
-  useEffect(() => {
-    if (!date) return;
-    setSeconds(Math.floor((Date.now() - date.getTime()) / 1000));
-    const id = setInterval(() => {
-      setSeconds(Math.floor((Date.now() - date.getTime()) / 1000));
-    }, 1000);
-    return () => clearInterval(id);
-  }, [date]);
-  return seconds;
-}
 
 export default function MarketPage() {
   const { quotes, loading, lastUpdated } = useMarketData();
