@@ -102,10 +102,11 @@ export async function POST(request: Request) {
 
   // 3-6) Only run price-dependent steps when market is open
   // When closed: prices don't move → duplicate snapshots, meaningless scores
-  let prices = { saved: 0, skipped: "market closed" as string | number };
-  let scoring = { scored: 0, skipped: "market closed" as string | number };
-  let sentiment = { saved: 0 };
-  let bias = { saved: 0 };
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  let prices: any = { saved: 0, skipped: "market closed" };
+  let scoring: any = { scored: 0, skipped: "market closed" };
+  let sentiment: any = { saved: 0, skipped: "market closed" };
+  let bias: any = { saved: 0, skipped: "market closed" };
 
   if (marketOpen) {
     prices = await savePriceSnapshots();
