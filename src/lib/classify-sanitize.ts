@@ -47,14 +47,19 @@ export function sanitizeResult(r: ClassifyResult): ClassifyResult | null {
   }
 
   // Enforce position rules based on signal_type
-  if (r.signal_type === "entry" && !r.position) {
-    r.position = r.direction === "bearish" ? "short" : "long";
-  }
-  if (r.signal_type === "position" && !r.position) {
+  if ((r.signal_type === "entry" || r.signal_type === "position") && !r.position) {
     r.position = r.direction === "bearish" ? "short" : "long";
   }
   if (r.signal_type === "opinion") {
     r.position = null;
+  }
+
+  // Enforce direction consistency: long must be bullish, short must be bearish
+  if (r.position === "long" && r.direction !== "bullish") {
+    r.direction = "bullish";
+  }
+  if (r.position === "short" && r.direction !== "bearish") {
+    r.direction = "bearish";
   }
 
   r.interpretation = r.interpretation ?? null;

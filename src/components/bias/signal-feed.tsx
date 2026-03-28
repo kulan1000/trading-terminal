@@ -7,28 +7,66 @@ const STRENGTH_STYLE: Record<string, string> = {
   weak: "border-l border-terminal-border opacity-80",
 };
 
-const DIR_TAG: Record<string, { label: string; cls: string }> = {
-  bullish: { label: "BULLISH", cls: "bg-green-500/20 text-green-400" },
-  bearish: { label: "BEARISH", cls: "bg-red-500/20 text-red-400" },
-  neutral: { label: "NEUTRAL", cls: "bg-yellow-500/20 text-yellow-400" },
-};
+/** Combined action tag: merges signal_type + position into one readable tag */
+function ActionTag({ signal }: { signal: SignalTag }) {
+  const { signal_type, position, direction } = signal;
 
-const TYPE_TAG: Record<string, { label: string; cls: string }> = {
-  entry: { label: "ENTRY", cls: "bg-blue-500/25 text-blue-300 ring-1 ring-blue-400/40" },
-  position: { label: "HOLDING", cls: "bg-purple-500/20 text-purple-300 ring-1 ring-purple-400/30" },
-  exited: { label: "EXITED", cls: "bg-zinc-500/25 text-zinc-300 ring-1 ring-zinc-400/30" },
-};
+  // Opinions: show direction only (no trade action)
+  if (!signal_type || signal_type === "opinion") {
+    const dir: Record<string, { label: string; cls: string }> = {
+      bullish: { label: "BULLISH", cls: "bg-green-500/20 text-green-400" },
+      bearish: { label: "BEARISH", cls: "bg-red-500/20 text-red-400" },
+      neutral: { label: "NEUTRAL", cls: "bg-yellow-500/20 text-yellow-400" },
+    };
+    const d = dir[direction] ?? dir.neutral;
+    return <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${d.cls}`}>{d.label}</span>;
+  }
 
-const POS_TAG: Record<string, { label: string; cls: string }> = {
-  long: { label: "LONG", cls: "bg-green-600/30 text-green-300 ring-1 ring-green-500/30" },
-  short: { label: "SHORT", cls: "bg-red-600/30 text-red-300 ring-1 ring-red-500/30" },
-};
+  // Trades: combine action + position into one tag
+  const posLabel = position === "short" ? "SHORT" : "LONG";
+  const isShort = position === "short";
+
+  const combos: Record<string, { label: string; cls: string }> = {
+    "entry-long": {
+      label: "ENTRY LONG",
+      cls: "bg-green-500/25 text-green-300 ring-1 ring-green-400/40",
+    },
+    "entry-short": {
+      label: "ENTRY SHORT",
+      cls: "bg-red-500/25 text-red-300 ring-1 ring-red-400/40",
+    },
+    "position-long": {
+      label: "HOLDING LONG",
+      cls: "bg-purple-500/20 text-purple-300 ring-1 ring-purple-400/30",
+    },
+    "position-short": {
+      label: "HOLDING SHORT",
+      cls: "bg-purple-500/20 text-orange-300 ring-1 ring-orange-400/30",
+    },
+    "exited-long": {
+      label: "EXIT LONG",
+      cls: "bg-zinc-500/25 text-zinc-300 ring-1 ring-zinc-400/30",
+    },
+    "exited-short": {
+      label: "EXIT SHORT",
+      cls: "bg-zinc-500/25 text-zinc-300 ring-1 ring-zinc-400/30",
+    },
+  };
+
+  const key = `${signal_type}-${position ?? (isShort ? "short" : "long")}`;
+  const combo = combos[key] ?? {
+    label: `${signal_type.toUpperCase()} ${posLabel}`,
+    cls: "bg-terminal-border text-terminal-muted",
+  };
+
+  return (
+    <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${combo.cls}`}>
+      {combo.label}
+    </span>
+  );
+}
 
 function SignalRow({ signal, index }: { signal: SignalTag; index: number }) {
-  const dir = DIR_TAG[signal.direction];
-  const typ = signal.signal_type ? TYPE_TAG[signal.signal_type] : null;
-  const pos = signal.position ? POS_TAG[signal.position] : null;
-
   return (
     <div key={index} className="flex flex-wrap items-center gap-1 mt-1">
       <span
@@ -36,21 +74,7 @@ function SignalRow({ signal, index }: { signal: SignalTag; index: number }) {
       >
         {signal.asset}
       </span>
-      {dir && (
-        <span className={`rounded px-1 py-0.5 text-[9px] font-bold ${dir.cls}`}>
-          {dir.label}
-        </span>
-      )}
-      {typ && (
-        <span className={`rounded px-1 py-0.5 text-[9px] font-bold ${typ.cls}`}>
-          {typ.label}
-        </span>
-      )}
-      {pos && (
-        <span className={`rounded px-1 py-0.5 text-[9px] font-bold ${pos.cls}`}>
-          {pos.label}
-        </span>
-      )}
+      <ActionTag signal={signal} />
       {signal.interpretation && (
         <span className="text-[10px] italic text-terminal-muted ml-1 truncate max-w-[60%]">
           {signal.interpretation}
