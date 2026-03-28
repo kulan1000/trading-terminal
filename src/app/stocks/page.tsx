@@ -51,7 +51,15 @@ function StockRow({
         onClick={onToggle}
       >
         <td className="px-4 py-2">
-          <span className="font-semibold text-terminal-text">{q.symbol}</span>
+          <a
+            href={`https://ceo.ca/${q.ceoSymbol}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="font-semibold text-terminal-text underline decoration-terminal-border hover:decoration-terminal-text"
+          >
+            {q.symbol}
+          </a>
           <span className="ml-2 text-terminal-muted">{q.name}</span>
         </td>
         <td className="px-2 py-2">
