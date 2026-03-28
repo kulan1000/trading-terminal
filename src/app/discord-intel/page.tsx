@@ -1,36 +1,51 @@
-import { getFilteredFeed } from "@/lib/queries";
-import { getMessageStats } from "@/lib/queries-stats";
-import { getDailyBriefing } from "@/lib/queries-briefing";
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { TerminalCard } from "@/components/ui/terminal-card";
 import { MessageList } from "@/components/discord/message-list";
 import { AdvancedSearch } from "@/components/discord/advanced-search";
 import { DailyBriefingPanel } from "@/components/discord/daily-briefing";
 import { Suspense } from "react";
 
-export const revalidate = 30;
-
-interface Props {
-  searchParams: Promise<{
-    channel?: string;
-    asset?: string;
-    q?: string;
-    author?: string;
-    signalType?: string;
-    dateFrom?: string;
-    dateTo?: string;
-  }>;
+export default function DiscordIntelPage() {
+  return (
+    <Suspense>
+      <DiscordIntelContent />
+    </Suspense>
+  );
 }
 
-export default async function DiscordIntelPage({ searchParams }: Props) {
-  const { channel, asset, q, author, signalType, dateFrom, dateTo } = await searchParams;
+function DiscordIntelContent() {
+  const searchParams = useSearchParams();
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  const [data, setData] = useState<{ messages: any[]; stats: { total: number; processed: number; signals: number }; briefing: any } | null>(null);
+  const [error, setError] = useState(false);
+
+  const fetchData = useCallback(() => {
+    const qs = searchParams.toString();
+    const url = `/api/discord-intel-data${qs ? `?${qs}` : ""}`;
+    fetch(url)
+      .then((r) => r.json())
+      .then((d) => { setData(d); setError(false); })
+      .catch(() => setError(true));
+  }, [searchParams]);
+
+  useEffect(() => {
+    fetchData();
+    const id = setInterval(fetchData, 30_000);
+    return () => clearInterval(id);
+  }, [fetchData]);
+
+  const channel = searchParams.get("channel") ?? undefined;
+  const asset = searchParams.get("asset") ?? undefined;
+  const q = searchParams.get("q") ?? undefined;
+  const author = searchParams.get("author") ?? undefined;
+  const signalType = searchParams.get("signalType") ?? undefined;
+  const dateFrom = searchParams.get("dateFrom") ?? undefined;
+  const dateTo = searchParams.get("dateTo") ?? undefined;
 
   const hasFilters = !!(q || author || (channel && channel !== "all") || (asset && asset !== "all") || (signalType && signalType !== "all") || dateFrom || dateTo);
-
-  const [messages, stats, briefing] = await Promise.all([
-    getFilteredFeed({ channel, asset, query: q, author, signalType, dateFrom, dateTo, limit: hasFilters ? 100 : 50 }).catch(() => []),
-    getMessageStats().catch(() => ({ total: 0, processed: 0, signals: 0 })),
-    getDailyBriefing().catch(() => null),
-  ]);
 
   const filterParts: string[] = [];
   if (q) filterParts.push(`"${q}"`);
@@ -38,13 +53,14 @@ export default async function DiscordIntelPage({ searchParams }: Props) {
   if (asset && asset !== "all") filterParts.push(asset);
   if (signalType && signalType !== "all") filterParts.push(signalType.toUpperCase());
 
+  const stats = data?.stats ?? { total: 0, processed: 0, signals: 0 };
+  const messages = data?.messages ?? [];
   const title = hasFilters
     ? `Sökresultat: ${filterParts.join(" + ")} (${messages.length})`
     : `Raw Feed (${messages.length})`;
 
   return (
     <div className="animate-fade-in space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">
           Discord Intel
@@ -56,15 +72,21 @@ export default async function DiscordIntelPage({ searchParams }: Props) {
         </div>
       </div>
 
-      {briefing && <DailyBriefingPanel data={briefing} />}
+      {data?.briefing && <DailyBriefingPanel data={data.briefing} />}
 
-      <Suspense>
-        <AdvancedSearch />
-      </Suspense>
+      <AdvancedSearch />
 
-      <TerminalCard title={title}>
-        <MessageList messages={messages} highlight={q} />
-      </TerminalCard>
+      {data ? (
+        <TerminalCard title={title}>
+          <MessageList messages={messages} highlight={q} />
+        </TerminalCard>
+      ) : error ? (
+        <div className="rounded-xl border border-white/[0.06] bg-[#111111] p-10 text-center">
+          <p className="font-sans text-[13px] text-white/40">Kunde inte ladda data. Försöker igen...</p>
+        </div>
+      ) : (
+        <div className="h-[300px] animate-pulse rounded-xl border border-white/[0.06] bg-[#111111]" />
+      )}
     </div>
   );
 }

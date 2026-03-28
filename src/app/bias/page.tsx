@@ -1,7 +1,8 @@
-import { ASSETS, ASSET_PAIRS } from "@/lib/constants";
-import { getAssetBias, getRecentSignals, getSignalFeed } from "@/lib/queries";
-import { getRecentTargets, getHotAsset, getBiasHistory } from "@/lib/queries-bias";
-import { getTraderScores } from "@/lib/queries-stats";
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { ASSET_PAIRS } from "@/lib/constants";
+import type { Asset } from "@/lib/types";
 import { AssetBiasCard } from "@/components/bias/asset-bias-card";
 import { RecentSignals } from "@/components/bias/recent-signals";
 import { SignalFeed } from "@/components/bias/signal-feed";
@@ -9,45 +10,76 @@ import { TargetsPanel } from "@/components/bias/targets-panel";
 import { BiasSummary } from "@/components/bias/bias-summary";
 import { TraderLeaderboard } from "@/components/bias/trader-leaderboard";
 
-export const revalidate = 30;
+/* eslint-disable @typescript-eslint/no-explicit-any */
+interface BiasData {
+  biases: any[];
+  signals: any[];
+  messages: any[];
+  traderScores: Record<string, number>;
+  targets: any[];
+  hotAsset: { asset: string } | null;
+  historyMap: Record<string, any[]>;
+}
 
-export default async function BiasPage() {
-  const fallbackBias = { direction: "neutral" as const, score: 0, count: 0 };
+export default function BiasPage() {
+  const [data, setData] = useState<BiasData | null>(null);
+  const [error, setError] = useState(false);
 
-  const [biases, signals, messages, traderScores, targets, hotAsset, histories] = await Promise.all([
-    Promise.all(ASSETS.map(async (asset) => ({ asset, ...(await getAssetBias(asset).catch(() => fallbackBias)) }))),
-    getRecentSignals().catch(() => []),
-    getSignalFeed().catch(() => []),
-    getTraderScores().catch(() => ({} as Record<string, number>)),
-    getRecentTargets().catch(() => []),
-    getHotAsset().catch(() => null),
-    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasHistory(asset).catch(() => []) }))),
-  ]);
+  const fetchData = useCallback(() => {
+    fetch("/api/bias-data")
+      .then((r) => r.json())
+      .then((d) => { setData(d); setError(false); })
+      .catch(() => setError(true));
+  }, []);
 
-  const historyMap = Object.fromEntries(histories.map((h) => [h.asset, h.data]));
+  useEffect(() => {
+    fetchData();
+    const id = setInterval(fetchData, 30_000);
+    return () => clearInterval(id);
+  }, [fetchData]);
+
+  if (error) {
+    return (
+      <div className="animate-fade-in flex items-center justify-center py-20">
+        <p className="font-sans text-[13px] text-white/40">Kunde inte ladda data. Försöker igen...</p>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="animate-fade-in space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">Market Bias</h1>
+          <span className="font-sans text-[12px] text-white/30">Gold &middot; Silver &middot; Oil</span>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-[200px] animate-pulse rounded-xl border border-white/[0.06] bg-[#111111]" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">
-          Market Bias
-        </h1>
-        <span className="font-sans text-[12px] text-white/30">
-          Gold &middot; Silver &middot; Oil
-        </span>
+        <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">Market Bias</h1>
+        <span className="font-sans text-[12px] text-white/30">Gold &middot; Silver &middot; Oil</span>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        {biases.map((b) => (
+        {data.biases.map((b: any) => (
           <AssetBiasCard
             key={b.asset}
             asset={b.asset}
-            pair={ASSET_PAIRS[b.asset]}
+            pair={ASSET_PAIRS[b.asset as Asset]}
             direction={b.direction}
             score={b.score}
             count={b.count}
-            isHot={hotAsset?.asset === b.asset}
-            history={historyMap[b.asset]}
+            isHot={data.hotAsset?.asset === b.asset}
+            history={data.historyMap[b.asset]}
           />
         ))}
       </div>
@@ -55,9 +87,9 @@ export default async function BiasPage() {
       <BiasSummary />
 
       <div className="grid grid-cols-3 gap-4">
-        <RecentSignals signals={signals} />
-        <SignalFeed messages={messages} traderScores={traderScores} />
-        <TargetsPanel targets={targets} />
+        <RecentSignals signals={data.signals} />
+        <SignalFeed messages={data.messages} traderScores={data.traderScores} />
+        <TargetsPanel targets={data.targets} />
       </div>
 
       <TraderLeaderboard />
