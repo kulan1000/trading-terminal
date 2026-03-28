@@ -1,53 +1,27 @@
-import { ASSETS } from "@/lib/constants";
-import { getAssetBias } from "@/lib/queries";
-import { getHotAsset, getBiasHistory, getLatestSignal, getBiasAgo } from "@/lib/queries-bias";
-import { getMarketQuotes } from "@/lib/market-data";
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
 import { MarketBiasSection } from "@/components/bias/market-bias-section";
-import { SentimentAutoRefresh } from "@/components/bias/sentiment-auto-refresh";
 
-export const revalidate = 30;
+export default function SentimentPage() {
+  const [biases, setBiases] = useState<unknown[] | null>(null);
+  const [error, setError] = useState(false);
 
-export default async function SentimentPage() {
-  // Wrap each data source so one slow/failing API can't crash the whole page
-  const fallbackBias = { direction: "neutral" as const, score: 0, count: 0, activeCount: 0 };
+  const fetchData = useCallback(() => {
+    fetch("/api/bias-page-data")
+      .then((r) => r.json())
+      .then((d) => { setBiases(d); setError(false); })
+      .catch(() => setError(true));
+  }, []);
 
-  const [biases, hotAsset, histories, quotes, latestSignals, biasAgos] = await Promise.all([
-    Promise.all(ASSETS.map(async (asset) => ({ asset, ...(await getAssetBias(asset).catch(() => fallbackBias)) }))),
-    getHotAsset().catch(() => null),
-    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasHistory(asset).catch(() => []) }))),
-    getMarketQuotes().catch(() => [] as Awaited<ReturnType<typeof getMarketQuotes>>),
-    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getLatestSignal(asset).catch(() => null) }))),
-    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasAgo(asset).catch(() => null) }))),
-  ]);
-
-  const historyMap = Object.fromEntries(histories.map((h) => [h.asset, h.data]));
-  const priceMap = Object.fromEntries(quotes.map((q) => [q.asset, { price: q.price, change: q.change, changePercent: q.changePercent }]));
-  const latestMap = Object.fromEntries(latestSignals.map((l) => [l.asset, l.data]));
-  const agoMap = Object.fromEntries(biasAgos.map((a) => [a.asset, a.data]));
-
-  const biasData = biases.map((b) => {
-    const ago = agoMap[b.asset];
-    const flipped = ago ? ago.direction !== b.direction : false;
-    return {
-      asset: b.asset,
-      direction: b.direction,
-      score: b.score,
-      count: b.count,
-      activeCount: b.activeCount ?? 0,
-      isHot: hotAsset?.asset === b.asset,
-      flipped,
-      history: historyMap[b.asset] ?? [],
-      price: priceMap[b.asset]?.price ?? 0,
-      change: priceMap[b.asset]?.change ?? 0,
-      changePercent: priceMap[b.asset]?.changePercent ?? 0,
-      latestSignal: latestMap[b.asset] ?? null,
-      biasAgo: ago ?? null,
-    };
-  });
+  useEffect(() => {
+    fetchData();
+    const id = setInterval(fetchData, 30_000);
+    return () => clearInterval(id);
+  }, [fetchData]);
 
   return (
     <div className="animate-fade-in space-y-6">
-      <SentimentAutoRefresh />
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
@@ -57,9 +31,22 @@ export default async function SentimentPage() {
             Gold &middot; Silver &middot; Oil
           </span>
         </div>
-        <MarketBiasSection biases={biasData} />
-      </section>
 
+        {biases ? (
+          /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+          <MarketBiasSection biases={biases as any} />
+        ) : error ? (
+          <div className="rounded-xl border border-white/[0.06] bg-[#111111] p-10 text-center">
+            <p className="font-sans text-[13px] text-white/40">Kunde inte ladda data. Försöker igen...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-[200px] animate-pulse rounded-xl border border-white/[0.06] bg-[#111111]" />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
