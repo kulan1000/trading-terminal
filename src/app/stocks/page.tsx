@@ -39,7 +39,7 @@ export default function StocksPage() {
             Stocks — Watchlist
           </h1>
           <button onClick={() => setShowAdd(true)}
-            className="rounded-[6px] bg-tv-blue/15 px-2.5 py-1 font-sans text-xs font-medium text-tv-blue transition-colors hover:bg-tv-blue/25">
+            className="rounded-md bg-tv-blue px-3 py-1 font-sans text-xs font-medium text-white shadow-[0_0_12px_-3px_rgba(41,98,255,0.4)] transition-all hover:bg-tv-blue-hover hover:shadow-[0_0_16px_-3px_rgba(41,98,255,0.5)]">
             + Add
           </button>
         </div>
