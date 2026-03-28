@@ -81,7 +81,22 @@ function SignalRow({ signal, index }: { signal: SignalTag; index: number }) {
   );
 }
 
-export function SignalFeed({ messages }: { messages: FeedMessage[] }) {
+function ScoreBadge({ winRate }: { winRate: number }) {
+  const pct = Math.round(winRate * 100);
+  const color = winRate >= 0.6 ? "text-tv-green bg-tv-green/15" : winRate >= 0.4 ? "text-tv-orange bg-tv-orange/15" : "text-tv-red bg-tv-red/15";
+  return (
+    <span className={`rounded px-1 py-0.5 text-[9px] font-bold tabular-nums ${color}`} title={`Win rate: ${pct}%`}>
+      {pct}%
+    </span>
+  );
+}
+
+interface FeedProps {
+  messages: FeedMessage[];
+  traderScores?: Record<string, number>;
+}
+
+export function SignalFeed({ messages, traderScores }: FeedProps) {
   return (
     <div className="animate-fade-in rounded-[6px] border border-tv-border bg-tv-surface p-4">
       <h3 className="mb-3 font-sans text-xs font-medium uppercase tracking-wider text-tv-text-secondary">
@@ -97,6 +112,9 @@ export function SignalFeed({ messages }: { messages: FeedMessage[] }) {
             >
               <div className="flex items-center gap-1.5 text-xs">
                 <span className="font-sans font-bold text-tv-blue">{m.author}</span>
+                {traderScores?.[m.author] != null && (
+                  <ScoreBadge winRate={traderScores[m.author]} />
+                )}
                 <span className="text-tv-text-secondary">#{m.channel}</span>
                 <span className="ml-auto font-mono text-tv-text-subtle">
                   {new Date(m.timestamp).toLocaleTimeString("sv-SE", {

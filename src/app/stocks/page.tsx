@@ -32,21 +32,21 @@ export default function StocksPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="animate-fade-in space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="text-sm font-bold uppercase tracking-wider text-terminal-text">
+          <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-text-bright">
             Stocks — Watchlist
           </h1>
           <button onClick={() => setShowAdd(true)}
-            className="rounded bg-terminal-green/10 px-2 py-0.5 text-xs font-medium text-terminal-green transition-colors hover:bg-terminal-green/20">
+            className="rounded-[4px] bg-tv-blue/15 px-2 py-0.5 font-sans text-xs font-medium text-tv-blue transition-colors hover:bg-tv-blue/25">
             + Add
           </button>
         </div>
         <div className="flex items-center gap-4">
           <TsxvStatus />
-          <span className="font-mono text-xs text-terminal-muted">
-            {loading ? "Loading…" : lastUpdated ? `${secondsAgo}s ago` : ""}
+          <span className="font-mono text-xs text-tv-text-secondary">
+            {loading ? "Loading..." : lastUpdated ? `${secondsAgo}s ago` : ""}
           </span>
         </div>
       </div>
@@ -54,7 +54,7 @@ export default function StocksPage() {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-40 animate-pulse rounded-lg border border-terminal-border bg-terminal-surface" />
+            <div key={i} className="h-40 animate-skeleton rounded-[6px] border border-tv-border bg-tv-surface" />
           ))}
         </div>
       ) : (

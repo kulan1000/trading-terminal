@@ -25,22 +25,22 @@ export default async function DiscordIntelPage({ searchParams }: Props) {
     : `Raw Feed (${messages.length})`;
 
   return (
-    <div className="space-y-4">
+    <div className="animate-fade-in space-y-4">
       <div className="flex items-baseline justify-between">
-        <h1 className="text-sm font-bold uppercase tracking-wider text-terminal-text">
+        <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-text-bright">
           Discord Intel
         </h1>
-        <div className="flex gap-4 font-mono text-xs text-terminal-muted">
+        <div className="flex gap-4 font-mono text-xs text-tv-text-secondary">
           <span>
-            Messages: <span className="text-terminal-text">{stats.total}</span>
+            Messages: <span className="text-tv-text">{stats.total}</span>
           </span>
           <span>
             Processed:{" "}
-            <span className="text-terminal-green">{stats.processed}</span>
+            <span className="text-tv-green">{stats.processed}</span>
           </span>
           <span>
             Signals:{" "}
-            <span className="text-terminal-accent">{stats.signals}</span>
+            <span className="text-tv-blue">{stats.signals}</span>
           </span>
         </div>
       </div>

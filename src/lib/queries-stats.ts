@@ -1,5 +1,19 @@
 import { supabase } from "@/lib/supabase";
 
+/** Fetch win rate for all traders with completed trades → { author: winRate } */
+export async function getTraderScores(): Promise<Record<string, number>> {
+  const { data } = await supabase
+    .from("user_credibility" as never)
+    .select("discord_user, win_rate, total_trades")
+    .gt("total_trades", 0);
+
+  const map: Record<string, number> = {};
+  for (const r of (data ?? []) as Array<{ discord_user: string; win_rate: number }>) {
+    map[r.discord_user] = r.win_rate;
+  }
+  return map;
+}
+
 export async function getMessageStats() {
   const { count: total } = await supabase
     .from("discord_messages")

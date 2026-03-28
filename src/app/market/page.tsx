@@ -12,14 +12,14 @@ export default function MarketPage() {
   const secondsAgo = useSecondsAgo(lastUpdated);
 
   return (
-    <div className="space-y-4">
+    <div className="animate-fade-in space-y-4">
       <div className="flex items-baseline justify-between">
-        <h1 className="text-sm font-bold uppercase tracking-wider text-terminal-text">
+        <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-text-bright">
           Market — Live Prices
         </h1>
-        <span className="font-mono text-xs text-terminal-muted">
+        <span className="font-mono text-xs text-tv-text-secondary">
           {loading
-            ? "Loading…"
+            ? "Loading..."
             : lastUpdated
               ? `Updated ${secondsAgo}s ago · ${lastUpdated.toLocaleTimeString()}`
               : ""}
@@ -31,7 +31,7 @@ export default function MarketPage() {
           ? Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="h-32 animate-pulse rounded-lg border border-terminal-border bg-terminal-surface"
+                className="h-32 animate-skeleton rounded-[6px] border border-tv-border bg-tv-surface"
               />
             ))
           : quotes.map((q) => (
