@@ -40,62 +40,64 @@ export function AdvancedSearch() {
     router.push("/discord-intel");
   }
 
-  const inputCls = "w-full rounded-[6px] border border-tv-border bg-tv-input px-2.5 py-1.5 font-mono text-xs text-tv-text placeholder:text-tv-muted focus:border-tv-blue focus:outline-none";
-  const selectCls = "rounded-[6px] border border-tv-border bg-tv-input px-2 py-1.5 font-mono text-xs text-tv-text focus:border-tv-blue focus:outline-none";
+  const inputCls = "w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 font-sans text-[12px] text-white placeholder:text-white/20 transition-colors focus:border-[#2962FF]/50 focus:outline-none focus:bg-white/[0.04]";
+  const selectCls = "w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 font-sans text-[12px] text-white transition-colors focus:border-[#2962FF]/50 focus:outline-none";
 
   return (
     <form onSubmit={search} className="space-y-2">
       <div className="flex gap-2">
         <input type="text" value={q} onChange={(e) => setQ(e.target.value)}
           placeholder="Sök meddelanden... (gold, short, 2400)" className={`flex-1 ${inputCls}`} />
-        <button type="submit" className="rounded-[6px] bg-tv-blue px-4 py-1.5 font-sans text-xs font-medium text-white hover:bg-tv-blue-hover">
+        <button type="submit"
+          className="rounded-lg bg-[#2962FF] px-4 py-2 font-sans text-[12px] font-medium text-white shadow-[0_0_12px_-3px_rgba(41,98,255,0.4)] transition-all hover:bg-[#1E53E5] hover:shadow-[0_0_16px_-3px_rgba(41,98,255,0.5)]">
           Sök
         </button>
         <button type="button" onClick={() => setOpen(!open)}
-          className="rounded-[6px] border border-tv-border px-3 py-1.5 font-sans text-xs text-tv-secondary hover:bg-tv-elevated hover:text-tv-text">
-          {open ? "▲ Färre filter" : "▼ Fler filter"}
+          className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 font-sans text-[12px] text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/70">
+          {open ? "Färre filter" : "▼ Fler filter"}
         </button>
       </div>
 
       {open && (
-        <div className="grid grid-cols-2 gap-2 rounded-[6px] border border-tv-border bg-tv-elevated/30 p-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 rounded-xl border border-white/[0.06] bg-[#111111] p-4 md:grid-cols-4">
           <div>
-            <label className="mb-1 block font-sans text-[10px] uppercase tracking-wider text-tv-muted">Trader</label>
+            <label className="mb-1.5 block font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-white/25">Trader</label>
             <input type="text" value={author} onChange={(e) => setAuthor(e.target.value)}
               placeholder="Namn..." className={inputCls} />
           </div>
           <div>
-            <label className="mb-1 block font-sans text-[10px] uppercase tracking-wider text-tv-muted">Kanal</label>
+            <label className="mb-1.5 block font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-white/25">Kanal</label>
             <select value={channel} onChange={(e) => setChannel(e.target.value)} className={selectCls}>
               {CHANNELS.map((c) => <option key={c} value={c}>{c === "all" ? "Alla kanaler" : `#${c}`}</option>)}
             </select>
           </div>
           <div>
-            <label className="mb-1 block font-sans text-[10px] uppercase tracking-wider text-tv-muted">Asset</label>
+            <label className="mb-1.5 block font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-white/25">Asset</label>
             <select value={asset} onChange={(e) => setAsset(e.target.value)} className={selectCls}>
               {ASSETS.map((a) => <option key={a} value={a}>{a === "all" ? "Alla" : a}</option>)}
             </select>
           </div>
           <div>
-            <label className="mb-1 block font-sans text-[10px] uppercase tracking-wider text-tv-muted">Signal-typ</label>
+            <label className="mb-1.5 block font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-white/25">Signal-typ</label>
             <select value={signalType} onChange={(e) => setSignalType(e.target.value)} className={selectCls}>
               {SIGNAL_TYPES.map((t) => <option key={t} value={t}>{t === "all" ? "Alla typer" : t.toUpperCase()}</option>)}
             </select>
           </div>
           <div>
-            <label className="mb-1 block font-sans text-[10px] uppercase tracking-wider text-tv-muted">Från datum</label>
+            <label className="mb-1.5 block font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-white/25">Från datum</label>
             <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={inputCls} />
           </div>
           <div>
-            <label className="mb-1 block font-sans text-[10px] uppercase tracking-wider text-tv-muted">Till datum</label>
+            <label className="mb-1.5 block font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-white/25">Till datum</label>
             <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={inputCls} />
           </div>
           <div className="col-span-2 flex items-end gap-2 md:col-span-2">
-            <button type="submit" className="rounded-[6px] bg-tv-blue px-4 py-1.5 font-sans text-xs font-medium text-white hover:bg-tv-blue-hover">
+            <button type="submit"
+              className="rounded-lg bg-[#2962FF] px-4 py-2 font-sans text-[12px] font-medium text-white shadow-[0_0_12px_-3px_rgba(41,98,255,0.4)] transition-all hover:bg-[#1E53E5]">
               Filtrera
             </button>
             <button type="button" onClick={reset}
-              className="rounded-[6px] border border-tv-border px-3 py-1.5 font-sans text-xs text-tv-secondary hover:text-tv-text">
+              className="rounded-lg border border-white/[0.08] px-3 py-2 font-sans text-[12px] text-white/40 transition-colors hover:text-white/70 hover:bg-white/[0.04]">
               Rensa
             </button>
           </div>
