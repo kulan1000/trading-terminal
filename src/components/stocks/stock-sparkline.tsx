@@ -1,6 +1,6 @@
 "use client";
 
-import { changeColor } from "@/lib/utils";
+import { useMemo } from "react";
 
 interface StockSparklineProps {
   data: number[];
@@ -12,52 +12,57 @@ interface StockSparklineProps {
 export function StockSparkline({ data, width = 100, height = 28, change }: StockSparklineProps) {
   if (data.length < 2) return <div style={{ width, height }} />;
 
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 1;
-  const pad = 1;
+  const { points, areaPoints, openY, lastY } = useMemo(() => {
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min || 1;
+    const pad = 2;
 
-  const points = data
-    .map((v, i) => {
+    const pts = data.map((v, i) => {
       const x = (i / (data.length - 1)) * width;
       const y = pad + (1 - (v - min) / range) * (height - 2 * pad);
-      return `${x},${y}`;
-    })
-    .join(" ");
+      return { x, y };
+    });
 
-  const color = change >= 0 ? "var(--color-terminal-green)" : "var(--color-terminal-red)";
+    const linePoints = pts.map(p => `${p.x},${p.y}`).join(" ");
+    const area = linePoints + ` ${width},${height} 0,${height}`;
+    const oY = pad + (1 - (data[0] - min) / range) * (height - 2 * pad);
+    const lY = pts[pts.length - 1].y;
 
-  // Opening price reference line
-  const openY = pad + (1 - (data[0] - min) / range) * (height - 2 * pad);
+    return { points: linePoints, areaPoints: area, openY: oY, lastY: lY };
+  }, [data, width, height]);
+
+  const isUp = change >= 0;
+  const gradientId = `sparkGrad-${isUp ? "up" : "dn"}-${Math.random().toString(36).slice(2, 6)}`;
+  const strokeColor = isUp ? "#26A69A" : "#EF5350";
+  const fillStart = isUp ? "rgba(38, 166, 154, 0.15)" : "rgba(239, 83, 80, 0.15)";
 
   return (
     <svg width={width} height={height} className="overflow-visible">
-      {/* Opening price line */}
-      <line
-        x1={0}
-        y1={openY}
-        x2={width}
-        y2={openY}
-        stroke="currentColor"
-        strokeOpacity={0.15}
-        strokeDasharray="2,2"
-      />
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={fillStart} />
+          <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+        </linearGradient>
+      </defs>
+
+      {/* Gradient area fill */}
+      <polygon points={areaPoints} fill={`url(#${gradientId})`} />
+
+      {/* Opening price reference line */}
+      <line x1={0} y1={openY} x2={width} y2={openY}
+        stroke="white" strokeOpacity={0.08} strokeDasharray="2,3" />
+
       {/* Price line */}
-      <polyline
-        points={points}
-        fill="none"
-        stroke={color}
-        strokeWidth={1.5}
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-      {/* Current price dot */}
-      <circle
-        cx={width}
-        cy={parseFloat(points.split(" ").pop()?.split(",")[1] ?? "0")}
-        r={2}
-        fill={color}
-      />
+      <polyline points={points} fill="none"
+        stroke={strokeColor} strokeWidth={1.5}
+        strokeLinejoin="round" strokeLinecap="round" />
+
+      {/* Current price dot with glow */}
+      <circle cx={width} cy={lastY} r={2.5}
+        fill={strokeColor} opacity={0.3} />
+      <circle cx={width} cy={lastY} r={1.5}
+        fill={strokeColor} />
     </svg>
   );
 }

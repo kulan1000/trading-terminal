@@ -15,6 +15,9 @@ const SECTOR_ACCENT: Record<string, string> = {
 const SECTOR_COLORS: Record<string, string> = {
   gold: "text-yellow-400", silver: "text-gray-300", oil: "text-orange-400",
 };
+const SECTOR_ICONS: Record<string, string> = {
+  gold: "⛏", silver: "◈", oil: "◉",
+};
 
 const COLUMNS: { key: SortKey; label: string; align: string }[] = [
   { key: "symbol", label: "Symbol", align: "text-left" },
@@ -51,6 +54,8 @@ export function SectorTable({
   if (quotes.length === 0) return null;
 
   const accent = SECTOR_ACCENT[sector] ?? "#2962FF";
+  const gainers = quotes.filter(q => q.change > 0).length;
+  const losers = quotes.filter(q => q.change < 0).length;
 
   return (
     <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
@@ -58,10 +63,28 @@ export function SectorTable({
       <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} />
 
       {/* Sector header */}
-      <div className="px-6 py-4">
-        <h2 className={`font-sans text-[15px] font-semibold tracking-wide ${SECTOR_COLORS[sector] ?? "text-white"}`}>
-          {SECTOR_LABELS[sector] ?? sector}
-        </h2>
+      <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex items-center gap-3">
+          <span className="text-[14px]">{SECTOR_ICONS[sector] ?? "●"}</span>
+          <h2 className={`font-sans text-[15px] font-semibold tracking-wide ${SECTOR_COLORS[sector] ?? "text-white"}`}>
+            {SECTOR_LABELS[sector] ?? sector}
+          </h2>
+          <span className="rounded-md bg-white/[0.05] px-2 py-0.5 font-mono text-[11px] tabular-nums text-white/30">
+            {quotes.length}
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          {gainers > 0 && (
+            <span className="font-mono text-[11px] tabular-nums text-[#26A69A]">
+              {gainers} ▲
+            </span>
+          )}
+          {losers > 0 && (
+            <span className="font-mono text-[11px] tabular-nums text-[#EF5350]">
+              {losers} ▼
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Table */}
@@ -74,7 +97,7 @@ export function SectorTable({
                 onClick={() => onSort(col.key)}>
                 {col.label}
                 {sortKey === col.key && (
-                  <span className="ml-1 text-tv-blue">{sortAsc ? "▲" : "▼"}</span>
+                  <span className="ml-1 text-[#2962FF]">{sortAsc ? "▲" : "▼"}</span>
                 )}
               </th>
             ))}
