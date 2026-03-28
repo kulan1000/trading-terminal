@@ -36,6 +36,7 @@ export function Sidebar() {
       className={`flex h-screen flex-col border-r border-tv-border bg-tv-sidebar transition-[width] duration-200 ${
         expanded ? "w-60" : "w-[60px]"
       }`}
+      style={{ backgroundImage: "linear-gradient(180deg, rgba(20,25,40,0.15) 0%, transparent 40%)" }}
     >
       {/* Logo */}
       <div className="flex h-14 items-center gap-3 border-b border-tv-border px-4">

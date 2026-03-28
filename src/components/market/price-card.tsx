@@ -16,8 +16,8 @@ const PAIRS: Record<string, string> = {
 /** Asset-specific ambient glow + border accent + top accent bar color */
 const ASSET_GLOW: Record<string, { glow: string; border: string; accent: string }> = {
   Gold:   { glow: "shadow-[0_0_60px_-6px_rgba(255,193,37,0.35),0_0_20px_-4px_rgba(255,193,37,0.15)]",  border: "border-yellow-500/30", accent: "#FFD700" },
-  Silver: { glow: "shadow-[0_0_60px_-6px_rgba(192,197,206,0.30),0_0_20px_-4px_rgba(192,197,206,0.12)]", border: "border-gray-400/30", accent: "#C0C5CE" },
-  Oil:    { glow: "shadow-[0_0_60px_-6px_rgba(20,20,24,0.6),0_0_20px_-4px_rgba(60,60,70,0.2)]",        border: "border-zinc-600/40", accent: "#3A3A42" },
+  Silver: { glow: "shadow-[0_0_60px_-6px_rgba(192,197,206,0.40),0_0_24px_-4px_rgba(220,225,235,0.18)]", border: "border-gray-300/25", accent: "#D0D5DE" },
+  Oil:    { glow: "shadow-[0_0_60px_-6px_rgba(120,80,30,0.30),0_0_24px_-4px_rgba(90,60,20,0.15)]",     border: "border-amber-800/25", accent: "#5C3D1A" },
 };
 
 const BIAS_STYLE: Record<string, { label: string; bg: string; text: string }> = {
@@ -60,9 +60,11 @@ export function PriceCard({ quote, pair, sentiment, variant = "default" }: Price
         className={`animate-fade-in cursor-pointer overflow-hidden rounded-lg border ${borderColor} bg-tv-surface font-mono transition-all duration-200 hover:border-tv-border-hover hover:bg-tv-elevated ${isHero ? `${glowColor} hover:scale-[1.005]` : ""}`}
         onClick={() => setExpanded(true)}
       >
-        {/* Asset accent bar on top */}
-        {isHero && assetStyle && (
+        {/* Asset accent bar on top + glossy sheen */}
+        {isHero && assetStyle ? (
           <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, transparent, ${assetStyle.accent}, transparent)` }} />
+        ) : (
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
         )}
         {/* Header row */}
         <div className={`flex items-baseline justify-between ${isHero ? "px-5 pt-4" : "px-4 pt-3"}`}>

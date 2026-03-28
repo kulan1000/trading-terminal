@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import type { MarketQuote } from "@/lib/market-data";
 import type { TradeMarker } from "./sparkline";
 import { changeColor } from "@/lib/utils";
+import { fmtTimeEpoch } from "@/lib/format-utils";
 import { positionMarkers, MARKER_LEGEND } from "./marker-utils";
 import { MarkerTooltip } from "./marker-tooltip";
 import { ChartModalChart } from "./chart-modal-chart";
@@ -75,9 +77,7 @@ export function ChartModal({ quote, pair, markers, onClose }: Props) {
 
   const hx = hover !== null ? toX(hover) : 0;
   const hTime = hover !== null && timestamps?.[hover]
-    ? new Date(timestamps[hover] * 1000).toLocaleTimeString("sv-SE", {
-        hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm",
-      })
+    ? fmtTimeEpoch(timestamps[hover])
     : null;
 
   const changeCol = changeColor(quote.change);
@@ -86,9 +86,9 @@ export function ChartModal({ quote, pair, markers, onClose }: Props) {
 
   if (phase === "gone") return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
       onClick={handleClose}
       style={{ perspective: "1200px" }}
     >
@@ -212,6 +212,7 @@ export function ChartModal({ quote, pair, markers, onClose }: Props) {
           {positioned.length} trade signal{positioned.length !== 1 ? "s" : ""} (48h) · Click a dot to see original message · ESC to close
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

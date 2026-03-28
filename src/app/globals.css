@@ -52,6 +52,7 @@
 /* === Base === */
 body {
   background-color: var(--color-tv-bg);
+  background-image: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(20, 25, 40, 0.35) 0%, transparent 70%);
   color: var(--color-tv-text);
   font-family: var(--font-sans);
 }
