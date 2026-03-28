@@ -54,7 +54,7 @@ export default function ScoringPage() {
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
+        <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">
           Trader Scoring
         </h1>
         <div className="flex items-center gap-3">
@@ -63,10 +63,10 @@ export default function ScoringPage() {
               <button
                 key={a}
                 onClick={() => setAsset(a)}
-                className={`rounded px-2.5 py-1 font-sans text-[11px] font-medium uppercase tracking-wider transition-colors ${
+                className={`rounded-md px-3 py-1.5 font-sans text-[12px] font-medium uppercase tracking-wider transition-all ${
                   asset === a
-                    ? "bg-tv-blue text-white"
-                    : "bg-tv-input text-tv-secondary hover:text-tv-text"
+                    ? "bg-[#2962FF] text-white shadow-[0_0_12px_-3px_rgba(41,98,255,0.4)]"
+                    : "bg-white/[0.04] text-white/40 hover:text-white/70"
                 }`}
               >
                 {a}
@@ -74,7 +74,7 @@ export default function ScoringPage() {
             ))}
           </div>
           <BackfillButton />
-          <span className="text-xs text-tv-secondary">
+          <span className="font-sans text-[11px] text-white/30">
             30m · 1h · 2h · 4h efter signal
           </span>
         </div>
@@ -82,7 +82,7 @@ export default function ScoringPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <span className="animate-pulse text-sm text-tv-secondary">Loading scoring data...</span>
+          <span className="animate-pulse font-sans text-[13px] text-white/40">Loading scoring data...</span>
         </div>
       ) : (
         <>

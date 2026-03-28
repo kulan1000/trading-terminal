@@ -8,7 +8,7 @@ export function BackfillButton() {
 
   async function runBackfill() {
     setLoading(true);
-    setStatus("Kör backfill...");
+    setStatus("Kor backfill...");
     try {
       const res = await fetch("/api/scoring/backfill", {
         method: "POST",
@@ -32,12 +32,12 @@ export function BackfillButton() {
       <button
         onClick={runBackfill}
         disabled={loading}
-        className="rounded-[6px] border border-tv-border bg-tv-elevated px-3 py-1 font-sans text-[11px] font-medium text-tv-secondary transition-colors hover:border-tv-blue hover:text-tv-blue disabled:opacity-50"
+        className="bg-[#2962FF] text-white rounded-md px-3 py-1 font-sans text-[12px] font-medium shadow-[0_0_12px_-3px_rgba(41,98,255,0.4)] hover:shadow-[0_0_16px_-3px_rgba(41,98,255,0.5)] transition-all disabled:opacity-50"
       >
         {loading ? "Scorar..." : "⟳ Backfill Scoring"}
       </button>
       {status && (
-        <span className="font-mono text-[11px] text-tv-secondary">{status}</span>
+        <span className="font-sans text-[11px] text-white/40">{status}</span>
       )}
     </div>
   );

@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import type { TraderScore, ScoredSignal } from "@/hooks/use-scoring-data";
-import { winRateColor } from "@/lib/utils";
 import { TraderDrilldown } from "./trader-drilldown";
 
 type SortKey = "author" | "signals" | "winRate" | "avgScore" | "consistency";
@@ -16,6 +15,30 @@ function sortTraders(list: TraderScore[], key: SortKey, asc: boolean): TraderSco
     if (va > vb) return asc ? 1 : -1;
     return 0;
   });
+}
+
+/** Win rate colored pill matching TradingView badge pattern */
+function WinRatePill({ rate }: { rate: number }) {
+  const pct = (rate * 100).toFixed(0);
+  if (rate >= 0.6) {
+    return (
+      <span className="inline-block rounded-md bg-[#26A69A]/20 px-2 py-0.5 font-mono text-[12px] tabular-nums text-[#26A69A]">
+        {pct}%
+      </span>
+    );
+  }
+  if (rate >= 0.4) {
+    return (
+      <span className="inline-block rounded-md bg-[#FF9800]/15 px-2 py-0.5 font-mono text-[12px] tabular-nums text-[#FF9800]">
+        {pct}%
+      </span>
+    );
+  }
+  return (
+    <span className="inline-block rounded-md bg-[#EF5350]/20 px-2 py-0.5 font-mono text-[12px] tabular-nums text-[#EF5350]">
+      {pct}%
+    </span>
+  );
 }
 
 const COLS: { key: SortKey; label: string; align: string }[] = [
@@ -45,85 +68,102 @@ export function ScoreboardTable({ traders, traderSignals }: Props) {
 
   if (!traders.length) {
     return (
-      <div className="rounded-lg border border-tv-border bg-tv-surface p-5">
-        <h3 className="mb-2 font-sans text-sm font-semibold uppercase tracking-[0.5px] text-tv-heading">
-          Scoreboard
-        </h3>
-        <p className="text-xs text-tv-muted">
-          Inga traders med minst 3 scorade signaler ännu. Scoring börjar automatiskt
-          efter att prisdata samlats in (30m/1h/2h/4h efter signal).
-        </p>
+      <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+        <div className="px-5 pt-4 pb-3">
+          <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">
+            Scoreboard
+          </h3>
+        </div>
+        <div className="px-5 pb-4">
+          <p className="font-sans text-[13px] text-white/40">
+            Inga traders med minst 3 scorade signaler annu. Scoring borjar automatiskt
+            efter att prisdata samlats in (30m/1h/2h/4h efter signal).
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="animate-fade-in rounded-lg border border-tv-border bg-tv-surface p-5">
-      <h3 className="mb-4 font-sans text-sm font-semibold uppercase tracking-[0.5px] text-tv-heading">
-        Scoreboard
-        <span className="ml-2 text-[10px] font-normal text-tv-muted">
-          Tidshorisonter: 30m · 1h · 2h · 4h
-        </span>
-      </h3>
-      <table className="w-full font-mono text-[13px]">
+    <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
+      {/* Glossy sheen */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+
+      {/* Card header */}
+      <div className="px-5 pt-4 pb-3">
+        <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">
+          Scoreboard
+          <span className="ml-2 font-sans text-[11px] font-normal text-white/30">
+            Tidshorisonter: 30m · 1h · 2h · 4h
+          </span>
+        </h3>
+      </div>
+
+      {/* Table */}
+      <table className="w-full text-[13px]">
         <thead>
-          <tr className="border-b border-tv-divider text-tv-secondary">
-            <th className="w-8 pb-2 text-center text-[11px] font-semibold uppercase tracking-[0.08em]">#</th>
+          <tr className="border-y border-white/[0.04] bg-white/[0.015]">
+            <th className="w-8 px-3 py-2.5 text-center font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">
+              #
+            </th>
             {COLS.map((c) => (
               <th
                 key={c.key}
                 onClick={() => handleSort(c.key)}
-                className={`cursor-pointer pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors hover:text-tv-text ${c.align}`}
+                className={`cursor-pointer px-5 py-2.5 font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40 transition-colors hover:text-white/70 ${c.align}`}
               >
                 {c.label}
-                {sortKey === c.key && <span className="ml-1 text-tv-blue">{sortAsc ? "▲" : "▼"}</span>}
+                {sortKey === c.key && <span className="ml-1 text-[#2962FF]">{sortAsc ? "▲" : "▼"}</span>}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
           {sorted.map((t, i) => {
-            const wrColor = winRateColor(t.winRate);
-            const scoreColor = t.avgScore > 0 ? "text-tv-bull" : t.avgScore < 0 ? "text-tv-bear" : "text-tv-secondary";
+            const scoreColor = t.avgScore > 0 ? "text-[#26A69A]" : t.avgScore < 0 ? "text-[#EF5350]" : "text-white/50";
             const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`;
             const isExpanded = expanded === t.author;
             return (
-              <>
+              <Fragment key={t.author}>
                 <tr
-                  key={t.author}
                   onClick={() => setExpanded(isExpanded ? null : t.author)}
-                  className={`cursor-pointer border-b border-tv-divider transition-colors hover:bg-tv-elevated ${isExpanded ? "bg-tv-elevated" : ""}`}
+                  className={`cursor-pointer border-b border-white/[0.03] transition-colors hover:bg-white/[0.025] ${isExpanded ? "bg-white/[0.025]" : ""}`}
                 >
-                  <td className="py-1.5 text-center">{medal}</td>
-                  <td className="py-1.5 font-sans text-tv-text">
+                  <td className="px-3 py-3 text-center font-sans text-[13px]">{medal}</td>
+                  <td className="px-5 py-3">
                     <Link href={`/trader/${encodeURIComponent(t.author)}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="text-tv-blue transition-colors hover:text-tv-blue-hover hover:underline">
+                      className="font-sans text-[14px] font-semibold text-white transition-colors hover:text-[#2962FF]">
                       {t.author}
                     </Link>
-                    <span className="ml-1.5 text-[10px] text-tv-muted">{isExpanded ? "▾" : "▸"}</span>
+                    <span className="ml-1.5 text-[10px] text-white/20">{isExpanded ? "▾" : "▸"}</span>
                   </td>
-                  <td className="py-1.5 text-right text-tv-secondary">
-                    {t.signals}
-                    <span className="ml-1 text-[10px] text-tv-muted">
+                  <td className="px-5 py-3 text-right">
+                    <span className="font-mono text-[13px] tabular-nums text-white/70">
+                      {t.signals}
+                    </span>
+                    <span className="ml-1 font-sans text-[10px] text-white/30">
                       ({t.entries}E {t.exits}X)
                     </span>
                   </td>
-                  <td className={`py-1.5 text-right font-semibold ${wrColor}`}>
-                    {(t.winRate * 100).toFixed(0)}%
+                  <td className="px-5 py-3 text-right">
+                    <WinRatePill rate={t.winRate} />
                   </td>
-                  <td className={`py-1.5 text-right ${scoreColor}`}>
+                  <td className={`px-5 py-3 text-right font-mono text-[13px] tabular-nums ${scoreColor}`}>
                     {t.avgScore > 0 ? "+" : ""}{t.avgScore.toFixed(2)}%
                   </td>
-                  <td className="py-1.5 text-right text-tv-secondary">
-                    {t.consistency}/{t.signals}
-                    <span className="ml-1 text-[9px] text-tv-bull">✦</span>
+                  <td className="px-5 py-3 text-right">
+                    <span className="font-mono text-[13px] tabular-nums text-white/70">
+                      {t.consistency}/{t.signals}
+                    </span>
+                    <span className="ml-1 text-[9px] text-[#26A69A]">✦</span>
                   </td>
                 </tr>
                 {isExpanded && traderSignals[t.author] && (
-                  <TraderDrilldown key={`${t.author}-detail`} signals={traderSignals[t.author]} />
+                  <TraderDrilldown signals={traderSignals[t.author]} />
                 )}
-              </>
+              </Fragment>
             );
           })}
         </tbody>
