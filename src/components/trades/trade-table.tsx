@@ -1,4 +1,5 @@
 import type { TradeRow } from "@/lib/queries-trades";
+import { changeColor } from "@/lib/utils";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-GB", {
@@ -44,7 +45,7 @@ export function TradeTable({ trades, title }: { trades: TradeRow[]; title: strin
           <tbody>
             {trades.map((t) => {
               const dirColor = t.direction === "long" ? "text-terminal-green" : "text-terminal-red";
-              const pnlColor = (t.pnl ?? 0) >= 0 ? "text-terminal-green" : "text-terminal-red";
+              const pnlColor = changeColor(t.pnl ?? 0);
               const pnlSign = (t.pnl ?? 0) >= 0 ? "+" : "";
 
               return (

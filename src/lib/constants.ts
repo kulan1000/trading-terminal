@@ -30,7 +30,3 @@ export const ASSET_TAG_COLORS: Record<string, string> = {
   Oil: "bg-orange-500/20 text-orange-400",
 };
 
-export const DIRECTION_ICON: Record<string, string> = {
-  bullish: "▲",
-  bearish: "▼",
-};

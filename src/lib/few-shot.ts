@@ -11,7 +11,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
   },
   {
     role: "assistant",
-    content: JSON.stringify([
+    content: JSON.stringify({ signals: [
       {
         has_signal: true,
         asset: "Gold",
@@ -23,7 +23,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
         interpretation:
           "Trader is entering a long position in GDX right now, citing a breakout pattern.",
       },
-    ]),
+    ] }),
   },
 
   // Example 2: Holding — past tense purchase, currently in position
@@ -33,7 +33,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
   },
   {
     role: "assistant",
-    content: JSON.stringify([
+    content: JSON.stringify({ signals: [
       {
         has_signal: true,
         asset: "Gold",
@@ -45,7 +45,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
         interpretation:
           "Trader bought gold earlier and is still holding the position. Past tense purchase = holding, not entry.",
       },
-    ]),
+    ] }),
   },
 
   // Example 3: Opinion — no trade action, just sentiment
@@ -55,7 +55,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
   },
   {
     role: "assistant",
-    content: JSON.stringify([
+    content: JSON.stringify({ signals: [
       {
         has_signal: true,
         asset: "Oil",
@@ -67,7 +67,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
         interpretation:
           "Trader says oil crisis is hurting economies, meaning oil prices are HIGH and rising. Bullish for oil price, no trade action taken.",
       },
-    ]),
+    ] }),
   },
 
   // Example 4: Ambiguous limit orders — cannot determine direction
@@ -77,7 +77,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
   },
   {
     role: "assistant",
-    content: JSON.stringify([
+    content: JSON.stringify({ signals: [
       {
         has_signal: true,
         asset: "Oil",
@@ -89,7 +89,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
         interpretation:
           "Trader has limit orders on oil but does not specify buy or sell. Cannot determine direction or position.",
       },
-    ]),
+    ] }),
   },
 
   // Example 5: Exit — taking profits
@@ -99,7 +99,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
   },
   {
     role: "assistant",
-    content: JSON.stringify([
+    content: JSON.stringify({ signals: [
       {
         has_signal: true,
         asset: "Silver",
@@ -111,7 +111,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
         interpretation:
           "Trader is partially exiting a long silver position by selling to lock in profits.",
       },
-    ]),
+    ] }),
   },
 
   // Example 6: Multi-commodity — separate signals per asset
@@ -121,7 +121,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
   },
   {
     role: "assistant",
-    content: JSON.stringify([
+    content: JSON.stringify({ signals: [
       {
         has_signal: true,
         asset: "Oil",
@@ -142,7 +142,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
         confidence: 0.5,
         interpretation: "Trader is entering a silver position, preferring the setup over oil.",
       },
-    ]),
+    ] }),
   },
 
   // Example 7: "Considering" = opinion, NOT action
@@ -152,7 +152,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
   },
   {
     role: "assistant",
-    content: JSON.stringify([
+    content: JSON.stringify({ signals: [
       {
         has_signal: true,
         asset: "Gold",
@@ -164,7 +164,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
         interpretation:
           "Trader is considering shorting gold but has not taken action. Intent without action = opinion.",
       },
-    ]),
+    ] }),
   },
 
   // Example 8: No commodity signal
@@ -174,6 +174,6 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
   },
   {
     role: "assistant",
-    content: JSON.stringify([{ has_signal: false }]),
+    content: JSON.stringify({ signals: [{ has_signal: false }] }),
   },
 ];

@@ -43,13 +43,16 @@ export async function classifyMessage(
   const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o-mini",
     messages,
-    temperature: 0.15,
+    temperature: 0.1,
     max_tokens: 600,
+    response_format: { type: "json_object" },
   });
 
   const text = response.choices[0]?.message?.content ?? "";
   try {
-    const parsed = JSON.parse(text);
+    const raw = JSON.parse(text);
+    // JSON mode returns an object — extract signals array
+    const parsed = raw.signals ?? (Array.isArray(raw) ? raw : [raw]);
     const results: ClassifyResult[] = Array.isArray(parsed) ? parsed : [parsed];
 
     // Sanitize, deduplicate by asset+direction+signal_type

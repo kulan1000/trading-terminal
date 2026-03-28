@@ -1,6 +1,5 @@
-"use client";
-
 import type { MarketQuote } from "@/lib/market-data";
+import { changeColor } from "@/lib/utils";
 import { AnimatedPrice } from "@/components/ui/animated-price";
 import { Sparkline } from "./sparkline";
 
@@ -11,7 +10,7 @@ interface PriceCardProps {
 
 export function PriceCard({ quote, pair }: PriceCardProps) {
   const isUp = quote.change >= 0;
-  const color = isUp ? "text-terminal-green" : "text-terminal-red";
+  const color = changeColor(quote.change);
   const arrow = isUp ? "▲" : "▼";
   const borderColor = isUp
     ? "border-terminal-green/30"

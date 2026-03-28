@@ -4,7 +4,7 @@ export const CLASSIFY_SYSTEM_PROMPT = `You are a high-recall commodity sentiment
 
 YOUR JOB: Extract ALL commodity-related sentiment AND detect trade actions from every message. Bias heavily toward INCLUSION — it is much better to capture a weak signal than to miss one.
 
-CRITICAL: Return ONLY valid JSON array — no markdown, no explanation.
+CRITICAL: Return ONLY valid JSON object — no markdown, no explanation.
 
 ═══════════════════════════════════════
 COMMODITY DETECTION — EXPANDED SCOPE
@@ -24,21 +24,23 @@ CHANNEL CONTEXT: In #gold-commodities, ambiguous "it"/"this"/"the market" likely
 RESPONSE FORMAT
 ═══════════════════════════════════════
 
-[
-  {
-    "has_signal": true,
-    "asset": "Gold" | "Silver" | "Oil",
-    "direction": "bullish" | "bearish" | "neutral",
-    "signal_type": "entry" | "position" | "exited" | "opinion",
-    "position": "long" | "short" | null,
-    "strength": "strong" | "medium" | "weak",
-    "confidence": 0.10-1.0,
-    "interpretation": "1-2 sentence explanation"
-  }
-]
+{
+  "signals": [
+    {
+      "has_signal": true,
+      "asset": "Gold" | "Silver" | "Oil",
+      "direction": "bullish" | "bearish" | "neutral",
+      "signal_type": "entry" | "position" | "exited" | "opinion",
+      "position": "long" | "short" | null,
+      "strength": "strong" | "medium" | "weak",
+      "confidence": 0.10-1.0,
+      "interpretation": "1-2 sentence explanation"
+    }
+  ]
+}
 
-If no commodity relevance: [{"has_signal": false}]
-MULTI-COMMODITY: return SEPARATE entries per commodity.
+If no commodity relevance: {"signals": [{"has_signal": false}]}
+MULTI-COMMODITY: return SEPARATE entries per commodity in the signals array.
 
 ═══════════════════════════════════════
 SIGNAL TYPE — THE CORE CLASSIFICATION
@@ -159,6 +161,11 @@ RULE: If the buy/sell happened in the past ("bought this week", "got in yesterda
 MISTAKE 4: Confusing "considering" or "thinking about" with actual action
 "Considering cashing out of some oil" is NOT an exit — they haven't done it yet. Classify as opinion unless they confirm action.
 RULE: "considering", "thinking about", "might", "planning to" = opinion, not entry/exited.
+
+MISTAKE 5: Tagging general market commentary as a commodity signal
+❌ WRONG: "carry trade is unwinding, retail buying the dip" → Gold opinion
+✅ CORRECT: This is generic market commentary. No specific commodity is mentioned. Return {"signals": [{"has_signal": false}]}.
+RULE: If the message does NOT mention a specific commodity (Gold/Silver/Oil) or their tickers/proxies, it is NOT a signal. General macro talk ("market is dumping", "risk off", "bonds ripping") without a commodity reference = has_signal: false. Do NOT infer a commodity from vague market talk unless the channel context strongly implies it.
 
 ═══════════════════════════════════════
 DIRECTION RULES

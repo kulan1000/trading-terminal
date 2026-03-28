@@ -21,17 +21,3 @@ export async function getMessageStats() {
   };
 }
 
-export async function getTopTraders(limit = 5) {
-  const { data } = await supabase
-    .from("user_credibility")
-    .select("discord_user, total_signals, correct_signals, score")
-    .order("score", { ascending: false })
-    .limit(limit);
-
-  return (data ?? []) as Array<{
-    discord_user: string;
-    total_signals: number;
-    correct_signals: number;
-    score: number;
-  }>;
-}

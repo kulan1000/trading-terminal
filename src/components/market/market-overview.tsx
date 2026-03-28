@@ -1,7 +1,6 @@
-"use client";
-
 import { TerminalCard } from "@/components/ui/terminal-card";
 import type { MarketQuote } from "@/lib/market-data";
+import { changeColor } from "@/lib/utils";
 
 interface MarketOverviewProps {
   quotes: MarketQuote[];
@@ -28,9 +27,7 @@ export function MarketOverview({ quotes }: MarketOverviewProps) {
           <tbody>
             {quotes.map((q) => {
               const isUp = q.change >= 0;
-              const color = isUp
-                ? "text-terminal-green"
-                : "text-terminal-red";
+              const color = changeColor(q.change);
               return (
                 <tr
                   key={q.asset}

@@ -1,3 +1,5 @@
+import { changeColor } from "@/lib/utils";
+
 interface TradeStatsProps {
   openCount: number;
   closedCount: number;
@@ -8,7 +10,7 @@ interface TradeStatsProps {
 }
 
 export function TradeStats({ openCount, closedCount, totalPnl, wins, losses, winRate }: TradeStatsProps) {
-  const pnlColor = totalPnl >= 0 ? "text-terminal-green" : "text-terminal-red";
+  const pnlColor = changeColor(totalPnl);
   const pnlSign = totalPnl >= 0 ? "+" : "";
 
   return (

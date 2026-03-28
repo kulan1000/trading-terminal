@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type { Asset, Direction, Strength, DiscordMessage, FeedMessage, SignalTag } from "@/lib/types";
+import type { Asset, Direction, Strength, DiscordMessage, FeedMessage } from "@/lib/types";
 
 interface SignalRow {
   direction: Direction;
@@ -11,18 +11,27 @@ interface SignalRow {
 type RawSignal = { asset: Asset; direction: Direction; strength?: Strength; signal_type?: string; position?: string | null; interpretation?: string };
 type RawMessageWithSignals = DiscordMessage & { signals: RawSignal[] };
 
+/** Filter out noise: weak neutral opinions with low confidence */
+function isNoise(s: RawSignal): boolean {
+  return s.direction === "neutral" && s.signal_type === "opinion" && (s.strength === "weak" || !s.strength);
+}
+
 function toFeedMessages(rows: RawMessageWithSignals[]): FeedMessage[] {
-  return rows.map(({ signals: sigs, ...msg }) => ({
-    ...msg,
-    assets: (sigs ?? []).map((s) => ({
-      asset: s.asset,
-      direction: s.direction,
-      strength: s.strength,
-      signal_type: s.signal_type as "entry" | "position" | "exited" | "opinion" | undefined,
-      position: s.position as "long" | "short" | undefined,
-      interpretation: s.interpretation,
-    })),
-  }));
+  return rows
+    .map(({ signals: sigs, ...msg }) => ({
+      ...msg,
+      assets: (sigs ?? [])
+        .filter((s) => !isNoise(s))
+        .map((s) => ({
+          asset: s.asset,
+          direction: s.direction,
+          strength: s.strength,
+          signal_type: s.signal_type as "entry" | "position" | "exited" | "opinion" | undefined,
+          position: s.position as "long" | "short" | undefined,
+          interpretation: s.interpretation,
+        })),
+    }))
+    .filter((m) => m.assets.length > 0); // Drop messages with only noise signals
 }
 
 export async function getAssetBias(asset: Asset) {
@@ -70,23 +79,7 @@ export async function getRecentSignals(limit = 10) {
   }>;
 }
 
-// Combined feed + search — pass query to filter, omit for full feed
-export async function getMessages(options?: { query?: string; limit?: number }): Promise<DiscordMessage[]> {
-  const { query, limit = 20 } = options ?? {};
-
-  let q = supabase
-    .from("discord_messages")
-    .select("id, author, content, channel, timestamp, processed")
-    .order("timestamp", { ascending: false })
-    .limit(limit);
-
-  if (query) q = q.ilike("content", `%${query}%`);
-
-  const { data } = await q;
-  return (data ?? []) as DiscordMessage[];
-}
-
-// Signal feed — ONLY messages that have commodity signals
+// Signal feed — ONLY messages that have meaningful commodity signals
 export async function getSignalFeed(limit = 20): Promise<FeedMessage[]> {
   const { data: signalRows } = await supabase
     .from("signals")
@@ -106,8 +99,6 @@ export async function getSignalFeed(limit = 20): Promise<FeedMessage[]> {
 
   return toFeedMessages((data ?? []) as RawMessageWithSignals[]);
 }
-
-export const searchMessages = (query: string, limit = 50) => getMessages({ query, limit });
 
 // Filtered signal feed for Discord Intel (channel + asset filters)
 export async function getFilteredFeed(options?: {
