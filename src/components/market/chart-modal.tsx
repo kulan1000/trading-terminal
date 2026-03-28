@@ -94,7 +94,7 @@ export function ChartModal({ quote, pair, markers, onClose }: Props) {
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/85 backdrop-blur-md"
         style={{
           opacity: isVisible ? 1 : 0,
           transition: "opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)",

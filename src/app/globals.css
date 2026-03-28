@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 @theme {
-  /* === Backgrounds — vary these, NEVER use the same everywhere === */
-  --color-tv-bg: #131722;
-  --color-tv-surface: #1E222D;
-  --color-tv-elevated: #2A2E39;
-  --color-tv-input: #363A45;
-  --color-tv-sidebar: #0C0E15;
+  /* === Backgrounds — deep black like TradingView === */
+  --color-tv-bg: #0a0a0a;
+  --color-tv-surface: #111111;
+  --color-tv-elevated: #1a1a1a;
+  --color-tv-input: #222222;
+  --color-tv-sidebar: #060606;
 
   /* === Text === */
   --color-tv-text: #D1D4DC;
@@ -26,16 +26,16 @@
   --color-tv-cyan: #00BCD4;
   --color-tv-yellow: #FFEB3B;
 
-  /* === Borders === */
-  --color-tv-border: rgba(255, 255, 255, 0.06);
-  --color-tv-border-default: rgba(255, 255, 255, 0.1);
-  --color-tv-border-hover: rgba(255, 255, 255, 0.16);
-  --color-tv-divider: rgba(255, 255, 255, 0.04);
+  /* === Borders — slightly brighter against pure black === */
+  --color-tv-border: rgba(255, 255, 255, 0.08);
+  --color-tv-border-default: rgba(255, 255, 255, 0.12);
+  --color-tv-border-hover: rgba(255, 255, 255, 0.20);
+  --color-tv-divider: rgba(255, 255, 255, 0.05);
 
   /* === Legacy aliases (sparklines, chart-modal use CSS vars directly) === */
-  --color-terminal-bg: #131722;
-  --color-terminal-surface: #1E222D;
-  --color-terminal-border: rgba(255, 255, 255, 0.06);
+  --color-terminal-bg: #0a0a0a;
+  --color-terminal-surface: #111111;
+  --color-terminal-border: rgba(255, 255, 255, 0.08);
   --color-terminal-text: #D1D4DC;
   --color-terminal-muted: #787B86;
   --color-terminal-accent: #2962FF;
@@ -79,6 +79,11 @@ body {
 }
 
 /* === Animations === */
+@keyframes loading-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }

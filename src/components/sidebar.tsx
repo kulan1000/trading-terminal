@@ -14,7 +14,6 @@ import {
   Briefcase,
   ChevronLeft,
   ChevronRight,
-  Gem,
 } from "lucide-react";
 
 const navItems = [
@@ -39,13 +38,13 @@ export function Sidebar() {
       }`}
     >
       {/* Logo */}
-      <div className="flex h-14 items-center gap-3 px-4">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-tv-blue/15">
-          <Gem size={16} strokeWidth={2} className="text-tv-blue" />
+      <div className="flex h-14 items-center gap-3 border-b border-tv-border px-4">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-tv-blue to-tv-blue/60 shadow-[0_0_16px_-4px_rgba(41,98,255,0.35)]">
+          <span className="text-[11px] font-bold text-white">TT</span>
         </div>
         {expanded && (
           <span className="truncate text-[13px] font-bold tracking-wider text-tv-heading">
-            TT
+            Trading Terminal
           </span>
         )}
       </div>
@@ -61,12 +60,15 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               title={expanded ? undefined : item.name}
-              className={`mx-0 flex h-11 items-center gap-3 rounded-[6px] px-4 text-[13px] font-medium transition-all duration-150 ${
+              className={`relative mx-0 flex h-11 items-center gap-3 rounded-[6px] px-4 text-[13px] font-medium transition-all duration-150 ${
                 isActive
-                  ? "bg-tv-blue/12 text-tv-blue"
-                  : "text-tv-secondary hover:bg-tv-elevated hover:text-tv-text"
+                  ? "bg-tv-blue/10 text-tv-blue"
+                  : "text-tv-secondary hover:bg-white/[0.04] hover:text-tv-text"
               }`}
             >
+              {isActive && (
+                <div className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-tv-blue" />
+              )}
               <Icon size={18} strokeWidth={1.8} className="shrink-0" />
               {expanded && <span className="truncate">{item.name}</span>}
             </Link>
