@@ -13,11 +13,11 @@ function VolumeCell({ volume, avgVolume }: { volume: number; avgVolume: number }
   return (
     <div className="flex flex-col items-end gap-0.5">
       <div className="flex items-baseline gap-1">
-        <span className="font-mono text-[13px] tabular-nums text-white/80">
+        <span className="font-sans text-[13px] tabular-nums text-white/80">
           {fmtVol(volume)}
         </span>
         {avgVolume > 0 && (
-          <span className={`font-mono text-[10px] tabular-nums ${isHigh ? "text-[#26A69A]" : "text-white/25"}`}>
+          <span className={`font-sans text-[10px] tabular-nums ${isHigh ? "text-[#26A69A]" : "text-white/25"}`}>
             {ratio.toFixed(1)}x
           </span>
         )}
@@ -33,12 +33,12 @@ function VolumeCell({ volume, avgVolume }: { volume: number; avgVolume: number }
 
 function ChangePill({ change, changePercent }: { change: number; changePercent: number }) {
   if (change === 0) {
-    return <span className="font-mono text-[12px] tabular-nums text-white/25">0.00%</span>;
+    return <span className="font-sans text-[13px] tabular-nums text-white/25">0.00%</span>;
   }
   const isUp = change > 0;
   const color = isUp ? "text-[#26A69A]" : "text-[#EF5350]";
   return (
-    <span className={`font-mono text-[13px] tabular-nums ${color}`}>
+    <span className={`font-sans text-[13px] tabular-nums ${color}`}>
       {isUp ? "+" : ""}{fmtNum(changePercent)}%
     </span>
   );
@@ -76,7 +76,7 @@ export function StockRow({
 
         {/* Price — 10% */}
         <div className="w-[10%] text-right">
-          <span className="font-mono text-[13px] font-medium tabular-nums text-white">
+          <span className="font-sans text-[13px] font-medium tabular-nums text-white">
             {fmtNum(q.price)}
           </span>
         </div>
@@ -93,7 +93,7 @@ export function StockRow({
 
         {/* VWAP — 10% */}
         <div className="w-[10%] text-right">
-          <span className="font-mono text-[12px] tabular-nums text-white/40">
+          <span className="font-sans text-[12px] tabular-nums text-white/40">
             {q.hasCeoData && q.vwap > 0 ? fmtNum(q.vwap, 4) : <span className="text-white/15">—</span>}
           </span>
         </div>
@@ -101,7 +101,7 @@ export function StockRow({
         {/* Shorts — 10% */}
         <div className="w-[10%] text-right">
           {q.hasCeoData && q.shortVolume > 0 ? (
-            <span className="font-mono text-[12px] tabular-nums text-white/40">
+            <span className="font-sans text-[12px] tabular-nums text-white/40">
               {fmtBig(q.shortVolume)}
               {q.shortChange !== 0 && (
                 <span className={q.shortChange > 0 ? "ml-0.5 text-[#EF5350]" : "ml-0.5 text-[#26A69A]"}>
@@ -109,12 +109,12 @@ export function StockRow({
                 </span>
               )}
             </span>
-          ) : <span className="font-mono text-[12px] text-white/15">—</span>}
+          ) : <span className="font-sans text-[12px] text-white/15">—</span>}
         </div>
 
         {/* MCap — 10% */}
         <div className="w-[10%] text-right">
-          <span className="font-mono text-[12px] tabular-nums text-white/40">
+          <span className="font-sans text-[12px] tabular-nums text-white/40">
             {q.marketCap > 0 ? fmtBig(q.marketCap) : <span className="text-white/15">—</span>}
           </span>
         </div>

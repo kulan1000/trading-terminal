@@ -2,9 +2,6 @@
 
 import { useState, useEffect } from "react";
 
-// TSX Venture Exchange: Mon-Fri 9:30-16:00 ET
-// Closed weekends and Canadian holidays (holidays not tracked here)
-
 function getETNow() {
   return new Date(
     new Date().toLocaleString("en-US", { timeZone: "America/New_York" })
@@ -34,34 +31,23 @@ function computeState(): MarketState {
   const m = et.getMinutes();
   const mins = h * 60 + m;
   const localTime = getStockholmTime();
+  const OPEN = 9 * 60 + 30;
+  const CLOSE = 16 * 60;
 
-  const OPEN = 9 * 60 + 30;  // 9:30 ET
-  const CLOSE = 16 * 60;      // 16:00 ET
-
-  // Weekend
   if (day === 0 || day === 6) {
     const daysToMon = day === 6 ? 2 : 1;
     const hLeft = (daysToMon - 1) * 24 + (24 - h) + 9;
-    return { open: false, label: "TSX-V Closed — Weekend", countdown: `~${hLeft}h`, localTime };
+    return { open: false, label: "TSX-V Closed", countdown: `~${hLeft}h`, localTime };
   }
-
-  // Before open
   if (mins < OPEN) {
     const left = OPEN - mins;
     return { open: false, label: "TSX-V Pre-Market", countdown: fmtMins(left), localTime };
   }
-
-  // After close
   if (mins >= CLOSE) {
-    // If Friday, show weekend
-    if (day === 5) {
-      return { open: false, label: "TSX-V Closed — Weekend", countdown: "~63h", localTime };
-    }
+    if (day === 5) return { open: false, label: "TSX-V Closed", countdown: "~63h", localTime };
     const left = (24 * 60 - mins) + OPEN;
     return { open: false, label: "TSX-V After Hours", countdown: fmtMins(left), localTime };
   }
-
-  // Market open
   const left = CLOSE - mins;
   return { open: true, label: "TSX-V Open", countdown: fmtMins(left), localTime };
 }
@@ -82,20 +68,20 @@ export function TsxvStatus() {
   }, []);
 
   return (
-    <div className="flex items-center gap-2.5 font-sans text-[12px]">
+    <div className="flex items-center gap-2 font-sans text-[11px]">
       <span
-        className={`inline-block h-2 w-2 rounded-full ${
-          state.open ? "animate-pulse bg-tv-bull" : "bg-tv-bear"
+        className={`inline-block h-[6px] w-[6px] rounded-full ${
+          state.open ? "animate-pulse bg-[#26A69A]" : "bg-[#EF5350]"
         }`}
       />
-      <span className="font-medium text-white/70">{state.label}</span>
+      <span className="font-medium text-white/60">{state.label}</span>
       {state.countdown && (
-        <span className="text-white/30">
-          {state.open ? "closes in " : "opens in "}
+        <span className="tabular-nums text-white/25">
+          {state.open ? "closes " : "opens "}
           {state.countdown}
         </span>
       )}
-      <span className="font-mono text-[11px] text-white/20">{state.localTime}</span>
+      <span className="tabular-nums text-white/15">{state.localTime}</span>
     </div>
   );
 }

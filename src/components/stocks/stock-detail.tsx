@@ -7,7 +7,7 @@ function Stat({ label, value, highlight }: { label: string; value: string; highl
   return (
     <div className="flex items-center justify-between gap-4 rounded-lg px-3 py-2 transition-colors hover:bg-white/[0.02]">
       <span className="font-sans text-[12px] text-white/40">{label}</span>
-      <span className={`font-mono text-[12px] tabular-nums ${highlight ? "font-medium text-white" : "text-white/70"}`}>{value}</span>
+      <span className={`font-sans text-[12px] tabular-nums ${highlight ? "font-medium text-white" : "text-white/70"}`}>{value}</span>
     </div>
   );
 }
@@ -33,7 +33,7 @@ function RangeBar({ low, high, current, label }: { low: number; high: number; cu
       <div className="flex items-center justify-between px-3">
         <span className="font-sans text-[12px] text-white/40">{label}</span>
         <div className="flex items-center gap-3">
-          <span className="font-mono text-[11px] tabular-nums text-white/30">{fmtNum(low)}</span>
+          <span className="font-sans text-[11px] tabular-nums text-white/30">{fmtNum(low)}</span>
           <div className="relative h-1.5 w-28 rounded-full bg-white/[0.06]">
             <div
               className="absolute top-0 left-0 h-full rounded-full bg-gradient-to-r from-[#EF5350]/30 via-[#FF9800]/20 to-[#26A69A]/30"
@@ -44,7 +44,7 @@ function RangeBar({ low, high, current, label }: { low: number; high: number; cu
               style={{ left: `${pct}%` }}
             />
           </div>
-          <span className="font-mono text-[11px] tabular-nums text-white/30">{fmtNum(high)}</span>
+          <span className="font-sans text-[11px] tabular-nums text-white/30">{fmtNum(high)}</span>
         </div>
       </div>
     </div>
@@ -63,7 +63,6 @@ export function StockDetail({ q }: { q: StockQuote }) {
   return (
     <div className="px-6 py-5">
       <div className="grid grid-cols-3 gap-6">
-
         <StatGroup title="Price">
           <Stat label="Prev Close" value={fmtNum(q.prevClose)} />
           <Stat label="Day High" value={fmtNum(q.dayHigh)} highlight />
@@ -93,15 +92,11 @@ export function StockDetail({ q }: { q: StockQuote }) {
           <Stat label="MA 50" value={q.ma50 > 0 ? fmtNum(q.ma50) : "—"} />
           <Stat label="MA 200" value={q.ma200 > 0 ? fmtNum(q.ma200) : "—"} />
           {q.shortVolume > 0 && (
-            <Stat
-              label="Shorts"
-              value={`${(q.shortVolume / 1e3).toFixed(0)}K ${q.shortChange > 0 ? "↑" : q.shortChange < 0 ? "↓" : ""}`}
-            />
+            <Stat label="Shorts" value={`${(q.shortVolume / 1e3).toFixed(0)}K ${q.shortChange > 0 ? "↑" : q.shortChange < 0 ? "↓" : ""}`} />
           )}
         </StatGroup>
       </div>
 
-      {/* Range bars */}
       <div className="mt-5 space-y-3 border-t border-white/[0.04] pt-5">
         <RangeBar low={q.dayLow} high={q.dayHigh} current={q.price} label="Day Range" />
         <RangeBar low={q.yearLow} high={q.yearHigh} current={q.price} label="52W Range" />

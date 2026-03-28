@@ -56,8 +56,6 @@ export function SectorTable({
 
   return (
     <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
-
-      {/* Sector accent line */}
       <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} />
 
       {/* Sector header */}
@@ -66,12 +64,12 @@ export function SectorTable({
           <h2 className={`font-sans text-[14px] font-semibold ${SECTOR_COLORS[sector] ?? "text-white"}`}>
             {SECTOR_LABELS[sector] ?? sector}
           </h2>
-          <span className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-white/25">
+          <span className="rounded bg-white/[0.06] px-1.5 py-0.5 font-sans text-[10px] tabular-nums text-white/25">
             {quotes.length}
           </span>
         </div>
         {(gainers > 0 || losers > 0) && (
-          <div className="flex items-center gap-2.5 font-mono text-[10px] tabular-nums">
+          <div className="flex items-center gap-2.5 font-sans text-[10px] tabular-nums">
             {gainers > 0 && <span className="text-[#26A69A]">{gainers}↑</span>}
             {losers > 0 && <span className="text-[#EF5350]">{losers}↓</span>}
           </div>

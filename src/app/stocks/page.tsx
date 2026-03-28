@@ -75,7 +75,7 @@ export default function StocksPage() {
         <div className="flex items-center gap-3">
           <TsxvStatus />
           {!loading && lastUpdated && (
-            <span className="font-mono text-[10px] tabular-nums text-white/20">
+            <span className="font-sans text-[10px] tabular-nums text-white/20">
               {secondsAgo}s
             </span>
           )}
