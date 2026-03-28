@@ -39,21 +39,26 @@ export function TradeMarkersOverlay({ markers, timestamps, toX, toY, min, max, w
     [markers, min, max]
   );
 
-  // Pre-compute marker positions
+  // Pre-compute marker positions — clamp to chart edges if outside time range
   const positioned = useMemo(() => {
+    if (!timestamps.length) return [];
     return markers.map((m) => {
       const mTs = new Date(m.created_at).getTime() / 1000;
-      if (!timestamps.length || mTs < timestamps[0] || mTs > timestamps[timestamps.length - 1])
-        return null;
       let mi = 0;
-      for (let j = 1; j < timestamps.length; j++) {
-        if (Math.abs(timestamps[j] - mTs) < Math.abs(timestamps[mi] - mTs)) mi = j;
+      if (mTs <= timestamps[0]) {
+        mi = 0;
+      } else if (mTs >= timestamps[timestamps.length - 1]) {
+        mi = timestamps.length - 1;
+      } else {
+        for (let j = 1; j < timestamps.length; j++) {
+          if (Math.abs(timestamps[j] - mTs) < Math.abs(timestamps[mi] - mTs)) mi = j;
+        }
       }
       return { ...m, mx: toX(mi), my: toY(m.price_at_signal), style: getMarkerStyle(m) };
-    }).filter(Boolean) as Array<TradeMarker & { mx: number; my: number; style: ReturnType<typeof getMarkerStyle> }>;
+    }) as Array<TradeMarker & { mx: number; my: number; style: ReturnType<typeof getMarkerStyle> }>;
   }, [markers, timestamps, toX, toY]);
 
-  const r = 3.5;
+  const r = 4.5;
 
   return (
     <>

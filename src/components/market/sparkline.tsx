@@ -49,8 +49,11 @@ export function Sparkline({
 
   if (data.length < 2) return null;
 
-  const min = Math.min(...data);
-  const max = Math.max(...data);
+  // Expand Y-range to include marker prices so they render on-screen
+  const markerPrices = markers?.length ? markers.map((m) => m.price_at_signal) : [];
+  const allValues = markerPrices.length ? [...data, ...markerPrices] : data;
+  const min = Math.min(...allValues);
+  const max = Math.max(...allValues);
   const range = max - min || 1;
   const pad = 2;
 

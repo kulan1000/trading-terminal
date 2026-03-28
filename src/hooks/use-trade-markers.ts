@@ -11,7 +11,7 @@ export function useTradeMarkers(asset: string) {
 
     async function load() {
       try {
-        const res = await fetch(`/api/trade-markers?asset=${asset}&hours=24`);
+        const res = await fetch(`/api/trade-markers?asset=${asset}&hours=48`);
         if (!res.ok) return;
         const { markers: m } = await res.json();
         if (!cancelled) setMarkers(m ?? []);
