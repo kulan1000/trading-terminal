@@ -1,8 +1,10 @@
 import { getFilteredFeed } from "@/lib/queries";
 import { getMessageStats } from "@/lib/queries-stats";
+import { getDailyBriefing } from "@/lib/queries-briefing";
 import { TerminalCard } from "@/components/ui/terminal-card";
 import { MessageList } from "@/components/discord/message-list";
 import { AdvancedSearch } from "@/components/discord/advanced-search";
+import { DailyBriefingPanel } from "@/components/discord/daily-briefing";
 import { Suspense } from "react";
 
 export const revalidate = 30;
@@ -24,9 +26,10 @@ export default async function DiscordIntelPage({ searchParams }: Props) {
 
   const hasFilters = !!(q || author || (channel && channel !== "all") || (asset && asset !== "all") || (signalType && signalType !== "all") || dateFrom || dateTo);
 
-  const [messages, stats] = await Promise.all([
+  const [messages, stats, briefing] = await Promise.all([
     getFilteredFeed({ channel, asset, query: q, author, signalType, dateFrom, dateTo, limit: hasFilters ? 100 : 50 }),
     getMessageStats(),
+    getDailyBriefing(),
   ]);
 
   const filterParts: string[] = [];
@@ -51,6 +54,8 @@ export default async function DiscordIntelPage({ searchParams }: Props) {
           <span>Signals: <span className="text-tv-blue">{stats.signals}</span></span>
         </div>
       </div>
+
+      <DailyBriefingPanel data={briefing} />
 
       <Suspense>
         <AdvancedSearch />
