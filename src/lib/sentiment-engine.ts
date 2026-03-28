@@ -67,6 +67,8 @@ export interface AssetSentiment {
   // Per-window scores
   hotBias: Direction;
   hotConfidence: number;
+  // Freshness
+  lastSignalAt: string | null;
 }
 
 // --- CORE LOGIC ---
@@ -170,6 +172,11 @@ function calcAssetSentiment(asset: Asset, signals: RawSignal[], nowMs: number): 
   const coldRate = coldSignals / (WINDOWS.primary - WINDOWS.hot);
   const acceleration = coldRate > 0 ? Math.round((hotRate / coldRate) * 100) / 100 : hotSignals > 0 ? 2.0 : 0;
 
+  // Find most recent signal
+  const lastSignalAt = signals.length > 0
+    ? signals.reduce((latest, s) => s.created_at > latest ? s.created_at : latest, signals[0].created_at)
+    : null;
+
   return {
     asset, bias, confidence: Math.min(confidence, 10),
     bullPressure: Math.round(bullPressure * 10) / 10,
@@ -182,6 +189,7 @@ function calcAssetSentiment(asset: Asset, signals: RawSignal[], nowMs: number): 
     hotSignals, coldSignals,
     acceleration,
     hotBias, hotConfidence: Math.min(hotConfidence, 10),
+    lastSignalAt,
   };
 }
 

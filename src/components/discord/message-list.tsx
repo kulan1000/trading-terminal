@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { FeedMessage } from "@/lib/types";
 import { ASSET_TAG_COLORS } from "@/lib/constants";
+import { fmtDateTime } from "@/lib/format-utils";
 
 const SIGNAL_TYPE_LABELS: Record<string, { label: string; cls: string }> = {
   entry: { label: "ENTRY", cls: "bg-tv-bull/20 text-tv-bull" },
@@ -41,10 +42,7 @@ export function MessageList({ messages, highlight }: Props) {
   return (
     <div className="space-y-0 text-sm">
       {messages.map((msg) => {
-        const time = new Date(msg.timestamp).toLocaleString("sv-SE", {
-          month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-          timeZone: "Europe/Stockholm",
-        });
+        const time = fmtDateTime(msg.timestamp);
         return (
           <div key={msg.id}
             className="flex items-start gap-2 border-b border-tv-divider px-1 py-2 transition-colors hover:bg-tv-elevated/50">

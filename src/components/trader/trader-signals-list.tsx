@@ -1,3 +1,5 @@
+import { fmtDateTime } from "@/lib/format-utils";
+
 interface Score {
   signal_id: number;
   asset: string;
@@ -61,10 +63,7 @@ export function TraderSignalsList({ signals, scores }: { signals: Signal[]; scor
         <tbody>
           {signals.map((sig) => {
             const sc = scoreMap.get(sig.id);
-            const time = new Date(sig.created_at).toLocaleString("sv-SE", {
-              month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-              timeZone: "Europe/Stockholm",
-            });
+            const time = fmtDateTime(sig.created_at);
             const typeInfo = TYPE_STYLE[sig.signal_type] ?? { label: sig.signal_type, cls: "bg-tv-input text-tv-secondary" };
             const dirCls = sig.direction === "bullish" ? "text-tv-bull" : sig.direction === "bearish" ? "text-tv-bear" : "text-tv-secondary";
 

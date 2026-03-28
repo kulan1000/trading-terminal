@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { processUnclassified } from "@/lib/classify-batch";
+import { savePriceSnapshots } from "@/lib/price-snapshots";
+import { scoreSignals } from "@/lib/score-signals";
+import { saveSentimentSnapshots } from "@/lib/sentiment-snapshots";
+import { saveBiasSnapshots } from "@/lib/bias-snapshots";
 
 // Discord channel IDs for FoFtyTrades
 const CHANNELS: Record<string, string> = {
@@ -40,15 +45,7 @@ async function fetchDiscordMessages(channelId: string, limit = 50) {
   >;
 }
 
-// POST /api/ingest — fetch latest Discord messages and store in Supabase
-export async function POST(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  const expected = `Bearer ${process.env.CLASSIFY_SECRET}`;
-
-  if (!authHeader || authHeader !== expected) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+async function ingestDiscord() {
   const supabase = getSupabase();
   let totalNew = 0;
 
@@ -57,11 +54,9 @@ export async function POST(request: Request) {
       const messages = await fetchDiscordMessages(channelId);
 
       for (const msg of messages) {
-        // Skip bots and short messages
         if (msg.author.bot) continue;
         if (msg.content.trim().length < 3) continue;
 
-        // Upsert by discord_message_id to avoid duplicates
         const { error } = await supabase.from("discord_messages").upsert(
           {
             discord_message_id: msg.id,
@@ -75,11 +70,7 @@ export async function POST(request: Request) {
         );
 
         if (error) {
-          // If unique constraint on discord_message_id doesn't exist yet,
-          // fall back to checking if content+author+timestamp combo exists
-          if (error.code === "23505" || error.message.includes("duplicate")) {
-            continue; // Already exists, skip
-          }
+          if (error.code === "23505" || error.message.includes("duplicate")) continue;
           console.error(`[INGEST] Insert error:`, error.message);
         } else {
           totalNew++;
@@ -89,8 +80,32 @@ export async function POST(request: Request) {
       console.error(`[INGEST] Error fetching #${channelName}:`, err);
     }
   }
+  return { ingested: totalNew };
+}
 
-  return NextResponse.json({ ingested: totalNew });
+// POST /api/ingest — full pipeline: ingest → classify → prices → score → sentiment → bias
+export async function POST(request: Request) {
+  const authHeader = request.headers.get("authorization");
+  const expected = `Bearer ${process.env.CLASSIFY_SECRET}`;
+
+  if (!authHeader || authHeader !== expected) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // 1) Fetch new Discord messages
+  const ingest = await ingestDiscord();
+  // 2) Classify unprocessed messages with GPT
+  const classify = await processUnclassified();
+  // 3) Save price snapshots (for scoring)
+  const prices = await savePriceSnapshots();
+  // 4) Score signals against actual prices
+  const scoring = await scoreSignals();
+  // 5) Save sentiment snapshots (for sparklines)
+  const sentiment = await saveSentimentSnapshots();
+  // 6) Save bias snapshots (for sparklines)
+  const bias = await saveBiasSnapshots();
+
+  return NextResponse.json({ ingest, ...classify, prices, scoring, sentiment, bias });
 }
 
 export async function GET() {

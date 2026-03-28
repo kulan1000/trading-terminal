@@ -8,29 +8,58 @@ import type { Asset } from "@/lib/types";
 
 function PressureBar({ bull, bear }: { bull: number; bear: number }) {
   const total = bull + bear;
-  if (total === 0) return <div className="h-2 w-full rounded-full bg-tv-input" />;
+  if (total === 0) return <div className="h-2.5 w-full rounded-full bg-tv-input" />;
   const bullPct = (bull / total) * 100;
   return (
-    <div className="flex h-2 w-full overflow-hidden rounded-full bg-tv-input">
-      <div className="bg-tv-bull transition-all" style={{ width: `${bullPct}%` }} />
+    <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-tv-input">
+      <div className="bg-tv-bull transition-all duration-500" style={{ width: `${bullPct}%` }} />
       <div className="bg-tv-bear flex-1" />
     </div>
   );
 }
 
-function ConfidenceDots({ value }: { value: number }) {
-  const filled = Math.round(value);
+function ConfidenceBar({ value }: { value: number }) {
+  // Color: green at 7+, orange 4-7, red below 4
+  const color = value >= 7 ? "bg-tv-bull" : value >= 4 ? "bg-tv-orange" : "bg-tv-bear";
+  const pct = (value / 10) * 100;
   return (
-    <div className="flex gap-0.5">
-      {Array.from({ length: 10 }, (_, i) => (
-        <div
-          key={i}
-          className={`h-1.5 w-1.5 rounded-full ${
-            i < filled ? "bg-tv-blue" : "bg-tv-input"
-          }`}
-        />
-      ))}
+    <div className="flex items-center gap-2">
+      <div className="h-2 w-24 overflow-hidden rounded-full bg-tv-input">
+        <div className={`h-full rounded-full transition-all duration-500 ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className={`font-mono text-xs font-bold ${value >= 7 ? "text-tv-bull" : value >= 4 ? "text-tv-orange" : "text-tv-bear"}`}>
+        {value.toFixed(1)}
+      </span>
     </div>
+  );
+}
+
+function LastSignalBadge({ lastSignalAt }: { lastSignalAt: string | null }) {
+  if (!lastSignalAt) return <span className="text-[10px] text-tv-muted">Inga signaler</span>;
+
+  const minsAgo = Math.floor((Date.now() - new Date(lastSignalAt).getTime()) / 60_000);
+
+  let label: string;
+  let cls: string;
+  if (minsAgo < 5) {
+    label = "Just nu";
+    cls = "text-tv-bull bg-tv-bull/10";
+  } else if (minsAgo < 15) {
+    label = `${minsAgo}m sedan`;
+    cls = "text-tv-blue bg-tv-blue/10";
+  } else if (minsAgo < 30) {
+    label = `${minsAgo}m sedan`;
+    cls = "text-tv-orange bg-tv-orange/10";
+  } else {
+    label = `${minsAgo}m sedan`;
+    cls = "text-tv-muted bg-tv-input";
+  }
+
+  return (
+    <span className={`rounded px-1.5 py-0.5 font-mono text-[9px] font-medium ${cls}`}>
+      {minsAgo < 5 && <span className="mr-1 inline-block h-1 w-1 animate-pulse rounded-full bg-tv-bull" />}
+      {label}
+    </span>
   );
 }
 
@@ -46,6 +75,10 @@ export function BiasGauge({ sentiment: s, extended: ext, history }: Props) {
   const accelLabel = s.acceleration > 1.5 ? "ACCELERATING" : s.acceleration < 0.5 ? "FADING" : "STEADY";
   const accelColor = s.acceleration > 1.5 ? "text-tv-bull" : s.acceleration < 0.5 ? "text-tv-bear" : "text-tv-secondary";
 
+  const totalPressure = s.bullPressure + s.bearPressure;
+  const bullPct = totalPressure > 0 ? Math.round((s.bullPressure / totalPressure) * 100) : 50;
+  const bearPct = totalPressure > 0 ? 100 - bullPct : 50;
+
   return (
     <div className="animate-fade-in rounded-lg border border-tv-border bg-tv-surface p-5">
       {/* Header */}
@@ -56,22 +89,18 @@ export function BiasGauge({ sentiment: s, extended: ext, history }: Props) {
           </span>
           <span className="ml-2 font-mono text-[11px] text-tv-secondary">{pair}</span>
         </div>
-        <div className="text-right">
+        <div className="flex items-center gap-2">
+          <LastSignalBadge lastSignalAt={s.lastSignalAt} />
           <span className={`font-sans text-lg font-bold uppercase ${biasColor}`}>
             {s.bias}
           </span>
         </div>
       </div>
 
-      {/* Confidence */}
+      {/* Confidence bar (bigger, color-coded) */}
       <div className="mb-3 flex items-center justify-between">
         <span className="text-[11px] text-tv-secondary">Confidence</span>
-        <div className="flex items-center gap-2">
-          <ConfidenceDots value={s.confidence} />
-          <span className="font-mono text-xs font-semibold text-tv-text">
-            {s.confidence.toFixed(1)}/10
-          </span>
-        </div>
+        <ConfidenceBar value={s.confidence} />
       </div>
 
       {/* Sparkline: sentiment history */}
@@ -82,14 +111,16 @@ export function BiasGauge({ sentiment: s, extended: ext, history }: Props) {
         </div>
       )}
 
-      {/* Pressure bar */}
+      {/* Pressure bar with percentages */}
       <div className="mb-1">
         <PressureBar bull={s.bullPressure} bear={s.bearPressure} />
       </div>
       <div className="mb-3 flex justify-between font-mono text-[10px]">
-        <span className="text-tv-bull">BULL {s.bullPressure}</span>
-        <span className="text-tv-secondary">NET {s.netScore > 0 ? "+" : ""}{s.netScore}</span>
-        <span className="text-tv-bear">BEAR {s.bearPressure}</span>
+        <span className="text-tv-bull">BULL {bullPct}%</span>
+        <span className="text-tv-secondary">
+          NET {s.netScore > 0 ? "+" : ""}{s.netScore.toFixed(1)}
+        </span>
+        <span className="text-tv-bear">BEAR {bearPct}%</span>
       </div>
 
       {/* Microstructure grid */}

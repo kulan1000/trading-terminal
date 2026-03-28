@@ -1,4 +1,5 @@
 // Trade signal dots rendered ON the sparkline chart
+// Uses HTML divs instead of SVG circles to avoid stretching from preserveAspectRatio="none"
 "use client";
 
 import { useMemo, useState } from "react";
@@ -22,54 +23,70 @@ export function TradeMarkersOverlay({
   const [hovered, setHovered] = useState<number | null>(null);
 
   const positioned = useMemo(
-    () => positionMarkers(markers, timestamps, data, toX, toY, width),
-    [markers, timestamps, data, toX, toY, width]
+    () => positionMarkers(markers, timestamps, data, toX, toY, width).map((p) => ({
+      ...p,
+      pctY: (p.py / height) * 100,
+    })),
+    [markers, timestamps, data, toX, toY, width, height]
   );
 
   if (!positioned.length) return null;
 
   return (
     <>
-      {/* SVG layer with dots */}
-      <svg
-        width="100%" height={height}
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="none"
-        style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", overflow: "visible" }}
-      >
-        <defs>
-          <filter id="dot-glow" x="-100%" y="-100%" width="300%" height="300%">
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
-        {positioned.map((p) => {
-          const isHov = hovered === p.id;
-          return (
-            <g key={p.id} style={{ pointerEvents: "all" }}
-              onMouseEnter={() => setHovered(p.id)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              <circle cx={p.px} cy={p.py} r={12} fill="transparent" style={{ cursor: "pointer" }} />
-              {isHov && (
-                <circle cx={p.px} cy={p.py} r={10}
-                  fill="none" stroke={p.style.color} strokeWidth={1.5}
-                  opacity={0.3} filter="url(#dot-glow)" />
-              )}
-              <circle cx={p.px} cy={p.py}
-                r={isHov ? 6 : 4.5} fill="rgba(10,10,14,0.8)"
-                stroke={p.style.color} strokeWidth={isHov ? 2 : 1.5} />
-              <circle cx={p.px} cy={p.py}
-                r={isHov ? 3 : 2} fill={p.style.color}
-                filter={isHov ? "url(#dot-glow)" : undefined} />
-            </g>
-          );
-        })}
-      </svg>
+      {/* HTML dots — won't stretch like SVG circles */}
+      {positioned.map((p) => {
+        const isHov = hovered === p.id;
+        return (
+          <div
+            key={p.id}
+            onMouseEnter={() => setHovered(p.id)}
+            onMouseLeave={() => setHovered(null)}
+            style={{
+              position: "absolute",
+              left: `${p.pctX}%`,
+              top: `${p.pctY}%`,
+              transform: "translate(-50%, -50%)",
+              zIndex: 10,
+              cursor: "pointer",
+              // Generous hit area
+              width: 24, height: 24,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            {/* Glow ring on hover */}
+            {isHov && (
+              <div style={{
+                position: "absolute",
+                width: 20, height: 20, borderRadius: "50%",
+                border: `1.5px solid ${p.style.color}`,
+                opacity: 0.35,
+                boxShadow: `0 0 8px ${p.style.color}60`,
+              }} />
+            )}
+            {/* Outer ring */}
+            <div style={{
+              width: isHov ? 12 : 9,
+              height: isHov ? 12 : 9,
+              borderRadius: "50%",
+              background: "rgba(10,10,14,0.8)",
+              border: `${isHov ? 2 : 1.5}px solid ${p.style.color}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "all 0.15s ease",
+            }}>
+              {/* Inner dot */}
+              <div style={{
+                width: isHov ? 6 : 4,
+                height: isHov ? 6 : 4,
+                borderRadius: "50%",
+                background: p.style.color,
+                boxShadow: isHov ? `0 0 6px ${p.style.color}` : undefined,
+                transition: "all 0.15s ease",
+              }} />
+            </div>
+          </div>
+        );
+      })}
 
       {/* Tooltip */}
       {hovered !== null && (() => {

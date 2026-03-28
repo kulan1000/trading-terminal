@@ -1,3 +1,5 @@
+import { fmtDateTime } from "@/lib/format-utils";
+
 interface Message {
   id: number;
   content: string;
@@ -13,10 +15,7 @@ export function TraderMessages({ messages }: { messages: Message[] }) {
   return (
     <div className="space-y-0">
       {messages.map((msg) => {
-        const time = new Date(msg.timestamp).toLocaleString("sv-SE", {
-          month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-          timeZone: "Europe/Stockholm",
-        });
+        const time = fmtDateTime(msg.timestamp);
         return (
           <div key={msg.id} className="flex gap-2 border-b border-tv-divider px-1 py-2 transition-colors hover:bg-tv-elevated/50">
             <span className="shrink-0 font-mono text-[10px] text-tv-muted">{time}</span>

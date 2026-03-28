@@ -1,5 +1,6 @@
 import { ASSETS, ASSET_PAIRS } from "@/lib/constants";
-import { getAssetBias, getRecentSignals, getSignalFeed, getRecentTargets, getHotAsset, getBiasHistory } from "@/lib/queries";
+import { getAssetBias, getRecentSignals, getSignalFeed } from "@/lib/queries";
+import { getRecentTargets, getHotAsset, getBiasHistory } from "@/lib/queries-bias";
 import { getTraderScores } from "@/lib/queries-stats";
 import { AssetBiasCard } from "@/components/bias/asset-bias-card";
 import { RecentSignals } from "@/components/bias/recent-signals";
