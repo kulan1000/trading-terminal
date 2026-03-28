@@ -22,7 +22,8 @@ export async function GET() {
         .order("created_at", { ascending: false })
         .limit(15);
 
-      const signals = data ?? [];
+      type SumSignal = { signal_type: string; direction: string; position: string | null; confidence: number; author: string; interpretation: string | null };
+      const signals = (data ?? []) as SumSignal[];
       if (!signals.length) {
         return { asset, summary: "No recent activity." };
       }
