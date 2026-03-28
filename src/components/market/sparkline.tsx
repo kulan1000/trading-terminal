@@ -113,14 +113,16 @@ export function Sparkline({
         )}
       </svg>
 
-      {/* Signal strip below chart */}
+      {/* Signal dots ON the chart */}
       {markers?.length ? (
         <TradeMarkersOverlay
           markers={markers}
           timestamps={timestamps ?? []}
+          data={data}
           toX={toX}
+          toY={toY}
           width={width}
-          stripHeight={28}
+          height={height}
         />
       ) : null}
 
