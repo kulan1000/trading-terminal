@@ -11,6 +11,15 @@ function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
+// Same decay logic as getAssetBias — single source of truth
+const STR: Record<string, number> = { strong: 3, medium: 2, weak: 1 };
+function timeDecay(iso: string, now: number): number {
+  const ageH = (now - new Date(iso).getTime()) / 3600000;
+  if (ageH <= 1) return 1.0;
+  if (ageH <= 3) return 0.7;
+  return 0.4;
+}
+
 export async function GET(req: NextRequest) {
   const asset = req.nextUrl.searchParams.get("asset") as Asset | null;
   if (!asset || !ASSETS.includes(asset)) {
@@ -18,18 +27,20 @@ export async function GET(req: NextRequest) {
   }
 
   const now = Date.now();
-  const since24h = new Date(now - 24 * 60 * 60 * 1000).toISOString();
   const since6h = new Date(now - 6 * 60 * 60 * 1000).toISOString();
+  const since24h = new Date(now - 24 * 60 * 60 * 1000).toISOString();
   const around24hAgo = new Date(now - 25 * 60 * 60 * 1000).toISOString();
 
   const [signalsRes, historyRes, price, oldBiasRes] = await Promise.all([
+    // Only 6h signals — matches getAssetBias window
     supabase
       .from("signals")
       .select("id, direction, confidence, strength, signal_type, position, interpretation, author, created_at, discord_messages(content)")
       .eq("asset", asset)
-      .gte("created_at", since24h)
+      .gte("created_at", since6h)
       .order("created_at", { ascending: false })
-      .limit(30),
+      .limit(50),
+    // Chart history still 24h for visual trend
     supabase
       .from("bias_snapshots")
       .select("score, direction, created_at")
@@ -56,20 +67,18 @@ export async function GET(req: NextRequest) {
   const signals = (signalsRes.data ?? []) as RawSignal[];
   const history = (historyRes.data ?? []) as Array<{ score: number; direction: string; created_at: string }>;
 
-  // Generate AI summary for this specific asset
-  const recentSignals = signals.filter((s) => s.created_at >= since6h);
+  // AI summary — uses all 6h signals
   let summary = "No recent activity.";
-
-  if (recentSignals.length > 0) {
-    const entries = recentSignals.filter((s) => s.signal_type === "entry").length;
-    const exits = recentSignals.filter((s) => s.signal_type === "exited").length;
-    const bullish = recentSignals.filter((s) => s.direction === "bullish").length;
-    const bearish = recentSignals.filter((s) => s.direction === "bearish").length;
+  if (signals.length > 0) {
+    const sBull = signals.filter((s) => s.direction === "bullish").length;
+    const sBear = signals.filter((s) => s.direction === "bearish").length;
+    const sEntries = signals.filter((s) => s.signal_type === "entry").length;
+    const sExits = signals.filter((s) => s.signal_type === "exited").length;
 
     const prompt = `You are a trading terminal AI. Summarize the community sentiment for ${asset} in exactly 2-3 sentences. Be concise and terminal-style.
 
-Recent signals (last 6h): ${recentSignals.length} total, ${entries} entries, ${exits} exits, ${bullish} bullish, ${bearish} bearish.
-Key interpretations: ${recentSignals.slice(0, 8).map((s) => `${s.author}: "${s.interpretation ?? s.discord_messages?.content ?? ""}"`).filter(Boolean).join("; ")}
+Recent signals (last 6h): ${signals.length} total, ${sEntries} entries, ${sExits} exits, ${sBull} bullish, ${sBear} bearish.
+Key interpretations: ${signals.slice(0, 8).map((s) => `${s.author}: "${s.interpretation ?? s.discord_messages?.content ?? ""}"`).filter(Boolean).join("; ")}
 
 Write a brief, factual summary. No fluff.`;
 
@@ -82,18 +91,18 @@ Write a brief, factual summary. No fluff.`;
       });
       summary = resp.choices[0]?.message?.content?.trim() ?? summary;
     } catch {
-      summary = `${bullish} bullish vs ${bearish} bearish signals. ${entries} entries, ${exits} exits in the last 6h.`;
+      summary = `${sBull} bullish vs ${sBear} bearish signals. ${sEntries} entries, ${sExits} exits in the last 6h.`;
     }
   }
 
-  // Compute stats (use different names to avoid shadowing the if-block locals)
-  const totalBull = signals.filter((s) => s.direction === "bullish").length;
-  const totalBear = signals.filter((s) => s.direction === "bearish").length;
-  const totalEntries = signals.filter((s) => s.signal_type === "entry").length;
-  const totalExits = signals.filter((s) => s.signal_type === "exited").length;
+  // Raw counts for stats display
+  const rawBull = signals.filter((s) => s.direction === "bullish").length;
+  const rawBear = signals.filter((s) => s.direction === "bearish").length;
+  const rawEntries = signals.filter((s) => s.signal_type === "entry").length;
+  const rawExits = signals.filter((s) => s.signal_type === "exited").length;
   const uniqueTraders = new Set(signals.map((s) => s.author)).size;
 
-  // Latest signal for card preview
+  // Latest signal
   const latestSignal = signals[0]
     ? { author: signals[0].author, direction: signals[0].direction, signal_type: signals[0].signal_type, position: signals[0].position, created_at: signals[0].created_at }
     : null;
@@ -102,19 +111,34 @@ Write a brief, factual summary. No fluff.`;
   const oldSnap = (oldBiasRes.data ?? [])[0] as { score: number; direction: string } | undefined;
   const biasChange = oldSnap ? { score: oldSnap.score, direction: oldSnap.direction } : null;
 
-  // Trader consensus: group by author
-  const traderMap = new Map<string, { direction: string; count: number; types: string[] }>();
+  // Trader consensus with decay weight
+  const traderMap = new Map<string, { direction: string; weight: number; count: number; types: string[] }>();
   for (const s of signals) {
+    const w = timeDecay(s.created_at, now) * (STR[s.strength] ?? 2) * s.confidence;
     const ex = traderMap.get(s.author);
-    if (ex) { ex.count++; if (s.signal_type && !ex.types.includes(s.signal_type)) ex.types.push(s.signal_type); }
-    else traderMap.set(s.author, { direction: s.direction, count: 1, types: s.signal_type ? [s.signal_type] : [] });
+    if (ex) {
+      ex.weight += w;
+      ex.count++;
+      if (s.signal_type && !ex.types.includes(s.signal_type)) ex.types.push(s.signal_type);
+    } else {
+      traderMap.set(s.author, { direction: s.direction, weight: w, count: 1, types: s.signal_type ? [s.signal_type] : [] });
+    }
   }
-  const traderConsensus = [...traderMap.entries()].map(([author, d]) => ({ author, ...d })).sort((a, b) => b.count - a.count);
+  const traderConsensus = [...traderMap.entries()]
+    .map(([author, d]) => ({ author, direction: d.direction, count: d.count, types: d.types }))
+    .sort((a, b) => (traderMap.get(b.author)?.weight ?? 0) - (traderMap.get(a.author)?.weight ?? 0));
 
   return NextResponse.json({
     asset,
     price,
-    stats: { bullish: totalBull, bearish: totalBear, entries: totalEntries, exits: totalExits, uniqueTraders, total: signals.length },
+    stats: {
+      bullish: rawBull,
+      bearish: rawBear,
+      entries: rawEntries,
+      exits: rawExits,
+      uniqueTraders,
+      total: signals.length,
+    },
     signals: signals.map((s) => ({
       id: s.id, direction: s.direction, confidence: s.confidence, strength: s.strength,
       signal_type: s.signal_type, position: s.position, interpretation: s.interpretation,
