@@ -62,8 +62,13 @@ export async function processUnclassified(limit = 50) {
     const results = await classifyMessage(msg.content, msg.channel, contextMessages, marketOpen);
     for (const result of results) {
       if (result.asset && result.direction && result.confidence) {
-        // Fetch live price for entry/exit/position signals
-        const sigType = result.signal_type ?? "opinion";
+        // Hard safety net: block entry/exited when market is closed
+        // GPT should already handle this via prompt, but this prevents any leaks
+        let sigType = result.signal_type ?? "opinion";
+        if (!marketOpen && (sigType === "entry" || sigType === "exited")) {
+          sigType = sigType === "entry" ? "position" : "opinion";
+          result.position = sigType === "position" ? result.position : null;
+        }
         const price = (sigType !== "opinion")
           ? await getAssetPrice(result.asset)
           : null;

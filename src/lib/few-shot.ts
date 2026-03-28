@@ -7,7 +7,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
   // Example 1: Clear entry — present tense, action happening now
   {
     role: "user",
-    content: "[Channel: #gold-commodities]\nJust went long GDX here, looks like a breakout",
+    content: "MARKET: OPEN\n[Channel: #gold-commodities]\nJust went long GDX here, looks like a breakout",
   },
   {
     role: "assistant",
@@ -29,7 +29,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
   // Example 2: Holding — past tense purchase, currently in position
   {
     role: "user",
-    content: "[Channel: #gold-commodities]\nBought gold earlier this week, still holding",
+    content: "MARKET: OPEN\n[Channel: #gold-commodities]\nBought gold earlier this week, still holding",
   },
   {
     role: "assistant",
@@ -51,7 +51,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
   // Example 3: Opinion — no trade action, just sentiment
   {
     role: "user",
-    content: "[Channel: #gold-commodities]\nOil crisis is crushing emerging markets, this is getting bad",
+    content: "MARKET: OPEN\n[Channel: #gold-commodities]\nOil crisis is crushing emerging markets, this is getting bad",
   },
   {
     role: "assistant",
@@ -73,7 +73,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
   // Example 4: Ambiguous limit orders — cannot determine direction
   {
     role: "user",
-    content: "[Channel: #traders-lounge]\nGot limit orders set on oil, waiting for a fill",
+    content: "MARKET: OPEN\n[Channel: #traders-lounge]\nGot limit orders set on oil, waiting for a fill",
   },
   {
     role: "assistant",
@@ -95,7 +95,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
   // Example 5: Exit — taking profits
   {
     role: "user",
-    content: "[Channel: #gold-commodities]\nSold half my SLV position here, locking in gains",
+    content: "MARKET: OPEN\n[Channel: #gold-commodities]\nSold half my SLV position here, locking in gains",
   },
   {
     role: "assistant",
@@ -117,7 +117,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
   // Example 6: Multi-commodity — separate signals per asset
   {
     role: "user",
-    content: "[Channel: #gold-commodities]\nRotating out of oil into silver here, like the setup better",
+    content: "MARKET: OPEN\n[Channel: #gold-commodities]\nRotating out of oil into silver here, like the setup better",
   },
   {
     role: "assistant",
@@ -148,7 +148,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
   // Example 7: "Considering" = opinion, NOT action
   {
     role: "user",
-    content: "[Channel: #traders-lounge]\nThinking about shorting gold here but not sure yet",
+    content: "MARKET: OPEN\n[Channel: #traders-lounge]\nThinking about shorting gold here but not sure yet",
   },
   {
     role: "assistant",
@@ -170,7 +170,7 @@ export const FEW_SHOT_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
   // Example 8: No commodity signal
   {
     role: "user",
-    content: "[Channel: #traders-lounge]\nAnyone watching the game tonight? Crazy ending",
+    content: "MARKET: OPEN\n[Channel: #traders-lounge]\nAnyone watching the game tonight? Crazy ending",
   },
   {
     role: "assistant",
