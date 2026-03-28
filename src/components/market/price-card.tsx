@@ -57,7 +57,7 @@ export function PriceCard({ quote, pair, sentiment, variant = "default" }: Price
         />
       )}
       <div
-        className={`animate-fade-in cursor-pointer overflow-hidden rounded-xl border ${borderColor} bg-[#111111] transition-all duration-200 hover:border-white/[0.12] hover:bg-[#151515] ${isHero ? `${glowColor} hover:scale-[1.005]` : ""}`}
+        className={`animate-fade-in cursor-pointer overflow-hidden rounded-xl border min-h-[280px] ${borderColor} bg-[#111111] transition-all duration-200 hover:border-white/[0.12] hover:bg-[#151515] ${isHero ? `${glowColor} hover:scale-[1.005]` : ""}`}
         onClick={() => setExpanded(true)}
       >
         {/* Asset accent bar on top + glossy sheen */}

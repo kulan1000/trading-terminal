@@ -40,7 +40,7 @@ export default function MarketPage() {
           ? Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="h-48 animate-skeleton rounded-lg border border-tv-border bg-tv-surface"
+                className="h-[280px] animate-skeleton rounded-xl border border-white/[0.06] bg-[#111111]"
               />
             ))
           : quotes.map((q) => {
