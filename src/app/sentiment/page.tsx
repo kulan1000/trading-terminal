@@ -3,7 +3,6 @@ import { getAssetBias } from "@/lib/queries";
 import { getHotAsset, getBiasHistory, getLatestSignal, getBiasAgo } from "@/lib/queries-bias";
 import { getMarketQuotes } from "@/lib/market-data";
 import { MarketBiasSection } from "@/components/bias/market-bias-section";
-import { SentimentLive } from "@/components/sentiment/sentiment-live";
 
 export const revalidate = 30;
 
@@ -50,7 +49,6 @@ export default async function SentimentPage() {
         <MarketBiasSection biases={biasData} />
       </section>
 
-      <SentimentLive />
     </div>
   );
 }

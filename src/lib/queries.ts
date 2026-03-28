@@ -36,25 +36,41 @@ function toFeedMessages(rows: RawMessageWithSignals[]): FeedMessage[] {
 }
 
 export async function getAssetBias(asset: Asset) {
+  const since6h = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+
   const { data } = await supabase
     .from("signals")
-    .select("direction, confidence, strength, signal_type")
+    .select("direction, confidence, strength, signal_type, created_at")
     .eq("asset", asset)
+    .gte("created_at", since6h)
     .order("created_at", { ascending: false })
-    .limit(30);
+    .limit(50);
 
-  const signals = (data ?? []) as SignalRow[];
+  const signals = (data ?? []) as (SignalRow & { created_at: string })[];
   if (!signals.length) return { direction: "neutral" as const, score: 0, count: 0 };
 
-  // Weight signals by strength: strong=3, medium=2, weak=1
-  // "position" (holding) = 1.5x conviction multiplier (skin in the game)
-  const W: Record<string, number> = { strong: 3, medium: 2, weak: 1 };
+  // Strength multiplier: strong=3, medium=2, weak=1
+  const STR: Record<string, number> = { strong: 3, medium: 2, weak: 1 };
+
+  // Time decay based on signal age
+  // 0-1h → 1.0, 1-3h → 0.7, 3-6h → 0.4
+  const now = Date.now();
+  function timeDecay(iso: string): number {
+    const ageH = (now - new Date(iso).getTime()) / 3600000;
+    if (ageH <= 1) return 1.0;
+    if (ageH <= 3) return 0.7;
+    return 0.4;
+  }
+
   let bullW = 0, bearW = 0;
   for (const s of signals) {
-    const w = W[s.strength] ?? 2;
+    const strength = STR[s.strength] ?? 2;
+    const decay = timeDecay(s.created_at);
     const convictionBoost = s.signal_type === "position" ? 1.5 : 1;
-    if (s.direction === "bullish") bullW += w * s.confidence * convictionBoost;
-    else if (s.direction === "bearish") bearW += w * s.confidence * convictionBoost;
+    const weight = decay * strength * s.confidence * convictionBoost;
+
+    if (s.direction === "bullish") bullW += weight;
+    else if (s.direction === "bearish") bearW += weight;
   }
 
   const total = bullW + bearW;
