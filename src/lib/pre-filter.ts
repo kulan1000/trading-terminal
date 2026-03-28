@@ -19,19 +19,25 @@ export function cleanDiscordContent(text: string): string {
 // ──────────────────────────────────────────────────────
 const COMMODITY_KEYWORDS = new RegExp(
   [
-    // Gold
+    // Gold — tickers, ETFs, miners, slang
     "gold", "xau", "xauusd", "\\bgc\\b", "gld", "gdx", "gdxj", "\\bau\\b",
-    "guld", "yellow metal", "miner", "precious metal",
-    // Silver
+    "guld", "yellow metal", "miner", "precious metal", "\\bpm\\b",
+    "nugt", "dust", "\\bhui\\b", "jnug", "\\bnem\\b", "\\baem\\b", "barrick",
+    "newmont", "agnico",
+    // Silver — tickers, ETFs
     "silver", "xag", "xagusd", "\\bsi\\b", "slv", "\\bag\\b",
-    // Oil
+    "\\bpaas\\b", "\\bhl\\b", "\\bwpm\\b", "first majestic",
+    // Oil — tickers, ETFs, slang
     "\\boil\\b", "crude", "wti", "brent", "\\bcl\\b", "uso", "uco", "sco",
     "olja", "energy", "petroleum", "opec", "ukoil",
-    // General (word-bounded to reduce false positives)
+    // General trade action words (word-bounded to reduce false positives)
     "commodit", "\\bmetal", "\\blong\\b", "\\bshort\\b", "bull", "bear",
     "\\bbought\\b", "\\bsold\\b", "\\bbuying\\b", "\\bselling\\b", "\\bposition\\b", "\\btrade",
     "\\bentry\\b", "\\bexit", "\\bprofit", "\\bloss\\b", "\\bstop\\b", "\\btarget",
     "\\bcalls\\b", "\\bputs\\b", "\\boption",
+    // Rotation / macro keywords that often precede commodity signals
+    "rotat", "allocat", "central bank", "\\bfed\\b", "supply", "demand",
+    "sanction", "export ban", "\\btariff",
   ].join("|"),
   "i"
 );

@@ -55,12 +55,17 @@ export function sanitizeResult(r: ClassifyResult): ClassifyResult | null {
     r.position = null;
   }
 
-  // Enforce direction consistency: long must be bullish, short must be bearish
-  if (r.position === "long" && r.direction !== "bullish") {
-    r.direction = "bullish";
-  }
-  if (r.position === "short" && r.direction !== "bearish") {
-    r.direction = "bearish";
+  // Enforce direction consistency for entries and positions:
+  // long must be bullish, short must be bearish.
+  // BUT for exits, direction reflects OUTLOOK, not the position held.
+  // E.g. "exited my gold long, think it's going down" = position: long, direction: bearish — valid!
+  if (r.signal_type !== "exited") {
+    if (r.position === "long" && r.direction !== "bullish") {
+      r.direction = "bullish";
+    }
+    if (r.position === "short" && r.direction !== "bearish") {
+      r.direction = "bearish";
+    }
   }
 
   r.interpretation = r.interpretation ?? null;

@@ -41,7 +41,7 @@ export async function processUnclassified(limit = 50) {
         .eq("channel", msg.channel)
         .lt("timestamp", msg.timestamp)
         .order("timestamp", { ascending: false })
-        .limit(3);
+        .limit(5);
       if (ctx?.length) {
         contextMessages = ctx
           .reverse()
