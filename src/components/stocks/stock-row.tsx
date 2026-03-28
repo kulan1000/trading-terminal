@@ -26,7 +26,7 @@ export function StockRow({
       >
         <td className="px-4 py-2">
           <a
-            href={`https://ceo.ca/${q.ceoSymbol}`}
+            href={`https://ceo.ca/${q.ceoSymbol.replace(".V", "")}`}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
