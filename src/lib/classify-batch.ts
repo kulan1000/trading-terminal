@@ -18,7 +18,6 @@ export async function processUnclassified(limit = 50) {
     .limit(limit);
 
   if (!messages?.length) return { processed: 0, signals: 0 };
-  const marketOpen = isMarketOpen();
   let signalCount = 0;
   let skipped = 0;
 
@@ -54,6 +53,11 @@ export async function processUnclassified(limit = 50) {
     if (traderHint) {
       contextMessages = [traderHint, ...contextMessages];
     }
+
+    // Check market status at MESSAGE time, not current time
+    // This ensures re-classification of old messages uses correct market state
+    const msgTime = msg.timestamp ? new Date(msg.timestamp) : new Date();
+    const marketOpen = isMarketOpen(msgTime);
 
     const results = await classifyMessage(msg.content, msg.channel, contextMessages, marketOpen);
     for (const result of results) {
