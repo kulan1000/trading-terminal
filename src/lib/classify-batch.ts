@@ -88,7 +88,7 @@ export async function processUnclassified(limit = 50) {
             price_at_signal: price,
             target_price: result.target_price ?? null,
           },
-          { onConflict: "message_id,asset,direction" }
+          { onConflict: "message_id,asset,signal_type" }
         );
         signalCount++;
       }
