@@ -22,7 +22,20 @@ export interface StockQuote {
   cash: number;
   liabilities: number;
   avgVolume: number;
-  hasCeoData: boolean; // false for WTI (limited data)
+  hasCeoData: boolean;
+  // Detail panel fields
+  prevClose: number;
+  bidPrice: number;
+  bidVolume: number;
+  askPrice: number;
+  askVolume: number;
+  eps: number;
+  pbRatio: number;
+  beta: number;
+  ma50: number;
+  ma200: number;
+  dollarVolume: number;
+  sparkline: number[];
 }
 
 // Caspar's watchlist — CEO.ca symbols (.V = TSX-V)
@@ -77,6 +90,10 @@ async function fetchCeoQuote(
       const fund = cq.fundamentals?.fundamental ?? {};
       const stat = cq.fundamentals?.statistical ?? {};
 
+      const sparkline = chartData.length > 1
+        ? chartData.map((p) => p.close).reverse()
+        : [];
+
       return {
         symbol: entry.displaySymbol,
         ceoSymbol: entry.ceoSymbol,
@@ -99,6 +116,18 @@ async function fetchCeoQuote(
         liabilities: parseNum(qm.total_liabilities),
         avgVolume: parseNum(stat.avg30dayvolume ?? cq.average_daily_volume),
         hasCeoData: true,
+        prevClose: parseNum(cq.previous_close_price),
+        bidPrice: parseNum(cq.best_bid_price),
+        bidVolume: parseNum(cq.best_bid_volume),
+        askPrice: parseNum(cq.best_ask_price),
+        askVolume: parseNum(cq.best_ask_volume),
+        eps: parseNum(fund.eps),
+        pbRatio: parseNum(fund.pbratio),
+        beta: parseNum(stat.beta),
+        ma50: parseNum(stat.day50movingavg),
+        ma200: parseNum(stat.day200movingavg),
+        dollarVolume: parseNum(cq.dollar_volume),
+        sparkline,
       };
     }
 
@@ -119,6 +148,8 @@ async function fetchCeoQuote(
       totalVol += (c as { volume?: number }).volume ?? 0;
     }
     if (dayLow === Infinity) dayLow = 0;
+
+    const sparkline = chartData.map((c) => c.close).reverse();
 
     return {
       symbol: entry.displaySymbol,
@@ -142,6 +173,18 @@ async function fetchCeoQuote(
       liabilities: 0,
       avgVolume: 0,
       hasCeoData: false,
+      prevClose: 0,
+      bidPrice: 0,
+      bidVolume: 0,
+      askPrice: 0,
+      askVolume: 0,
+      eps: 0,
+      pbRatio: 0,
+      beta: 0,
+      ma50: 0,
+      ma200: 0,
+      dollarVolume: 0,
+      sparkline,
     };
   } catch {
     return null;
