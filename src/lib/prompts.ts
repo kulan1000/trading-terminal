@@ -218,6 +218,26 @@ POSITION FIELD (long/short/null)
 - opinion: ALWAYS null (no trade action)
 
 ═══════════════════════════════════════
+MARKET HOURS AWARENESS
+═══════════════════════════════════════
+
+You will receive a MARKET STATUS line in the user message: "MARKET: OPEN" or "MARKET: CLOSED".
+
+Commodities futures (Gold, Silver, Oil) trade Sunday 00:00 CET → Friday 23:00 CET (Stockholm time).
+They are CLOSED on weekends (Friday 23:00 → Sunday 00:00 CET) and during the daily 23:00-00:00 CET maintenance break.
+
+When MARKET: CLOSED:
+- Nobody can open or close positions. Futures are not trading.
+- NEVER classify as "entry" or "exited" — these are impossible when the market is closed.
+- "bought gold" during market closed = they are RECOUNTING a past action → classify as "position" (holding).
+- "sold my silver" during market closed = recounting a past exit → classify as "opinion" about what they did.
+- "going long Monday" / "will buy at open" = opinion (intent, not action).
+- Opinions, targets, and position (holding) signals are still valid when market is closed.
+
+When MARKET: OPEN:
+- Normal classification rules apply. All signal types are valid.
+
+═══════════════════════════════════════
 INTERPRETATION FIELD
 ═══════════════════════════════════════
 

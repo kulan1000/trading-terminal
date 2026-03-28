@@ -5,6 +5,7 @@ import { deriveStrength } from "@/lib/classify-sanitize";
 import { maybeCommodityRelevant } from "@/lib/pre-filter";
 import { getTraderHint, refreshTraderProfile } from "@/lib/trader-profiles";
 import { getAssetPrice } from "@/lib/price-snapshot";
+import { isMarketOpen } from "@/lib/market-hours";
 
 export async function processUnclassified(limit = 50) {
   const supabase = getSupabaseAdmin();
@@ -17,6 +18,7 @@ export async function processUnclassified(limit = 50) {
     .limit(limit);
 
   if (!messages?.length) return { processed: 0, signals: 0 };
+  const marketOpen = isMarketOpen();
   let signalCount = 0;
   let skipped = 0;
 
@@ -53,7 +55,7 @@ export async function processUnclassified(limit = 50) {
       contextMessages = [traderHint, ...contextMessages];
     }
 
-    const results = await classifyMessage(msg.content, msg.channel, contextMessages);
+    const results = await classifyMessage(msg.content, msg.channel, contextMessages, marketOpen);
     for (const result of results) {
       if (result.asset && result.direction && result.confidence) {
         // Fetch live price for entry/exit/position signals

@@ -12,12 +12,13 @@ function getOpenAI() {
 export async function classifyMessage(
   content: string,
   channel?: string,
-  contextMessages?: string[]
+  contextMessages?: string[],
+  marketOpen?: boolean
 ): Promise<ClassifyResult[]> {
   const cleaned = cleanDiscordContent(content);
 
-  // Build user message with optional conversation context
-  let userContent = "";
+  // Build user message with market status + optional conversation context
+  let userContent = `MARKET: ${marketOpen === false ? "CLOSED" : "OPEN"}\n`;
   if (contextMessages?.length) {
     userContent += "RECENT CONTEXT (previous messages in channel):\n";
     userContent += contextMessages.map((m) => `- ${cleanDiscordContent(m)}`).join("\n");
