@@ -32,7 +32,7 @@
   --color-tv-border-hover: rgba(255, 255, 255, 0.20);
   --color-tv-divider: rgba(255, 255, 255, 0.05);
 
-  /* === Legacy aliases (sparklines, chart-modal use CSS vars directly) === */
+  /* === Legacy aliases === */
   --color-terminal-bg: #0a0a0a;
   --color-terminal-surface: #111111;
   --color-terminal-border: rgba(255, 255, 255, 0.08);
@@ -44,9 +44,9 @@
   --color-terminal-green: #26A69A;
   --color-terminal-yellow: #FF9800;
 
-  /* === Fonts === */
-  --font-sans: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-mono), "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  /* === Fonts — TradingView system font stack === */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Trebuchet MS", Roboto, Ubuntu, sans-serif;
+  --font-mono: -apple-system, BlinkMacSystemFont, "Trebuchet MS", Roboto, Ubuntu, sans-serif;
 }
 
 /* === Base === */
@@ -55,6 +55,7 @@ body {
   background-image: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(20, 25, 40, 0.35) 0%, transparent 70%);
   color: var(--color-tv-text);
   font-family: var(--font-sans);
+  font-feature-settings: "tnum";
 }
 
 /* === Scrollbar — Firefox === */
