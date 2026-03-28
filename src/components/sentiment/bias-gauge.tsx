@@ -44,11 +44,11 @@ export function BiasGauge({ sentiment: s, extended: ext }: Props) {
   const accelColor = s.acceleration > 1.5 ? "text-tv-bull" : s.acceleration < 0.5 ? "text-tv-bear" : "text-tv-secondary";
 
   return (
-    <div className="animate-fade-in rounded-[6px] border border-tv-border bg-tv-surface p-4">
+    <div className="animate-fade-in rounded-lg border border-tv-border bg-tv-surface p-5">
       {/* Header */}
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div>
-          <span className="font-sans text-xs font-semibold uppercase tracking-wider text-tv-text">
+          <span className="font-sans text-sm font-semibold uppercase tracking-[0.5px] text-tv-heading">
             {s.asset}
           </span>
           <span className="ml-2 font-mono text-[11px] text-tv-secondary">{pair}</span>

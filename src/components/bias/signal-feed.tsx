@@ -33,12 +33,20 @@ function ActionTag({ signal }: { signal: SignalTag }) {
       cls: "bg-tv-bear/25 text-tv-bear ring-1 ring-tv-bear/40",
     },
     "position-long": {
-      label: "HOLDING LONG",
-      cls: "bg-tv-purple/20 text-tv-purple ring-1 ring-tv-purple/30",
+      label: "CONVICTION LONG",
+      cls: "bg-tv-bull/10 text-tv-bull ring-1 ring-tv-bull/20",
     },
     "position-short": {
-      label: "HOLDING SHORT",
-      cls: "bg-tv-orange/20 text-tv-orange ring-1 ring-tv-orange/30",
+      label: "CONVICTION SHORT",
+      cls: "bg-tv-bear/10 text-tv-bear ring-1 ring-tv-bear/20",
+    },
+    "target-long": {
+      label: "TARGET",
+      cls: "bg-tv-blue/20 text-tv-blue ring-1 ring-tv-blue/30",
+    },
+    "target-short": {
+      label: "TARGET",
+      cls: "bg-tv-blue/20 text-tv-blue ring-1 ring-tv-blue/30",
     },
     "exited-long": {
       label: "EXIT LONG",

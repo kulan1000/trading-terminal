@@ -30,8 +30,9 @@ RESPONSE FORMAT
       "has_signal": true,
       "asset": "Gold" | "Silver" | "Oil",
       "direction": "bullish" | "bearish" | "neutral",
-      "signal_type": "entry" | "position" | "exited" | "opinion",
+      "signal_type": "entry" | "position" | "exited" | "opinion" | "target",
       "position": "long" | "short" | null,
+      "target_price": number | null,
       "strength": "strong" | "medium" | "weak",
       "confidence": 0.10-1.0,
       "interpretation": "1-2 sentence explanation"
@@ -91,6 +92,24 @@ Every signal MUST have exactly one signal_type. This is the most important field
   - "sold my gold longs" → position: "long" (they were long, now exited)
   - "covered my oil short" → position: "short" (they were short, now exited)
   - "I'm out" → position: null (can't infer what they had)
+
+▸ "target" — Trader mentions a SPECIFIC PRICE TARGET or stop loss level
+  The message contains an explicit price number the trader is targeting.
+
+  DETECT these patterns:
+  - "my target is 4600", "targeting 3100 on silver"
+  - "stop loss at 4400", "stop at 68"
+  - "looking for 4800", "I think gold hits 5000"
+  - "take profit at 72", "TP at 3050"
+  - "if gold reaches 4700 I'm out"
+  - "exit target 4550"
+
+  ALWAYS set target_price to the numeric value mentioned.
+  Direction: bullish if target is ABOVE current price, bearish if BELOW.
+  Position: null for targets.
+
+  NOTE: A message can produce BOTH a target signal AND another signal type.
+  E.g. "bought gold at 4500, target 4700" → one "entry" signal + one "target" signal.
 
 ▸ "opinion" — General sentiment, analysis, or observation WITHOUT a trade action
   No trade was entered, held, or exited. Just an opinion.

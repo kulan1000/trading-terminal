@@ -75,6 +75,7 @@ export async function processUnclassified(limit = 50) {
             model_used: "gpt-4o-mini",
             author: msg.author,
             price_at_signal: price,
+            target_price: result.target_price ?? null,
           },
           { onConflict: "message_id,asset,direction" }
         );

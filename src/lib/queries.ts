@@ -5,6 +5,7 @@ interface SignalRow {
   direction: Direction;
   confidence: number;
   strength: Strength;
+  signal_type: string | null;
 }
 
 // Shared mapping: raw Supabase row with joined signals → FeedMessage
@@ -37,7 +38,7 @@ function toFeedMessages(rows: RawMessageWithSignals[]): FeedMessage[] {
 export async function getAssetBias(asset: Asset) {
   const { data } = await supabase
     .from("signals")
-    .select("direction, confidence, strength")
+    .select("direction, confidence, strength, signal_type")
     .eq("asset", asset)
     .order("created_at", { ascending: false })
     .limit(30);
@@ -46,12 +47,14 @@ export async function getAssetBias(asset: Asset) {
   if (!signals.length) return { direction: "neutral" as const, score: 0, count: 0 };
 
   // Weight signals by strength: strong=3, medium=2, weak=1
+  // "position" (holding) = 1.5x conviction multiplier (skin in the game)
   const W: Record<string, number> = { strong: 3, medium: 2, weak: 1 };
   let bullW = 0, bearW = 0;
   for (const s of signals) {
     const w = W[s.strength] ?? 2;
-    if (s.direction === "bullish") bullW += w * s.confidence;
-    else if (s.direction === "bearish") bearW += w * s.confidence;
+    const convictionBoost = s.signal_type === "position" ? 1.5 : 1;
+    if (s.direction === "bullish") bullW += w * s.confidence * convictionBoost;
+    else if (s.direction === "bearish") bearW += w * s.confidence * convictionBoost;
   }
 
   const total = bullW + bearW;
@@ -125,6 +128,61 @@ export async function getFilteredFeed(options?: {
     return feed.filter((m) => m.assets.some((a) => a.asset === asset));
   }
   return feed;
+}
+
+// ─── Targets: recent price targets from traders ─────────────────
+export async function getRecentTargets(limit = 15) {
+  const { data } = await supabase
+    .from("signals")
+    .select("id, asset, direction, target_price, confidence, author, created_at")
+    .eq("signal_type", "target")
+    .not("target_price", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  return (data ?? []) as Array<{
+    id: number;
+    asset: string;
+    direction: string;
+    target_price: number;
+    confidence: number;
+    author: string;
+    created_at: string;
+  }>;
+}
+
+// ─── Hot Asset: which commodity has the most signals in last 4h ──
+export async function getHotAsset(): Promise<{ asset: Asset; count: number } | null> {
+  const since = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+  const { data } = await supabase
+    .from("signals")
+    .select("asset")
+    .gte("created_at", since);
+
+  if (!data?.length) return null;
+  const counts: Record<string, number> = {};
+  for (const s of data) {
+    counts[s.asset] = (counts[s.asset] || 0) + 1;
+  }
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  return top ? { asset: top[0] as Asset, count: top[1] } : null;
+}
+
+// ─── Bias History: snapshots for sparklines ─────────────────────
+export async function getBiasHistory(asset: Asset, hours = 24) {
+  const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+  const { data } = await supabase
+    .from("bias_snapshots")
+    .select("score, direction, created_at")
+    .eq("asset", asset)
+    .gte("created_at", since)
+    .order("created_at", { ascending: true });
+
+  return (data ?? []) as Array<{
+    score: number;
+    direction: string;
+    created_at: string;
+  }>;
 }
 
 // Stats & traders queries → lib/queries-stats.ts

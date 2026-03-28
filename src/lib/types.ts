@@ -13,7 +13,7 @@ export interface DiscordMessage {
 }
 
 export type Position = "long" | "short";
-export type SignalType = "entry" | "position" | "exited" | "opinion";
+export type SignalType = "entry" | "position" | "exited" | "opinion" | "target";
 
 // Signal tag attached to a message
 export interface SignalTag {
