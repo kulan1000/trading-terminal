@@ -5,6 +5,7 @@ import { useScoringData } from "@/hooks/use-scoring-data";
 import { ScoreboardTable } from "@/components/scoring/scoreboard-table";
 import { OpenPositions } from "@/components/scoring/open-positions";
 import { RecentScored } from "@/components/scoring/recent-trades";
+import { BackfillButton } from "@/components/scoring/backfill-button";
 
 const ASSETS = ["all", "gold", "silver", "oil"] as const;
 type AssetFilter = (typeof ASSETS)[number];
@@ -72,6 +73,7 @@ export default function ScoringPage() {
               </button>
             ))}
           </div>
+          <BackfillButton />
           <span className="text-xs text-tv-secondary">
             30m · 1h · 2h · 4h efter signal
           </span>
