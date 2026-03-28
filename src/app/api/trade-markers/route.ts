@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     .select(`
       id, author, signal_type, position, direction,
       price_at_signal, confidence, created_at,
-      discord_messages!inner(timestamp)
+      discord_messages!inner(timestamp, content)
     `)
     .eq("asset", asset)
     .in("signal_type", ["entry", "exited", "position"])
@@ -29,7 +29,7 @@ export async function GET(req: Request) {
 
   // Flatten: extract msg_timestamp from the joined relation
   const markers = (data ?? []).map((s: Record<string, unknown>) => {
-    const dm = s.discord_messages as { timestamp: string } | null;
+    const dm = s.discord_messages as { timestamp: string; content: string } | null;
     return {
       id: s.id,
       author: s.author,
@@ -39,6 +39,7 @@ export async function GET(req: Request) {
       price_at_signal: s.price_at_signal,
       created_at: s.created_at,
       msg_timestamp: dm?.timestamp ?? s.created_at,
+      content: dm?.content ?? "",
     };
   });
 

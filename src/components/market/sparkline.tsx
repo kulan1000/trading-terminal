@@ -13,6 +13,7 @@ export interface TradeMarker {
   price_at_signal: number;
   created_at: string;
   msg_timestamp: string; // original Discord message time — used for chart positioning
+  content: string; // original Discord message text
 }
 
 interface SparklineProps {

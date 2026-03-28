@@ -16,8 +16,3 @@ export function fmtVol(v: number): string {
   if (v >= 1e3) return `${(v / 1e3).toFixed(0)}K`;
   return v > 0 ? v.toString() : "—";
 }
-
-export function formatTime(ts: number | string, tz = "America/New_York"): string {
-  const d = typeof ts === "number" ? new Date(ts * 1000) : new Date(ts);
-  return d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", timeZone: tz });
-}
