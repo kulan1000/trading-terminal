@@ -11,14 +11,14 @@ export function TerminalCard({
 }: TerminalCardProps) {
   return (
     <div
-      className={`rounded-md border border-terminal-border bg-terminal-surface p-4 ${className}`}
+      className={`animate-fade-in rounded-[6px] border border-tv-border bg-tv-surface p-4 transition-all duration-150 hover:border-tv-border-hover ${className}`}
     >
-      <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-terminal-muted">
+      <h3 className="mb-3 font-sans text-xs font-medium uppercase tracking-wider text-tv-text-secondary">
         {title}
       </h3>
-      <div className="text-sm text-terminal-text">
+      <div className="text-sm text-tv-text">
         {children ?? (
-          <p className="text-terminal-muted italic">Awaiting data...</p>
+          <p className="italic text-tv-text-secondary">Awaiting data...</p>
         )}
       </div>
     </div>

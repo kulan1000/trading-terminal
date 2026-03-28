@@ -1,26 +1,102 @@
 @import "tailwindcss";
 
 @theme {
-  --color-terminal-bg: #0a0a0f;
-  --color-terminal-surface: #12121a;
-  --color-terminal-border: #1e1e2e;
-  --color-terminal-text: #e2e2e8;
-  --color-terminal-muted: #6b6b80;
-  --color-terminal-accent: #00d4aa;
-  --color-terminal-accent-dim: #00d4aa33;
-  --color-terminal-red: #ff4d6a;
-  --color-terminal-green: #00d4aa;
-  --color-terminal-yellow: #ffd866;
-  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  /* === TradingView Background Colors === */
+  --color-tv-black: #000000;
+  --color-tv-bg: #131722;
+  --color-tv-surface: #1E222D;
+  --color-tv-hover: #2A2E39;
+  --color-tv-input: #363A45;
+
+  /* === Text Colors === */
+  --color-tv-text: #D1D4DC;
+  --color-tv-text-bright: #FFFFFF;
+  --color-tv-text-secondary: #787B86;
+  --color-tv-text-subtle: #434651;
+
+  /* === Trading Signal Colors === */
+  --color-tv-green: #26A69A;
+  --color-tv-red: #EF5350;
+  --color-tv-orange: #FF9800;
+  --color-tv-blue: #2962FF;
+
+  /* === Accent Colors === */
+  --color-tv-purple: #AB47BC;
+  --color-tv-cyan: #00BCD4;
+  --color-tv-yellow: #FFEB3B;
+
+  /* === Borders === */
+  --color-tv-border: rgba(255, 255, 255, 0.06);
+  --color-tv-border-hover: rgba(255, 255, 255, 0.12);
+  --color-tv-divider: rgba(255, 255, 255, 0.04);
+
+  /* === Legacy aliases (for gradual migration) === */
+  --color-terminal-bg: #131722;
+  --color-terminal-surface: #1E222D;
+  --color-terminal-border: rgba(255, 255, 255, 0.06);
+  --color-terminal-text: #D1D4DC;
+  --color-terminal-muted: #787B86;
+  --color-terminal-accent: #2962FF;
+  --color-terminal-accent-dim: rgba(41, 98, 255, 0.2);
+  --color-terminal-red: #EF5350;
+  --color-terminal-green: #26A69A;
+  --color-terminal-yellow: #FF9800;
+
+  /* === Fonts === */
+  --font-sans: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono), "JetBrains Mono", "Fira Code", ui-monospace, monospace;
 }
 
+/* === Base Styles === */
 body {
-  background-color: var(--color-terminal-bg);
-  color: var(--color-terminal-text);
-  font-family: var(--font-mono);
+  background-color: var(--color-tv-bg);
+  color: var(--color-tv-text);
+  font-family: var(--font-sans);
 }
 
+/* === Scrollbar === */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-terminal-border) transparent;
+  scrollbar-color: var(--color-tv-input) transparent;
 }
+
+/* === Animations === */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes highlight-new {
+  0% { background-color: rgba(41, 98, 255, 0.15); }
+  100% { background-color: transparent; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease both;
+}
+
+.animate-skeleton {
+  animation: pulse-subtle 1.5s ease-in-out infinite;
+}
+
+.animate-highlight {
+  animation: highlight-new 1.5s ease-out both;
+}
+
+/* === Staggered fade-in for lists === */
+.animate-fade-in-1 { animation: fade-in 0.2s ease 0.03s both; }
+.animate-fade-in-2 { animation: fade-in 0.2s ease 0.06s both; }
+.animate-fade-in-3 { animation: fade-in 0.2s ease 0.09s both; }
+.animate-fade-in-4 { animation: fade-in 0.2s ease 0.12s both; }
+.animate-fade-in-5 { animation: fade-in 0.2s ease 0.15s both; }

@@ -11,17 +11,17 @@ export default function ScoringPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-sm font-bold uppercase tracking-wider text-terminal-text">
+        <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-text">
           Trader Scoring
         </h1>
-        <span className="text-xs text-terminal-muted">
+        <span className="text-xs text-tv-text-secondary">
           Baserat på entry/exit-signaler från Discord
         </span>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <span className="animate-pulse text-sm text-terminal-muted">Loading scoring data...</span>
+          <span className="animate-pulse text-sm text-tv-text-secondary">Loading scoring data...</span>
         </div>
       ) : (
         <>
