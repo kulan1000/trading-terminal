@@ -120,7 +120,7 @@ export function Sparkline({
           timestamps={timestamps ?? []}
           toX={toX}
           width={width}
-          stripHeight={10}
+          stripHeight={16}
         />
       ) : null}
 
