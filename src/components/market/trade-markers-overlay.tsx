@@ -105,23 +105,28 @@ export function TradeMarkersOverlay({
               onMouseEnter={() => setHovered(p.id)}
               onMouseLeave={() => setHovered(null)}
             >
-              {/* Larger invisible hit area */}
-              <circle cx={p.px} cy={p.py} r={10} fill="transparent"
+              {/* Hit area */}
+              <circle cx={p.px} cy={p.py} r={12} fill="transparent"
                 style={{ cursor: "pointer" }} />
-              {/* Outer glow ring on hover */}
+              {/* Outer pulse ring on hover */}
               {isHov && (
-                <circle cx={p.px} cy={p.py} r={6}
-                  fill="none" stroke={p.style.color} strokeWidth={1}
+                <circle cx={p.px} cy={p.py} r={10}
+                  fill="none" stroke={p.style.color} strokeWidth={1.5}
                   opacity={0.3} filter="url(#dot-glow)" />
               )}
-              {/* The dot itself */}
-              <circle
-                cx={p.px} cy={p.py}
-                r={isHov ? 4 : 3}
+              {/* Dark outline ring — makes dot visible against any background */}
+              <circle cx={p.px} cy={p.py}
+                r={isHov ? 6 : 4.5}
+                fill="rgba(10,10,14,0.8)"
+                stroke={p.style.color}
+                strokeWidth={isHov ? 2 : 1.5}
+                opacity={1}
+              />
+              {/* Inner bright dot */}
+              <circle cx={p.px} cy={p.py}
+                r={isHov ? 3 : 2}
                 fill={p.style.color}
-                opacity={isHov ? 1 : 0.75}
-                stroke={isHov ? "rgba(255,255,255,0.3)" : "none"}
-                strokeWidth={isHov ? 1 : 0}
+                opacity={1}
                 filter={isHov ? "url(#dot-glow)" : undefined}
               />
             </g>

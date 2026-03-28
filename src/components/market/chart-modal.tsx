@@ -184,7 +184,7 @@ export function ChartModal({ quote, pair, markers, onClose }: Props) {
           <svg
             ref={svgRef}
             width="100%"
-            viewBox={`0 0 ${W} ${H}`}
+            viewBox={`0 0 ${W} ${H + 20}`}
             preserveAspectRatio="none"
             className="cursor-crosshair"
             onMouseMove={onMove}
@@ -203,6 +203,31 @@ export function ChartModal({ quote, pair, markers, onClose }: Props) {
                 </feMerge>
               </filter>
             </defs>
+
+            {/* Time axis labels */}
+            {timestamps && timestamps.length > 10 && (() => {
+              const tickCount = 6;
+              const ticks = [];
+              for (let i = 0; i <= tickCount; i++) {
+                const idx = Math.round((i / tickCount) * (data.length - 1));
+                const ts = timestamps[idx];
+                if (!ts) continue;
+                const x = toX(idx);
+                const label = new Date(ts * 1000).toLocaleTimeString("sv-SE", {
+                  hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm",
+                });
+                ticks.push(
+                  <g key={i}>
+                    <line x1={x} y1={H - 2} x2={x} y2={H + 4} stroke="#52525b" strokeWidth="0.5" />
+                    <text x={x} y={H + 14} textAnchor="middle"
+                      fill="#71717a" fontSize="9" fontFamily="ui-monospace, monospace">
+                      {label}
+                    </text>
+                  </g>
+                );
+              }
+              return ticks;
+            })()}
 
             {/* Open price dashed line */}
             <line x1={0} y1={openY} x2={W} y2={openY}
@@ -238,18 +263,26 @@ export function ChartModal({ quote, pair, markers, onClose }: Props) {
                   onMouseEnter={() => { setHoveredMarker(p.id); setHover(null); }}
                   onMouseLeave={() => setHoveredMarker(null)}
                 >
-                  <circle cx={p.px} cy={p.py} r={14} fill="transparent" />
+                  <circle cx={p.px} cy={p.py} r={18} fill="transparent" />
+                  {/* Pulse ring on hover */}
                   {isHov && (
-                    <circle cx={p.px} cy={p.py} r={10}
-                      fill="none" stroke={p.style.color} strokeWidth={1}
-                      opacity={0.25} filter="url(#modal-glow)" />
+                    <circle cx={p.px} cy={p.py} r={14}
+                      fill="none" stroke={p.style.color} strokeWidth={1.5}
+                      opacity={0.3} filter="url(#modal-glow)" />
                   )}
+                  {/* Dark outline ring */}
                   <circle cx={p.px} cy={p.py}
-                    r={isHov ? 6 : 4.5}
+                    r={isHov ? 8 : 6}
+                    fill="rgba(10,10,14,0.85)"
+                    stroke={p.style.color}
+                    strokeWidth={isHov ? 2.5 : 2}
+                    opacity={1}
+                  />
+                  {/* Inner bright dot */}
+                  <circle cx={p.px} cy={p.py}
+                    r={isHov ? 4 : 3}
                     fill={p.style.color}
-                    opacity={isHov ? 1 : 0.8}
-                    stroke={isHov ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.3)"}
-                    strokeWidth={isHov ? 1.5 : 0.5}
+                    opacity={1}
                     filter={isHov ? "url(#modal-glow)" : undefined}
                   />
                 </g>
