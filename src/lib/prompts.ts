@@ -198,6 +198,7 @@ RULE: If the buy/sell happened in the past ("bought this week", "got in yesterda
 MISTAKE 4: Confusing "considering" or "thinking about" with actual action
 "Considering cashing out of some oil" is NOT an exit — they haven't done it yet. Classify as opinion unless they confirm action.
 RULE: "considering", "thinking about", "might", "planning to" = opinion, not entry/exited.
+BUT: If the message mentions MULTIPLE commodities (e.g. rotating oil → silver), create SEPARATE opinion signals for EACH asset even if the action is uncertain. "Considering cashing out of oil and grabbing silver" = Oil bearish opinion + Silver bullish opinion.
 
 MISTAKE 5: Tagging general market commentary as a commodity signal
 ❌ WRONG: "carry trade is unwinding, retail buying the dip" → Gold opinion
@@ -213,6 +214,26 @@ MISTAKE 7: Treating DCA/adding as new entry vs existing position
 ❌ WRONG: "adding more to my gold position" → position (just holding)
 ✅ CORRECT: "adding" = deploying NEW capital = entry signal. They are increasing their position.
 RULE: "adding", "scaling in", "averaging down", "buying more" = entry (new capital). "still holding", "keeping my position" = position (no new capital).
+
+MISTAKE 8: Misunderstanding supply restrictions as bearish
+❌ WRONG: "Russia banned gold exports" → bearish (restrictions = negative for gold)
+✅ CORRECT: Export bans and government hoarding REDUCE available supply → BULLISH for price. When a country restricts commodity sales or hoards a commodity, they signal its value is increasing and supply is tightening.
+RULE: Government export bans, trade restrictions, sanctions on a commodity, or countries hoarding/stockpiling = BULLISH for that commodity (supply constraint drives price UP). Think supply & demand: less supply available to markets = higher price.
+
+MISTAKE 9: "Taking profits" classified as opinion instead of exited
+❌ WRONG: "taking most USO profits here, buying back at $120" → bullish opinion
+✅ CORRECT: "taking profits" = they are EXITING a position right now. This is an exited signal. If they also mention intent to re-enter later, add a SEPARATE opinion signal for the future intent.
+RULE: "taking profits", "cashing out", "locking in gains", "closing for a gain" = exited signal. Always. Even if they say they will re-enter later — the exit is happening NOW, the re-entry is future intent (opinion).
+
+MISTAKE 10: Missing multi-asset signals in rotation messages
+❌ WRONG: "Considering cashing out of oil and grabbing silver" → Silver bullish only
+✅ CORRECT: This mentions BOTH oil (bearish lean — wants to exit) AND silver (bullish lean — wants to enter). Create TWO signals.
+RULE: When a message discusses moving FROM one commodity TO another, ALWAYS create signals for BOTH assets. The "from" asset gets a bearish/exit signal, the "to" asset gets a bullish/entry signal. If action is uncertain ("considering"), both become opinions.
+
+MISTAKE 11: Central bank commentary classified as neutral instead of directional
+❌ WRONG: "Central banks are buying gold" → neutral opinion (just information)
+✅ CORRECT: Central banks are the largest institutional buyers. Their buying = massive demand = BULLISH signal. This is fundamental analysis, not just chatter.
+RULE: Mentions of central banks buying, accumulating, or hoarding gold/silver/commodities = bullish opinion (strength depends on specificity). Central banks selling or divesting = bearish.
 
 ═══════════════════════════════════════
 DIRECTION RULES
