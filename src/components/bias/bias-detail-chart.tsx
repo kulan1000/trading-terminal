@@ -80,7 +80,7 @@ export function BiasDetailChart({ history, price, asset }: Props) {
       <div className="px-5 pt-4 pb-4">
         <div className="mb-3 flex items-center justify-between">
           <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">
-            Bias-trend 24h
+            Bias-trend 6h
           </h4>
           {showPrice && (
             <div className="flex items-center gap-3">

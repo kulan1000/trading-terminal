@@ -31,7 +31,9 @@ interface BiasData {
   direction: "bullish" | "bearish" | "neutral";
   score: number;
   count: number;
+  activeCount: number;
   isHot: boolean;
+  flipped: boolean;
   history: BiasPoint[];
   price: number;
   change: number;
@@ -100,6 +102,11 @@ export function MarketBiasSection({ biases }: Props) {
                     <h3 className="font-sans text-[13px] font-medium text-white/50">
                       {b.asset} — {ASSET_PAIRS[b.asset]}
                     </h3>
+                    {b.flipped && (
+                      <span className="animate-pulse rounded-md bg-[#EF5350]/20 px-2 py-0.5 font-sans text-[9px] font-bold uppercase text-[#EF5350] ring-1 ring-[#EF5350]/30">
+                        Flipped
+                      </span>
+                    )}
                     {b.isHot && (
                       <span className="animate-pulse rounded-md bg-[#FF9800]/20 px-2 py-0.5 font-sans text-[9px] font-bold uppercase text-[#FF9800] ring-1 ring-[#FF9800]/30">
                         Hot
@@ -128,7 +135,9 @@ export function MarketBiasSection({ biases }: Props) {
                   </div>
                   <div className="text-right">
                     <p className="font-mono text-[28px] font-bold tabular-nums text-white">{b.score}%</p>
-                    <p className="font-sans text-[12px] text-white/30">{b.count} signaler</p>
+                    <p className="font-sans text-[12px] text-white/30">
+                      {b.count} signaler{b.activeCount > 0 && <span className="text-white/50"> · {b.activeCount} aktiva</span>}
+                    </p>
                   </div>
                 </div>
 
@@ -156,10 +165,10 @@ export function MarketBiasSection({ biases }: Props) {
                   </div>
                 )}
 
-                {/* 24h bias change */}
+                {/* 6h bias change */}
                 {b.biasAgo && (
                   <div className="mt-1.5 font-sans text-[10px] text-white/30">
-                    <span className="text-white/20">24h:</span>{" "}
+                    <span className="text-white/20">6h:</span>{" "}
                     <span className={b.biasAgo.direction === "bullish" ? "text-[#26A69A]/60" : b.biasAgo.direction === "bearish" ? "text-[#EF5350]/60" : "text-[#FF9800]/60"}>
                       {b.biasAgo.direction.toUpperCase()} {b.biasAgo.score}%
                     </span>

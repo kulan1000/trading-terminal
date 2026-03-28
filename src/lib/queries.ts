@@ -78,7 +78,10 @@ export async function getAssetBias(asset: Asset) {
     bullW > bearW ? "bullish" : bearW > bullW ? "bearish" : "neutral";
   const score = total > 0 ? Math.round((Math.max(bullW, bearW) / total) * 100) : 0;
 
-  return { direction, score, count: signals.length };
+  // Count signals within 1h (active/hot signals)
+  const activeCount = signals.filter((s) => (now - new Date(s.created_at).getTime()) / 3600000 <= 1).length;
+
+  return { direction, score, count: signals.length, activeCount };
 }
 
 export async function getRecentSignals(limit = 10) {

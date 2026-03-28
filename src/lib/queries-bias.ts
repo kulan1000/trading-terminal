@@ -54,9 +54,9 @@ export async function getLatestSignal(asset: Asset) {
   return row ?? null;
 }
 
-/** Oldest bias snapshot ~24h ago for card comparison */
+/** Oldest bias snapshot ~6h ago for card comparison */
 export async function getBiasAgo(asset: Asset) {
-  const since = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString();
+  const since = new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString();
   const { data } = await supabase
     .from("bias_snapshots")
     .select("score, direction")
@@ -69,7 +69,7 @@ export async function getBiasAgo(asset: Asset) {
 }
 
 /** Bias history snapshots for sparklines */
-export async function getBiasHistory(asset: Asset, hours = 24) {
+export async function getBiasHistory(asset: Asset, hours = 6) {
   const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
   const { data } = await supabase
     .from("bias_snapshots")

@@ -28,8 +28,7 @@ export async function GET(req: NextRequest) {
 
   const now = Date.now();
   const since6h = new Date(now - 6 * 60 * 60 * 1000).toISOString();
-  const since24h = new Date(now - 24 * 60 * 60 * 1000).toISOString();
-  const around24hAgo = new Date(now - 25 * 60 * 60 * 1000).toISOString();
+  const around7hAgo = new Date(now - 7 * 60 * 60 * 1000).toISOString();
 
   const [signalsRes, historyRes, price, oldBiasRes] = await Promise.all([
     // Only 6h signals — matches getAssetBias window
@@ -40,19 +39,19 @@ export async function GET(req: NextRequest) {
       .gte("created_at", since6h)
       .order("created_at", { ascending: false })
       .limit(50),
-    // Chart history still 24h for visual trend
+    // Chart history 6h to match decay window
     supabase
       .from("bias_snapshots")
       .select("score, direction, created_at")
       .eq("asset", asset)
-      .gte("created_at", since24h)
+      .gte("created_at", since6h)
       .order("created_at", { ascending: true }),
     getAssetPrice(asset),
     supabase
       .from("bias_snapshots")
       .select("score, direction")
       .eq("asset", asset)
-      .gte("created_at", around24hAgo)
+      .gte("created_at", around7hAgo)
       .order("created_at", { ascending: true })
       .limit(1),
   ]);
@@ -95,12 +94,23 @@ Write a brief, factual summary. No fluff.`;
     }
   }
 
-  // Raw counts for stats display
+  // Raw counts + decay-weighted percentages
   const rawBull = signals.filter((s) => s.direction === "bullish").length;
   const rawBear = signals.filter((s) => s.direction === "bearish").length;
   const rawEntries = signals.filter((s) => s.signal_type === "entry").length;
   const rawExits = signals.filter((s) => s.signal_type === "exited").length;
   const uniqueTraders = new Set(signals.map((s) => s.author)).size;
+
+  // Decay-weighted bull/bear for accurate representation
+  let wBull = 0, wBear = 0;
+  for (const s of signals) {
+    const w = timeDecay(s.created_at, now) * (STR[s.strength] ?? 2) * s.confidence * (s.signal_type === "position" ? 1.5 : 1);
+    if (s.direction === "bullish") wBull += w;
+    else if (s.direction === "bearish") wBear += w;
+  }
+  const wTotal = wBull + wBear || 1;
+  const weightedBullPct = Math.round((wBull / wTotal) * 100);
+  const weightedBearPct = 100 - weightedBullPct;
 
   // Latest signal
   const latestSignal = signals[0]
@@ -111,8 +121,8 @@ Write a brief, factual summary. No fluff.`;
   const oldSnap = (oldBiasRes.data ?? [])[0] as { score: number; direction: string } | undefined;
   const biasChange = oldSnap ? { score: oldSnap.score, direction: oldSnap.direction } : null;
 
-  // Trader consensus with decay weight
-  const traderMap = new Map<string, { direction: string; weight: number; count: number; types: string[] }>();
+  // Trader consensus with decay weight + latest signal time
+  const traderMap = new Map<string, { direction: string; weight: number; count: number; types: string[]; latestAt: string }>();
   for (const s of signals) {
     const w = timeDecay(s.created_at, now) * (STR[s.strength] ?? 2) * s.confidence;
     const ex = traderMap.get(s.author);
@@ -120,12 +130,13 @@ Write a brief, factual summary. No fluff.`;
       ex.weight += w;
       ex.count++;
       if (s.signal_type && !ex.types.includes(s.signal_type)) ex.types.push(s.signal_type);
+      if (s.created_at > ex.latestAt) ex.latestAt = s.created_at;
     } else {
-      traderMap.set(s.author, { direction: s.direction, weight: w, count: 1, types: s.signal_type ? [s.signal_type] : [] });
+      traderMap.set(s.author, { direction: s.direction, weight: w, count: 1, types: s.signal_type ? [s.signal_type] : [], latestAt: s.created_at });
     }
   }
   const traderConsensus = [...traderMap.entries()]
-    .map(([author, d]) => ({ author, direction: d.direction, count: d.count, types: d.types }))
+    .map(([author, d]) => ({ author, direction: d.direction, count: d.count, types: d.types, latestAt: d.latestAt }))
     .sort((a, b) => (traderMap.get(b.author)?.weight ?? 0) - (traderMap.get(a.author)?.weight ?? 0));
 
   return NextResponse.json({
@@ -138,6 +149,8 @@ Write a brief, factual summary. No fluff.`;
       exits: rawExits,
       uniqueTraders,
       total: signals.length,
+      weightedBullPct,
+      weightedBearPct,
     },
     signals: signals.map((s) => ({
       id: s.id, direction: s.direction, confidence: s.confidence, strength: s.strength,

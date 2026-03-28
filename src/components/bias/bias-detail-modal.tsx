@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { ASSET_PAIRS } from "@/lib/constants";
 import { fmtPrice } from "@/lib/format-utils";
 import type { Asset } from "@/lib/types";
+import Link from "next/link";
 import { BiasDetailChart } from "./bias-detail-chart";
 import { BiasDetailSignals } from "./bias-detail-signals";
 
@@ -15,6 +16,8 @@ interface Stats {
   exits: number;
   uniqueTraders: number;
   total: number;
+  weightedBullPct: number;
+  weightedBearPct: number;
 }
 
 interface BiasDetailData {
@@ -52,6 +55,7 @@ interface TraderEntry {
   direction: string;
   count: number;
   types: string[];
+  latestAt: string;
 }
 
 interface Props {
@@ -140,9 +144,7 @@ export function BiasDetailModal({ asset, direction, score, count, price, changeP
           ) : data ? (
             <>
               {data.stats && <StatsBar stats={data.stats} />}
-              <BiasDetailChart history={data.history} price={price} asset={asset} />
-              {data.traderConsensus?.length > 0 && <TraderConsensus traders={data.traderConsensus} />}
-              <BiasDetailSignals signals={data.signals} />
+              {/* AI Analys — most valuable, placed right after stats */}
               <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
                 <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
                 <div className="px-5 pt-4 pb-4">
@@ -152,6 +154,9 @@ export function BiasDetailModal({ asset, direction, score, count, price, changeP
                   <p className="mt-2 font-sans text-[13px] leading-relaxed text-white/70">{data.summary}</p>
                 </div>
               </div>
+              <BiasDetailChart history={data.history} price={price} asset={asset} />
+              {data.traderConsensus?.length > 0 && <TraderConsensus traders={data.traderConsensus} />}
+              <BiasDetailSignals signals={data.signals} />
             </>
           ) : (
             <p className="text-center font-sans text-[13px] text-white/30">Kunde inte ladda data.</p>
@@ -165,11 +170,11 @@ export function BiasDetailModal({ asset, direction, score, count, price, changeP
 
 function StatsBar({ stats }: { stats: Stats }) {
   const items = [
-    { label: "Bullish", value: stats.bullish, cls: "text-[#26A69A]" },
-    { label: "Bearish", value: stats.bearish, cls: "text-[#EF5350]" },
-    { label: "Entries", value: stats.entries, cls: "text-[#2962FF]" },
-    { label: "Exits", value: stats.exits, cls: "text-white/50" },
-    { label: "Traders", value: stats.uniqueTraders, cls: "text-white" },
+    { label: "Bullish", value: `${stats.weightedBullPct}%`, sub: `${stats.bullish} st`, cls: "text-[#26A69A]" },
+    { label: "Bearish", value: `${stats.weightedBearPct}%`, sub: `${stats.bearish} st`, cls: "text-[#EF5350]" },
+    { label: "Entries", value: String(stats.entries), sub: null, cls: "text-[#2962FF]" },
+    { label: "Exits", value: String(stats.exits), sub: null, cls: "text-white/50" },
+    { label: "Traders", value: String(stats.uniqueTraders), sub: null, cls: "text-white" },
   ];
 
   return (
@@ -180,6 +185,7 @@ function StatsBar({ stats }: { stats: Stats }) {
           <div className="p-3">
             <p className={`font-mono text-[18px] font-bold tabular-nums ${s.cls}`}>{s.value}</p>
             <p className="font-sans text-[10px] font-medium uppercase tracking-[0.08em] text-white/40">{s.label}</p>
+            {s.sub && <p className="mt-0.5 font-mono text-[9px] text-white/20">{s.sub}</p>}
           </div>
         </div>
       ))}
@@ -196,6 +202,19 @@ const TYPE_TAG: Record<string, string> = {
   target: "bg-[#2962FF]/15 text-[#2962FF]",
 };
 
+function traderFreshness(latestAt: string): string {
+  const ageH = (Date.now() - new Date(latestAt).getTime()) / 3600000;
+  if (ageH <= 1) return "opacity-100";
+  if (ageH <= 3) return "opacity-70";
+  return "opacity-40";
+}
+
+function timeSinceShort(iso: string): string {
+  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 60) return `${mins}m`;
+  return `${Math.round(mins / 60)}h`;
+}
+
 function TraderConsensus({ traders }: { traders: TraderEntry[] }) {
   const bulls = traders.filter((t) => t.direction === "bullish");
   const bears = traders.filter((t) => t.direction === "bearish");
@@ -207,15 +226,18 @@ function TraderConsensus({ traders }: { traders: TraderEntry[] }) {
       </h5>
       <div className="space-y-1.5">
         {list.slice(0, 6).map((t) => (
-          <div key={t.author} className="flex items-center gap-2">
+          <div key={t.author} className={`flex items-center gap-2 ${traderFreshness(t.latestAt)}`}>
             <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${DIR_DOT[t.direction]}`} />
-            <span className="truncate font-sans text-[12px] font-medium text-white/70">{t.author}</span>
+            <Link href={`/trader/${encodeURIComponent(t.author)}`} className="truncate font-sans text-[12px] font-medium text-white/70 hover:text-[#2962FF] hover:underline">
+              {t.author}
+            </Link>
             <div className="ml-auto flex items-center gap-1">
               {t.types.slice(0, 2).map((ty) => (
                 <span key={ty} className={`rounded px-1.5 py-0.5 font-sans text-[9px] font-bold uppercase ${TYPE_TAG[ty] ?? TYPE_TAG.opinion}`}>
                   {ty}
                 </span>
               ))}
+              <span className="font-mono text-[9px] text-white/20">{timeSinceShort(t.latestAt)}</span>
               <span className="font-mono text-[10px] text-white/20">{t.count}x</span>
             </div>
           </div>
