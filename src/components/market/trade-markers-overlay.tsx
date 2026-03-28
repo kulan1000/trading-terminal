@@ -39,23 +39,26 @@ export function TradeMarkersOverlay({ markers, timestamps, toX, toY, min, max, w
     [markers, min, max]
   );
 
-  // Pre-compute marker positions — clamp to chart edges if outside time range
+  // Position markers using original Discord message timestamp
+  // Only show markers that fall within the chart's visible time range
   const positioned = useMemo(() => {
     if (!timestamps.length) return [];
-    return markers.map((m) => {
-      const mTs = new Date(m.created_at).getTime() / 1000;
-      let mi = 0;
-      if (mTs <= timestamps[0]) {
-        mi = 0;
-      } else if (mTs >= timestamps[timestamps.length - 1]) {
-        mi = timestamps.length - 1;
-      } else {
+    const tStart = timestamps[0];
+    const tEnd = timestamps[timestamps.length - 1];
+
+    return markers
+      .map((m) => {
+        const mTs = new Date(m.msg_timestamp).getTime() / 1000;
+        // Skip markers outside the chart's time window
+        if (mTs < tStart || mTs > tEnd) return null;
+        // Find nearest chart data point
+        let mi = 0;
         for (let j = 1; j < timestamps.length; j++) {
           if (Math.abs(timestamps[j] - mTs) < Math.abs(timestamps[mi] - mTs)) mi = j;
         }
-      }
-      return { ...m, mx: toX(mi), my: toY(m.price_at_signal), style: getMarkerStyle(m) };
-    }) as Array<TradeMarker & { mx: number; my: number; style: ReturnType<typeof getMarkerStyle> }>;
+        return { ...m, mx: toX(mi), my: toY(m.price_at_signal), style: getMarkerStyle(m) };
+      })
+      .filter(Boolean) as Array<TradeMarker & { mx: number; my: number; style: ReturnType<typeof getMarkerStyle> }>;
   }, [markers, timestamps, toX, toY]);
 
   const r = 4.5;
@@ -112,7 +115,7 @@ export function TradeMarkersOverlay({ markers, timestamps, toX, toY, min, max, w
         const tx = p.mx + 10 + tipW > width ? p.mx - tipW - 6 : p.mx + 6;
         const ty = Math.max(2, Math.min(p.my - 20, height - 36));
         const time = new Date(p.created_at).toLocaleTimeString("sv-SE", {
-          hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm",
+          hour: "2-digit", minute: "2-digit", timeZone: "America/New_York",
         });
         return (
           <foreignObject x={tx} y={ty} width={tipW} height={36}>

@@ -1,24 +1,10 @@
 "use client";
 
 import { changeColor } from "@/lib/utils";
+import { fmtNum, fmtVol, fmtBig } from "@/lib/format-utils";
 import { StockSparkline } from "@/components/stocks/stock-sparkline";
 import { StockDetail } from "@/components/stocks/stock-detail";
 import type { StockQuote } from "@/lib/data-ceo-stocks";
-
-function fmtNum(n: number, d = 2): string {
-  return n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
-}
-function fmtVol(v: number): string {
-  if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
-  if (v >= 1e3) return `${(v / 1e3).toFixed(0)}K`;
-  return v > 0 ? v.toString() : "—";
-}
-function fmtBig(n: number): string {
-  if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
-  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `${(n / 1e3).toFixed(0)}K`;
-  return n > 0 ? n.toString() : "—";
-}
 
 export function StockRow({
   q,

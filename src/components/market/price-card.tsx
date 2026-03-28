@@ -88,7 +88,7 @@ export function PriceCard({ quote, pair }: PriceCardProps) {
       {/* Marker count badge */}
       {markers.length > 0 && (
         <div className="px-4 pb-2 text-[10px] text-terminal-muted">
-          {markers.length} trade signal{markers.length !== 1 ? "s" : ""} (24h)
+          {markers.length} trade signal{markers.length !== 1 ? "s" : ""} (48h)
         </div>
       )}
     </div>

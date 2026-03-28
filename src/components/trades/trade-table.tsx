@@ -1,5 +1,6 @@
 import type { TradeRow } from "@/lib/queries-trades";
 import { changeColor } from "@/lib/utils";
+import { fmtNum } from "@/lib/format-utils";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-GB", {
@@ -9,10 +10,6 @@ function formatDate(iso: string) {
     minute: "2-digit",
     timeZone: "Europe/Stockholm",
   });
-}
-
-function formatPrice(n: number) {
-  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 export function TradeTable({ trades, title }: { trades: TradeRow[]; title: string }) {
@@ -52,9 +49,9 @@ export function TradeTable({ trades, title }: { trades: TradeRow[]; title: strin
                 <tr key={t.id} className="border-b border-terminal-border/50">
                   <td className="py-2 font-semibold text-terminal-text">{t.asset}</td>
                   <td className={`py-2 uppercase ${dirColor}`}>{t.direction}</td>
-                  <td className="py-2 text-right text-terminal-text">{formatPrice(t.entry_price)}</td>
+                  <td className="py-2 text-right text-terminal-text">{fmtNum(t.entry_price)}</td>
                   <td className="py-2 text-right text-terminal-text">
-                    {t.exit_price ? formatPrice(t.exit_price) : "—"}
+                    {t.exit_price ? fmtNum(t.exit_price) : "—"}
                   </td>
                   <td className="py-2 text-right text-terminal-muted">{t.quantity}</td>
                   <td className={`py-2 text-right font-semibold ${pnlColor}`}>

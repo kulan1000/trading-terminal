@@ -1,18 +1,7 @@
 "use client";
 
-import type { StockQuote } from "@/app/api/stocks/route";
-
-function fmtNum(n: number, d = 2): string {
-  return n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
-}
-
-function fmtBig(n: number): string {
-  if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
-  if (n > 0) return `$${n}`;
-  return "—";
-}
+import type { StockQuote } from "@/lib/data-ceo-stocks";
+import { fmtNum, fmtBig } from "@/lib/format-utils";
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (

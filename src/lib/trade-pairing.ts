@@ -1,14 +1,7 @@
 // Trade pairing: match entry signals with exit signals per author+asset
 // Runs after each classify batch to compute PnL
 
-import { createClient } from "@supabase/supabase-js";
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 interface Signal {
   id: number;
@@ -22,7 +15,7 @@ interface Signal {
 
 /** Pair unmatched entries with exits and compute PnL */
 export async function pairTrades() {
-  const supabase = getSupabase();
+  const supabase = getSupabaseAdmin();
 
   // Get all entry signals not yet paired
   const { data: entries } = await supabase

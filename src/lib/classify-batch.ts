@@ -1,20 +1,13 @@
 // Batch processing: loops unclassified Discord messages through the classification pipeline
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { classifyMessage } from "@/lib/classify";
 import { deriveStrength } from "@/lib/classify-sanitize";
 import { maybeCommodityRelevant } from "@/lib/pre-filter";
 import { getTraderHint, refreshTraderProfile } from "@/lib/trader-profiles";
 import { getAssetPrice } from "@/lib/price-snapshot";
 
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
-
 export async function processUnclassified(limit = 50) {
-  const supabase = getSupabase();
+  const supabase = getSupabaseAdmin();
 
   const { data: messages } = await supabase
     .from("discord_messages")

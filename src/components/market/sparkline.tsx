@@ -11,7 +11,8 @@ export interface TradeMarker {
   position: "long" | "short" | null;
   direction: string;
   price_at_signal: number;
-  created_at: string; // ISO timestamp
+  created_at: string;
+  msg_timestamp: string; // original Discord message time — used for chart positioning
 }
 
 interface SparklineProps {
