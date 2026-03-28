@@ -15,18 +15,15 @@ const SECTOR_ACCENT: Record<string, string> = {
 const SECTOR_COLORS: Record<string, string> = {
   gold: "text-yellow-400", silver: "text-gray-300", oil: "text-orange-400",
 };
-const SECTOR_ICONS: Record<string, string> = {
-  gold: "⛏", silver: "◈", oil: "◉",
-};
 
-const COLUMNS: { key: SortKey; label: string; align: string }[] = [
-  { key: "symbol", label: "Symbol", align: "text-left" },
-  { key: "price", label: "Price", align: "text-right" },
-  { key: "changePercent", label: "Change", align: "text-center" },
-  { key: "volume", label: "Vol / Avg", align: "text-right" },
-  { key: "vwap", label: "VWAP", align: "text-right" },
-  { key: "shortVolume", label: "Shorts", align: "text-right" },
-  { key: "marketCap", label: "MCap", align: "text-right" },
+const COLUMNS: { key: SortKey; label: string; align: string; width: string }[] = [
+  { key: "symbol",        label: "Symbol",  align: "text-left",   width: "w-[22%]" },
+  { key: "price",         label: "Price",   align: "text-right",  width: "w-[10%]" },
+  { key: "changePercent", label: "Change",  align: "text-right",  width: "w-[14%]" },
+  { key: "volume",        label: "Volume",  align: "text-right",  width: "w-[14%]" },
+  { key: "vwap",          label: "VWAP",    align: "text-right",  width: "w-[10%]" },
+  { key: "shortVolume",   label: "Shorts",  align: "text-right",  width: "w-[10%]" },
+  { key: "marketCap",     label: "MCap",    align: "text-right",  width: "w-[10%]" },
 ];
 
 function sortQuotes(quotes: StockQuote[], key: SortKey, asc: boolean): StockQuote[] {
@@ -59,64 +56,56 @@ export function SectorTable({
 
   return (
     <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
+
       {/* Sector accent line */}
       <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} />
 
       {/* Sector header */}
-      <div className="flex items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-3">
-          <span className="text-[14px]">{SECTOR_ICONS[sector] ?? "●"}</span>
-          <h2 className={`font-sans text-[15px] font-semibold tracking-wide ${SECTOR_COLORS[sector] ?? "text-white"}`}>
+      <div className="flex items-center justify-between px-5 py-3.5">
+        <div className="flex items-center gap-2.5">
+          <h2 className={`font-sans text-[14px] font-semibold ${SECTOR_COLORS[sector] ?? "text-white"}`}>
             {SECTOR_LABELS[sector] ?? sector}
           </h2>
-          <span className="rounded-md bg-white/[0.05] px-2 py-0.5 font-mono text-[11px] tabular-nums text-white/30">
+          <span className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-white/25">
             {quotes.length}
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          {gainers > 0 && (
-            <span className="font-mono text-[11px] tabular-nums text-[#26A69A]">
-              {gainers} ▲
-            </span>
-          )}
-          {losers > 0 && (
-            <span className="font-mono text-[11px] tabular-nums text-[#EF5350]">
-              {losers} ▼
-            </span>
-          )}
-        </div>
+        {(gainers > 0 || losers > 0) && (
+          <div className="flex items-center gap-2.5 font-mono text-[10px] tabular-nums">
+            {gainers > 0 && <span className="text-[#26A69A]">{gainers}↑</span>}
+            {losers > 0 && <span className="text-[#EF5350]">{losers}↓</span>}
+          </div>
+        )}
       </div>
 
-      {/* Table */}
-      <table className="w-full text-[13px]">
-        <thead>
-          <tr className="border-y border-white/[0.04] bg-white/[0.015]">
-            {COLUMNS.map((col) => (
-              <th key={col.key}
-                className={`cursor-pointer select-none px-6 py-2.5 font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40 transition-colors hover:text-white/70 ${col.align}`}
-                onClick={() => onSort(col.key)}>
-                {col.label}
-                {sortKey === col.key && (
-                  <span className="ml-1 text-[#2962FF]">{sortAsc ? "▲" : "▼"}</span>
-                )}
-              </th>
-            ))}
-            <th className="w-[100px] px-3 py-2.5 font-sans text-left text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">
-              Intraday
-            </th>
-            <th className="w-8" />
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map((q) => (
-            <StockRow key={q.symbol} q={q}
-              expanded={expanded === q.symbol}
-              onToggle={() => setExpanded(expanded === q.symbol ? null : q.symbol)}
-              onRemove={() => onRemove(q.ceoSymbol)}
-            />
-          ))}
-        </tbody>
-      </table>
+      {/* Column headers */}
+      <div className="flex items-center border-y border-white/[0.04] bg-white/[0.02] px-5 py-2">
+        {COLUMNS.map((col) => (
+          <div key={col.key}
+            className={`cursor-pointer select-none font-sans text-[11px] font-medium uppercase tracking-[0.06em] text-white/30 transition-colors hover:text-white/60 ${col.align} ${col.width}`}
+            onClick={() => onSort(col.key)}>
+            {col.label}
+            {sortKey === col.key && (
+              <span className="ml-1 text-[#2962FF]">{sortAsc ? "↑" : "↓"}</span>
+            )}
+          </div>
+        ))}
+        <div className="w-[8%] text-right font-sans text-[11px] font-medium uppercase tracking-[0.06em] text-white/30">
+          Chart
+        </div>
+        <div className="w-[2%]" />
+      </div>
+
+      {/* Rows */}
+      <div>
+        {sorted.map((q) => (
+          <StockRow key={q.symbol} q={q}
+            expanded={expanded === q.symbol}
+            onToggle={() => setExpanded(expanded === q.symbol ? null : q.symbol)}
+            onRemove={() => onRemove(q.ceoSymbol)}
+          />
+        ))}
+      </div>
     </div>
   );
 }
