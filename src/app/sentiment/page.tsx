@@ -1,6 +1,6 @@
 import { ASSETS, ASSET_PAIRS } from "@/lib/constants";
 import { getAssetBias } from "@/lib/queries";
-import { getHotAsset, getBiasHistory } from "@/lib/queries-bias";
+import { getHotAsset, getBiasHistory, getLatestSignal, getBiasAgo } from "@/lib/queries-bias";
 import { getMarketQuotes } from "@/lib/market-data";
 import { MarketBiasSection } from "@/components/bias/market-bias-section";
 import { SentimentLive } from "@/components/sentiment/sentiment-live";
@@ -8,15 +8,19 @@ import { SentimentLive } from "@/components/sentiment/sentiment-live";
 export const revalidate = 30;
 
 export default async function SentimentPage() {
-  const [biases, hotAsset, histories, quotes] = await Promise.all([
+  const [biases, hotAsset, histories, quotes, latestSignals, biasAgos] = await Promise.all([
     Promise.all(ASSETS.map(async (asset) => ({ asset, ...(await getAssetBias(asset)) }))),
     getHotAsset(),
     Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasHistory(asset) }))),
     getMarketQuotes(),
+    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getLatestSignal(asset) }))),
+    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasAgo(asset) }))),
   ]);
 
   const historyMap = Object.fromEntries(histories.map((h) => [h.asset, h.data]));
   const priceMap = Object.fromEntries(quotes.map((q) => [q.asset, { price: q.price, change: q.change, changePercent: q.changePercent }]));
+  const latestMap = Object.fromEntries(latestSignals.map((l) => [l.asset, l.data]));
+  const agoMap = Object.fromEntries(biasAgos.map((a) => [a.asset, a.data]));
 
   const biasData = biases.map((b) => ({
     asset: b.asset,
@@ -28,6 +32,8 @@ export default async function SentimentPage() {
     price: priceMap[b.asset]?.price ?? 0,
     change: priceMap[b.asset]?.change ?? 0,
     changePercent: priceMap[b.asset]?.changePercent ?? 0,
+    latestSignal: latestMap[b.asset] ?? null,
+    biasAgo: agoMap[b.asset] ?? null,
   }));
 
   return (

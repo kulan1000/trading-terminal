@@ -17,10 +17,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid asset" }, { status: 400 });
   }
 
-  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const since6h = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+  const now = Date.now();
+  const since24h = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+  const since6h = new Date(now - 6 * 60 * 60 * 1000).toISOString();
+  const around24hAgo = new Date(now - 25 * 60 * 60 * 1000).toISOString();
 
-  const [signalsRes, historyRes, price] = await Promise.all([
+  const [signalsRes, historyRes, price, oldBiasRes] = await Promise.all([
     supabase
       .from("signals")
       .select("id, direction, confidence, strength, signal_type, position, interpretation, author, created_at, discord_messages(content)")
@@ -35,6 +37,13 @@ export async function GET(req: NextRequest) {
       .gte("created_at", since24h)
       .order("created_at", { ascending: true }),
     getAssetPrice(asset),
+    supabase
+      .from("bias_snapshots")
+      .select("score, direction")
+      .eq("asset", asset)
+      .gte("created_at", around24hAgo)
+      .order("created_at", { ascending: true })
+      .limit(1),
   ]);
 
   type RawSignal = {
@@ -77,30 +86,44 @@ Write a brief, factual summary. No fluff.`;
     }
   }
 
-  // Compute stats
-  const bullish = signals.filter((s) => s.direction === "bullish").length;
-  const bearish = signals.filter((s) => s.direction === "bearish").length;
-  const entries = signals.filter((s) => s.signal_type === "entry").length;
-  const exits = signals.filter((s) => s.signal_type === "exited").length;
+  // Compute stats (use different names to avoid shadowing the if-block locals)
+  const totalBull = signals.filter((s) => s.direction === "bullish").length;
+  const totalBear = signals.filter((s) => s.direction === "bearish").length;
+  const totalEntries = signals.filter((s) => s.signal_type === "entry").length;
+  const totalExits = signals.filter((s) => s.signal_type === "exited").length;
   const uniqueTraders = new Set(signals.map((s) => s.author)).size;
+
+  // Latest signal for card preview
+  const latestSignal = signals[0]
+    ? { author: signals[0].author, direction: signals[0].direction, signal_type: signals[0].signal_type, position: signals[0].position, created_at: signals[0].created_at }
+    : null;
+
+  // 24h-ago bias for comparison
+  const oldSnap = (oldBiasRes.data ?? [])[0] as { score: number; direction: string } | undefined;
+  const biasChange = oldSnap ? { score: oldSnap.score, direction: oldSnap.direction } : null;
+
+  // Trader consensus: group by author
+  const traderMap = new Map<string, { direction: string; count: number; types: string[] }>();
+  for (const s of signals) {
+    const ex = traderMap.get(s.author);
+    if (ex) { ex.count++; if (s.signal_type && !ex.types.includes(s.signal_type)) ex.types.push(s.signal_type); }
+    else traderMap.set(s.author, { direction: s.direction, count: 1, types: s.signal_type ? [s.signal_type] : [] });
+  }
+  const traderConsensus = [...traderMap.entries()].map(([author, d]) => ({ author, ...d })).sort((a, b) => b.count - a.count);
 
   return NextResponse.json({
     asset,
     price,
-    stats: { bullish, bearish, entries, exits, uniqueTraders, total: signals.length },
+    stats: { bullish: totalBull, bearish: totalBear, entries: totalEntries, exits: totalExits, uniqueTraders, total: signals.length },
     signals: signals.map((s) => ({
-      id: s.id,
-      direction: s.direction,
-      confidence: s.confidence,
-      strength: s.strength,
-      signal_type: s.signal_type,
-      position: s.position,
-      interpretation: s.interpretation,
-      author: s.author,
-      created_at: s.created_at,
-      content: s.discord_messages?.content ?? null,
+      id: s.id, direction: s.direction, confidence: s.confidence, strength: s.strength,
+      signal_type: s.signal_type, position: s.position, interpretation: s.interpretation,
+      author: s.author, created_at: s.created_at, content: s.discord_messages?.content ?? null,
     })),
     history,
     summary,
+    latestSignal,
+    biasChange,
+    traderConsensus,
   });
 }

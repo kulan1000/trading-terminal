@@ -13,6 +13,19 @@ interface BiasPoint {
   created_at: string;
 }
 
+interface LatestSignal {
+  author: string;
+  direction: string;
+  signal_type: string | null;
+  position: string | null;
+  created_at: string;
+}
+
+interface BiasAgo {
+  score: number;
+  direction: string;
+}
+
 interface BiasData {
   asset: Asset;
   direction: "bullish" | "bearish" | "neutral";
@@ -23,6 +36,8 @@ interface BiasData {
   price: number;
   change: number;
   changePercent: number;
+  latestSignal: LatestSignal | null;
+  biasAgo: BiasAgo | null;
 }
 
 interface Props {
@@ -46,6 +61,15 @@ const DIR_ACCENT: Record<string, string> = {
   bearish: "#EF5350",
   neutral: "#FF9800",
 };
+
+function timeAgo(iso: string) {
+  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 60) return `${mins}m sedan`;
+  const hours = Math.round(mins / 60);
+  return hours < 24 ? `${hours}h sedan` : `${Math.round(hours / 24)}d sedan`;
+}
+
+const TYPE_SHORT: Record<string, string> = { entry: "ENTRY", exited: "EXIT", position: "HOLD", opinion: "OPINION", target: "TARGET" };
 
 export function MarketBiasSection({ biases }: Props) {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
@@ -120,6 +144,32 @@ export function MarketBiasSection({ biases }: Props) {
                   </div>
                 </div>
 
+                {/* Latest signal */}
+                {b.latestSignal && (
+                  <div className="mt-3 flex items-center gap-1.5 overflow-hidden">
+                    <span className={`shrink-0 font-sans text-[10px] font-bold ${b.latestSignal.direction === "bullish" ? "text-[#26A69A]" : b.latestSignal.direction === "bearish" ? "text-[#EF5350]" : "text-[#FF9800]"}`}>
+                      {TYPE_SHORT[b.latestSignal.signal_type ?? "opinion"]}
+                      {b.latestSignal.position ? ` ${b.latestSignal.position.toUpperCase()}` : ""}
+                    </span>
+                    <span className="truncate font-sans text-[10px] text-white/40">{b.latestSignal.author}</span>
+                    <span className="ml-auto shrink-0 font-mono text-[9px] text-white/20">{timeAgo(b.latestSignal.created_at)}</span>
+                  </div>
+                )}
+
+                {/* 24h bias change */}
+                {b.biasAgo && (
+                  <div className="mt-1.5 font-sans text-[10px] text-white/30">
+                    <span className="text-white/20">24h:</span>{" "}
+                    <span className={b.biasAgo.direction === "bullish" ? "text-[#26A69A]/60" : b.biasAgo.direction === "bearish" ? "text-[#EF5350]/60" : "text-[#FF9800]/60"}>
+                      {b.biasAgo.direction.toUpperCase()} {b.biasAgo.score}%
+                    </span>
+                    <span className="text-white/20"> → </span>
+                    <span className={DIR_TEXT[b.direction] ?? "text-[#FF9800]"}>
+                      {b.direction.toUpperCase()} {b.score}%
+                    </span>
+                  </div>
+                )}
+
                 {/* Hover hint */}
                 <div className="mt-1 font-sans text-[10px] uppercase tracking-[0.08em] text-white/20 opacity-0 transition-opacity group-hover:opacity-100">
                   Klicka för detaljer →
@@ -138,6 +188,7 @@ export function MarketBiasSection({ biases }: Props) {
           count={selected.count}
           price={selected.price}
           changePercent={selected.changePercent}
+          biasAgo={selected.biasAgo}
           onClose={() => setSelectedAsset(null)}
         />
       )}

@@ -42,6 +42,32 @@ export async function getHotAsset(): Promise<{ asset: Asset; count: number } | n
   return top ? { asset: top[0] as Asset, count: top[1] } : null;
 }
 
+/** Latest signal per asset (card preview) */
+export async function getLatestSignal(asset: Asset) {
+  const { data } = await supabase
+    .from("signals")
+    .select("author, direction, signal_type, position, created_at")
+    .eq("asset", asset)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const row = (data ?? [])[0] as { author: string; direction: string; signal_type: string | null; position: string | null; created_at: string } | undefined;
+  return row ?? null;
+}
+
+/** Oldest bias snapshot ~24h ago for card comparison */
+export async function getBiasAgo(asset: Asset) {
+  const since = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString();
+  const { data } = await supabase
+    .from("bias_snapshots")
+    .select("score, direction")
+    .eq("asset", asset)
+    .gte("created_at", since)
+    .order("created_at", { ascending: true })
+    .limit(1);
+  const row = (data ?? [])[0] as { score: number; direction: string } | undefined;
+  return row ?? null;
+}
+
 /** Bias history snapshots for sparklines */
 export async function getBiasHistory(asset: Asset, hours = 24) {
   const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
