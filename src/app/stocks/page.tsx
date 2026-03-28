@@ -3,115 +3,22 @@
 import { useState } from "react";
 import { useStockData } from "@/hooks/use-stock-data";
 import { useSecondsAgo } from "@/hooks/use-seconds-ago";
-import { changeColor } from "@/lib/utils";
-import { StockSparkline } from "@/components/stocks/stock-sparkline";
-import { StockDetail } from "@/components/stocks/stock-detail";
-import type { StockQuote } from "@/app/api/stocks/route";
+import { StockRow } from "@/components/stocks/stock-row";
+import { AddStockDialog } from "@/components/stocks/add-stock-dialog";
+import type { StockQuote } from "@/lib/data-ceo-stocks";
 
-const SECTOR_LABELS: Record<string, string> = {
-  gold: "Gold Miners",
-  silver: "Silver",
-  oil: "Oil & Gas",
-};
-const SECTOR_COLORS: Record<string, string> = {
-  gold: "text-yellow-400",
-  silver: "text-gray-300",
-  oil: "text-orange-400",
-};
+const SECTOR_LABELS: Record<string, string> = { gold: "Gold Miners", silver: "Silver", oil: "Oil & Gas" };
+const SECTOR_COLORS: Record<string, string> = { gold: "text-yellow-400", silver: "text-gray-300", oil: "text-orange-400" };
 
-function fmtNum(n: number, d = 2): string {
-  return n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
-}
-function fmtVol(v: number): string {
-  if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
-  if (v >= 1e3) return `${(v / 1e3).toFixed(0)}K`;
-  return v > 0 ? v.toString() : "—";
-}
-function fmtBig(n: number): string {
-  if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
-  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `${(n / 1e3).toFixed(0)}K`;
-  return n > 0 ? n.toString() : "—";
-}
-
-function StockRow({
-  q,
-  expanded,
-  onToggle,
+function SectorTable({
+  sector,
+  quotes,
+  onRemove,
 }: {
-  q: StockQuote;
-  expanded: boolean;
-  onToggle: () => void;
+  sector: string;
+  quotes: StockQuote[];
+  onRemove: (ceoSymbol: string) => void;
 }) {
-  const color = changeColor(q.change);
-  return (
-    <>
-      <tr
-        className="cursor-pointer border-b border-terminal-border/50 transition-colors hover:bg-terminal-accent/5"
-        onClick={onToggle}
-      >
-        <td className="px-4 py-2">
-          <a
-            href={`https://ceo.ca/${q.ceoSymbol}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="font-semibold text-terminal-text underline decoration-terminal-border hover:decoration-terminal-text"
-          >
-            {q.symbol}
-          </a>
-          <span className="ml-2 text-terminal-muted">{q.name}</span>
-        </td>
-        <td className="px-2 py-2">
-          <StockSparkline data={q.sparkline} change={q.change} />
-        </td>
-        <td className="px-4 py-2 text-right tabular-nums text-terminal-text">
-          {fmtNum(q.price)}
-        </td>
-        <td className={`px-4 py-2 text-right tabular-nums ${color}`}>
-          {q.change >= 0 ? "+" : ""}
-          {fmtNum(q.change)} ({q.changePercent >= 0 ? "+" : ""}
-          {fmtNum(q.changePercent)}%)
-        </td>
-        <td className="px-4 py-2 text-right tabular-nums text-terminal-muted">
-          {fmtVol(q.volume)}
-        </td>
-        <td className="px-4 py-2 text-right tabular-nums text-terminal-muted">
-          {q.hasCeoData && q.vwap > 0 ? fmtNum(q.vwap, 4) : "—"}
-        </td>
-        <td className="px-4 py-2 text-right tabular-nums">
-          {q.hasCeoData && q.shortVolume > 0 ? (
-            <span className="text-terminal-muted">
-              {fmtBig(q.shortVolume)}
-              {q.shortChange !== 0 && (
-                <span className={q.shortChange > 0 ? "ml-1 text-terminal-red" : "ml-1 text-terminal-green"}>
-                  {q.shortChange > 0 ? "↑" : "↓"}
-                </span>
-              )}
-            </span>
-          ) : "—"}
-        </td>
-        <td className="px-4 py-2 text-right tabular-nums text-terminal-muted">
-          {q.marketCap > 0 ? fmtBig(q.marketCap) : "—"}
-        </td>
-        <td className="w-6 px-2 py-2 text-terminal-muted">
-          <span className={`inline-block transition-transform ${expanded ? "rotate-90" : ""}`}>
-            ▸
-          </span>
-        </td>
-      </tr>
-      {expanded && (
-        <tr className="border-b border-terminal-border/30 bg-terminal-surface/80">
-          <td colSpan={9}>
-            <StockDetail q={q} />
-          </td>
-        </tr>
-      )}
-    </>
-  );
-}
-
-function SectorTable({ sector, quotes }: { sector: string; quotes: StockQuote[] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   if (quotes.length === 0) return null;
 
@@ -143,6 +50,7 @@ function SectorTable({ sector, quotes }: { sector: string; quotes: StockQuote[] 
               q={q}
               expanded={expanded === q.symbol}
               onToggle={() => setExpanded(expanded === q.symbol ? null : q.symbol)}
+              onRemove={() => onRemove(q.ceoSymbol)}
             />
           ))}
         </tbody>
@@ -152,8 +60,9 @@ function SectorTable({ sector, quotes }: { sector: string; quotes: StockQuote[] 
 }
 
 export default function StocksPage() {
-  const { quotes, loading, lastUpdated } = useStockData();
+  const { quotes, loading, lastUpdated, addStock, removeStock } = useStockData();
   const secondsAgo = useSecondsAgo(lastUpdated);
+  const [showAdd, setShowAdd] = useState(false);
 
   const sectors = ["silver", "gold", "oil"];
   const grouped = sectors.reduce(
@@ -161,18 +70,27 @@ export default function StocksPage() {
     {} as Record<string, StockQuote[]>
   );
 
+  const handleRemove = async (ceoSymbol: string) => {
+    if (!confirm(`Remove ${ceoSymbol} from watchlist?`)) return;
+    try { await removeStock(ceoSymbol); } catch { /* toast later */ }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-baseline justify-between">
-        <h1 className="text-sm font-bold uppercase tracking-wider text-terminal-text">
-          Stocks — Watchlist
-        </h1>
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-sm font-bold uppercase tracking-wider text-terminal-text">
+            Stocks — Watchlist
+          </h1>
+          <button
+            onClick={() => setShowAdd(true)}
+            className="rounded bg-terminal-green/10 px-2 py-0.5 text-xs font-medium text-terminal-green transition-colors hover:bg-terminal-green/20"
+          >
+            + Add
+          </button>
+        </div>
         <span className="font-mono text-xs text-terminal-muted">
-          {loading
-            ? "Loading…"
-            : lastUpdated
-              ? `Updated ${secondsAgo}s ago · CEO.ca`
-              : ""}
+          {loading ? "Loading…" : lastUpdated ? `Updated ${secondsAgo}s ago · CEO.ca` : ""}
         </span>
       </div>
 
@@ -185,10 +103,12 @@ export default function StocksPage() {
       ) : (
         <div className="space-y-4">
           {sectors.map((s) => (
-            <SectorTable key={s} sector={s} quotes={grouped[s]} />
+            <SectorTable key={s} sector={s} quotes={grouped[s]} onRemove={handleRemove} />
           ))}
         </div>
       )}
+
+      <AddStockDialog open={showAdd} onClose={() => setShowAdd(false)} onAdd={addStock} />
     </div>
   );
 }

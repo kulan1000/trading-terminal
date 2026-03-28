@@ -1,194 +1,30 @@
 import { NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
+import { fetchCeoQuote } from "@/lib/data-ceo-stocks";
+import type { StockQuote, WatchlistEntry } from "@/lib/data-ceo-stocks";
 
-export interface StockQuote {
-  symbol: string;
-  ceoSymbol: string;
-  name: string;
-  price: number;
-  change: number;
-  changePercent: number;
-  volume: number;
-  marketCap: number;
-  sector: "gold" | "silver" | "oil";
-  // CEO.ca extended fields
-  dayHigh: number;
-  dayLow: number;
-  vwap: number;
-  shortVolume: number;
-  shortChange: number;
-  yearHigh: number;
-  yearLow: number;
-  sharesOutstanding: number;
-  cash: number;
-  liabilities: number;
-  avgVolume: number;
-  hasCeoData: boolean;
-  // Detail panel fields
-  prevClose: number;
-  bidPrice: number;
-  bidVolume: number;
-  askPrice: number;
-  askVolume: number;
-  eps: number;
-  pbRatio: number;
-  beta: number;
-  ma50: number;
-  ma200: number;
-  dollarVolume: number;
-  sparkline: number[];
-}
-
-// Caspar's watchlist — CEO.ca symbols (.V = TSX-V)
-const WATCHLIST: {
-  ceoSymbol: string;
-  displaySymbol: string;
-  name: string;
-  sector: StockQuote["sector"];
-}[] = [
-  { ceoSymbol: "CDPR.V", displaySymbol: "CDPR", name: "Cerro de Pasco Resources", sector: "silver" },
-  { ceoSymbol: "SVRS.V", displaySymbol: "SVRS", name: "Silver Storm Mining", sector: "silver" },
-  { ceoSymbol: "SLVR.V", displaySymbol: "SLVR", name: "Silver Tiger Metals", sector: "silver" },
-  { ceoSymbol: "IPT.V", displaySymbol: "IPT", name: "IMPACT Silver Corp", sector: "silver" },
-  { ceoSymbol: "SMN.V", displaySymbol: "SMN", name: "Sun Summit Minerals", sector: "gold" },
-  { ceoSymbol: "WTI", displaySymbol: "WTI", name: "W&T Offshore", sector: "oil" },
-];
+// Re-export for use in client components
+export type { StockQuote };
 
 // In-memory cache
 let cachedQuotes: StockQuote[] | null = null;
 let lastFetch = 0;
 const CACHE_TTL = 30_000;
 
-function parseNum(v: unknown): number {
-  if (typeof v === "number") return v;
-  if (typeof v === "string") return parseFloat(v) || 0;
-  return 0;
-}
+async function getWatchlist(): Promise<WatchlistEntry[]> {
+  const { data, error } = await supabase
+    .from("stock_watchlist" as never)
+    .select("ceo_symbol, display_symbol, name, sector")
+    .order("sort_order", { ascending: true });
 
-async function fetchCeoQuote(
-  entry: (typeof WATCHLIST)[number]
-): Promise<StockQuote | null> {
-  const url = `https://new-api.ceo.ca/api/quotes/get_us_chart?symbol=${entry.ceoSymbol}&time_period=1d`;
+  if (error || !data) return [];
 
-  try {
-    const res = await fetch(url, {
-      headers: { "User-Agent": "TradingTerminal/1.0" },
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-
-    const json = await res.json();
-    const cq = json.current_quote ?? {};
-    const chartData: { close: number; open: number; high: number; low: number }[] =
-      json.data ?? [];
-
-    // Check if we have rich quote data (TSX-V stocks)
-    const hasRichData = cq.last_trade_price != null && typeof cq.last_trade_price === "number";
-
-    if (hasRichData) {
-      // TSX-V stocks — full CEO.ca data
-      const qm = cq.quote_media_data ?? {};
-      const fund = cq.fundamentals?.fundamental ?? {};
-      const stat = cq.fundamentals?.statistical ?? {};
-
-      const sparkline = chartData.length > 1
-        ? chartData.map((p) => p.close).reverse()
-        : [];
-
-      return {
-        symbol: entry.displaySymbol,
-        ceoSymbol: entry.ceoSymbol,
-        name: entry.name,
-        price: parseNum(cq.last_trade_price),
-        change: parseNum(cq.price_change),
-        changePercent: parseNum(cq.percent_change),
-        volume: parseNum(cq.volume),
-        marketCap: parseNum(cq.market_cap),
-        sector: entry.sector,
-        dayHigh: parseNum(cq.day_high),
-        dayLow: parseNum(cq.day_low),
-        vwap: parseNum(cq.vwap),
-        shortVolume: parseNum(cq.short_volume),
-        shortChange: parseNum(cq.short_change),
-        yearHigh: parseNum(stat.week52high ?? qm.year_high),
-        yearLow: parseNum(stat.week52low ?? qm.year_low),
-        sharesOutstanding: parseNum(cq.shares_outstanding_raw ?? fund.sharesoutstanding),
-        cash: parseNum(qm.total_cash),
-        liabilities: parseNum(qm.total_liabilities),
-        avgVolume: parseNum(stat.avg30dayvolume ?? cq.average_daily_volume),
-        hasCeoData: true,
-        prevClose: parseNum(cq.previous_close_price),
-        bidPrice: parseNum(cq.best_bid_price),
-        bidVolume: parseNum(cq.best_bid_volume),
-        askPrice: parseNum(cq.best_ask_price),
-        askVolume: parseNum(cq.best_ask_volume),
-        eps: parseNum(fund.eps),
-        pbRatio: parseNum(fund.pbratio),
-        beta: parseNum(stat.beta),
-        ma50: parseNum(stat.day50movingavg),
-        ma200: parseNum(stat.day200movingavg),
-        dollarVolume: parseNum(cq.dollar_volume),
-        sparkline,
-      };
-    }
-
-    // WTI-style: only chart data available, derive price from latest candle
-    if (chartData.length === 0) return null;
-
-    const latest = chartData[0]; // most recent candle
-    const oldest = chartData[chartData.length - 1];
-    const change = latest.close - oldest.open;
-    const changePct = oldest.open > 0 ? (change / oldest.open) * 100 : 0;
-
-    let dayHigh = 0;
-    let dayLow = Infinity;
-    let totalVol = 0;
-    for (const c of chartData) {
-      if (c.high > dayHigh) dayHigh = c.high;
-      if (c.low < dayLow) dayLow = c.low;
-      totalVol += (c as { volume?: number }).volume ?? 0;
-    }
-    if (dayLow === Infinity) dayLow = 0;
-
-    const sparkline = chartData.map((c) => c.close).reverse();
-
-    return {
-      symbol: entry.displaySymbol,
-      ceoSymbol: entry.ceoSymbol,
-      name: entry.name,
-      price: latest.close,
-      change: Math.round(change * 10000) / 10000,
-      changePercent: Math.round(changePct * 100) / 100,
-      volume: totalVol,
-      marketCap: 0,
-      sector: entry.sector,
-      dayHigh,
-      dayLow,
-      vwap: 0,
-      shortVolume: 0,
-      shortChange: 0,
-      yearHigh: 0,
-      yearLow: 0,
-      sharesOutstanding: 0,
-      cash: 0,
-      liabilities: 0,
-      avgVolume: 0,
-      hasCeoData: false,
-      prevClose: 0,
-      bidPrice: 0,
-      bidVolume: 0,
-      askPrice: 0,
-      askVolume: 0,
-      eps: 0,
-      pbRatio: 0,
-      beta: 0,
-      ma50: 0,
-      ma200: 0,
-      dollarVolume: 0,
-      sparkline,
-    };
-  } catch {
-    return null;
-  }
+  return (data as { ceo_symbol: string; display_symbol: string; name: string; sector: string }[]).map((row) => ({
+    ceoSymbol: row.ceo_symbol,
+    displaySymbol: row.display_symbol,
+    name: row.name,
+    sector: row.sector as StockQuote["sector"],
+  }));
 }
 
 export async function GET() {
@@ -199,7 +35,12 @@ export async function GET() {
   }
 
   try {
-    const results = await Promise.all(WATCHLIST.map(fetchCeoQuote));
+    const watchlist = await getWatchlist();
+    if (watchlist.length === 0) {
+      return NextResponse.json({ quotes: [], cached: false });
+    }
+
+    const results = await Promise.all(watchlist.map(fetchCeoQuote));
     const quotes = results.filter((q): q is StockQuote => q !== null);
     cachedQuotes = quotes;
     lastFetch = now;
@@ -209,5 +50,70 @@ export async function GET() {
       return NextResponse.json({ quotes: cachedQuotes, cached: true, stale: true });
     }
     return NextResponse.json({ error: "Failed to fetch stock data" }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { ceoSymbol, displaySymbol, name, sector } = body;
+
+    if (!ceoSymbol || !displaySymbol || !name || !sector) {
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    }
+
+    // Get next sort_order
+    const { data: maxRow } = await supabase
+      .from("stock_watchlist" as never)
+      .select("sort_order")
+      .order("sort_order", { ascending: false })
+      .limit(1);
+
+    const nextOrder = ((maxRow as { sort_order: number }[] | null)?.[0]?.sort_order ?? 0) + 1;
+
+    const { error } = await supabase
+      .from("stock_watchlist" as never)
+      .insert({ ceo_symbol: ceoSymbol, display_symbol: displaySymbol, name, sector, sort_order: nextOrder } as never);
+
+    if (error) {
+      const msg = error.message.includes("unique") ? "Stock already in watchlist" : error.message;
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
+
+    // Invalidate cache
+    cachedQuotes = null;
+    lastFetch = 0;
+
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const ceoSymbol = searchParams.get("symbol");
+
+    if (!ceoSymbol) {
+      return NextResponse.json({ error: "Missing symbol" }, { status: 400 });
+    }
+
+    const { error } = await supabase
+      .from("stock_watchlist" as never)
+      .delete()
+      .eq("ceo_symbol" as never, ceoSymbol as never);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    // Invalidate cache
+    cachedQuotes = null;
+    lastFetch = 0;
+
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 }
