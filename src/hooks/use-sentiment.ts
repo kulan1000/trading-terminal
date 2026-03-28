@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import type { AssetSentiment } from "@/lib/sentiment-engine";
 import type { Direction } from "@/lib/types";
+import { detectAlerts, type SentimentAlert } from "@/lib/sentiment-alerts";
 
 export interface TimelineSignal {
   asset: string;
@@ -51,5 +52,10 @@ export function useSentiment() {
     return () => clearInterval(interval);
   }, [refetch]);
 
-  return { ...data, loading };
+  const alerts: SentimentAlert[] = useMemo(
+    () => detectAlerts(data.history),
+    [data.history]
+  );
+
+  return { ...data, alerts, loading };
 }

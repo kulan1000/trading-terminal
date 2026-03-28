@@ -3,9 +3,10 @@
 import { useSentiment } from "@/hooks/use-sentiment";
 import { BiasGauge } from "@/components/sentiment/bias-gauge";
 import { SignalTimeline } from "@/components/sentiment/signal-timeline";
+import { SentimentAlerts } from "@/components/sentiment/sentiment-alerts";
 
 export default function SentimentPage() {
-  const { primary, extended, timeline, history, updatedAt, loading } = useSentiment();
+  const { primary, extended, timeline, history, alerts, updatedAt, loading } = useSentiment();
 
   return (
     <div className="animate-fade-in space-y-4">
@@ -35,6 +36,9 @@ export default function SentimentPage() {
         </div>
       ) : (
         <>
+          {/* Sentiment shift alerts */}
+          <SentimentAlerts alerts={alerts} />
+
           {/* Bias gauges: one per asset */}
           <div className="grid grid-cols-3 gap-4">
             {primary.map((s, i) => (
