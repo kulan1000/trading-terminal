@@ -23,6 +23,7 @@ interface Stats {
 interface BiasDetailData {
   asset: string;
   price: number | null;
+  intradayPrices?: { ts: number; price: number }[];
   stats: Stats;
   signals: DetailSignal[];
   history: { score: number; direction: string; created_at: string }[];
@@ -154,7 +155,7 @@ export function BiasDetailModal({ asset, direction, score, count, price, changeP
                   <p className="mt-2 font-sans text-[13px] leading-relaxed text-white/70">{data.summary}</p>
                 </div>
               </div>
-              <BiasDetailChart history={data.history} signals={data.signals} price={price} asset={asset} />
+              <BiasDetailChart history={data.history} signals={data.signals} intradayPrices={data.intradayPrices} price={price} asset={asset} />
               {data.traderConsensus?.length > 0 && <TraderConsensus traders={data.traderConsensus} />}
               <BiasDetailSignals signals={data.signals} />
             </>

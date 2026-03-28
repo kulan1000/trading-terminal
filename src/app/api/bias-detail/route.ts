@@ -3,7 +3,10 @@ import OpenAI from "openai";
 import { supabase } from "@/lib/supabase";
 import { ASSETS } from "@/lib/constants";
 import { getAssetPrice } from "@/lib/price-snapshot";
+import { fetchYahoo } from "@/lib/data-yahoo";
 import type { Asset } from "@/lib/types";
+
+const YAHOO_SYMBOLS: Record<Asset, string> = { Gold: "GC=F", Silver: "SI=F", Oil: "CL=F" };
 
 export const revalidate = 60;
 
@@ -30,7 +33,7 @@ export async function GET(req: NextRequest) {
   const since6h = new Date(now - 6 * 60 * 60 * 1000).toISOString();
   const around7hAgo = new Date(now - 7 * 60 * 60 * 1000).toISOString();
 
-  const [signalsRes, historyRes, price, oldBiasRes] = await Promise.all([
+  const [signalsRes, historyRes, price, oldBiasRes, yahooData] = await Promise.all([
     // Only 6h signals — matches getAssetBias window
     supabase
       .from("signals")
@@ -54,6 +57,7 @@ export async function GET(req: NextRequest) {
       .gte("created_at", around7hAgo)
       .order("created_at", { ascending: true })
       .limit(1),
+    fetchYahoo(asset, YAHOO_SYMBOLS[asset]),
   ]);
 
   type RawSignal = {
@@ -139,9 +143,22 @@ Write a brief, factual summary. No fluff.`;
     .map(([author, d]) => ({ author, direction: d.direction, count: d.count, types: d.types, latestAt: d.latestAt }))
     .sort((a, b) => (traderMap.get(b.author)?.weight ?? 0) - (traderMap.get(a.author)?.weight ?? 0));
 
+  // Build intraday price series filtered to last 6h
+  const sixHAgoEpoch = Math.floor((now - 6 * 60 * 60 * 1000) / 1000);
+  let intradayPrices: { ts: number; price: number }[] = [];
+  if (yahooData) {
+    for (let i = 0; i < yahooData.intraday.length; i++) {
+      const ts = yahooData.intradayTs[i] ?? 0;
+      if (ts >= sixHAgoEpoch) {
+        intradayPrices.push({ ts, price: yahooData.intraday[i] });
+      }
+    }
+  }
+
   return NextResponse.json({
     asset,
     price,
+    intradayPrices,
     stats: {
       bullish: rawBull,
       bearish: rawBear,

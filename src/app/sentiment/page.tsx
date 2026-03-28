@@ -3,6 +3,7 @@ import { getAssetBias } from "@/lib/queries";
 import { getHotAsset, getBiasHistory, getLatestSignal, getBiasAgo } from "@/lib/queries-bias";
 import { getMarketQuotes } from "@/lib/market-data";
 import { MarketBiasSection } from "@/components/bias/market-bias-section";
+import { SentimentAutoRefresh } from "@/components/bias/sentiment-auto-refresh";
 
 export const revalidate = 30;
 
@@ -43,6 +44,7 @@ export default async function SentimentPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
+      <SentimentAutoRefresh />
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
