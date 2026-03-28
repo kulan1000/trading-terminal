@@ -24,12 +24,12 @@ interface SparklineProps {
   markers?: TradeMarker[];
 }
 
-/** Intraday SVG sparkline with hover tooltip + trade markers */
+/** Intraday SVG sparkline with hover tooltip + signal strip below */
 export function Sparkline({
   data,
   timestamps,
   width = 280,
-  height = 64,
+  height = 56,
   className,
   markers,
 }: SparklineProps) {
@@ -50,11 +50,9 @@ export function Sparkline({
 
   if (data.length < 2) return null;
 
-  // Expand Y-range to include marker prices so they render on-screen
-  const markerPrices = markers?.length ? markers.map((m) => m.price_at_signal) : [];
-  const allValues = markerPrices.length ? [...data, ...markerPrices] : data;
-  const min = Math.min(...allValues);
-  const max = Math.max(...allValues);
+  // Y-range from price data only (markers are in separate strip now)
+  const min = Math.min(...data);
+  const max = Math.max(...data);
   const range = max - min || 1;
   const pad = 2;
 
@@ -70,11 +68,11 @@ export function Sparkline({
   const fillPath = `M${points[0]} ${points.join(" L")} L${width},${height} L0,${height} Z`;
   const gradId = `intra-${isUp ? "up" : "dn"}`;
 
-  // Hover calculations
+  // Hover calculations — Stockholm time
   const hx = hover !== null ? toX(hover) : 0;
   const hy = hover !== null ? toY(data[hover]) : 0;
   const hTime = hover !== null && timestamps?.[hover]
-    ? new Date(timestamps[hover] * 1000).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", timeZone: "America/New_York" })
+    ? new Date(timestamps[hover] * 1000).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm" })
     : null;
 
   return (
@@ -106,16 +104,6 @@ export function Sparkline({
 
         <circle cx={width} cy={toY(data[data.length - 1])} r="2.5" fill={color} />
 
-        {/* Trade heatmap + markers overlay */}
-        {markers?.length ? (
-          <TradeMarkersOverlay
-            markers={markers}
-            timestamps={timestamps ?? []}
-            toX={toX} toY={toY}
-            min={min} max={max} width={width} height={height}
-          />
-        ) : null}
-
         {hover !== null && (
           <>
             <line x1={hx} y1={0} x2={hx} y2={height}
@@ -124,6 +112,17 @@ export function Sparkline({
           </>
         )}
       </svg>
+
+      {/* Signal strip below chart: clean colored ticks for entries/exits */}
+      {markers?.length ? (
+        <TradeMarkersOverlay
+          markers={markers}
+          timestamps={timestamps ?? []}
+          toX={toX}
+          width={width}
+          stripHeight={10}
+        />
+      ) : null}
 
       {hover !== null && (
         <SparklineTooltip

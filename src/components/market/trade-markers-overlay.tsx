@@ -1,46 +1,37 @@
-// SVG overlay: trade entry/exit markers + heatmap zones on sparkline chart
+// Signal strip below sparkline: clean colored ticks for entries/exits
 "use client";
 
 import { useMemo, useState } from "react";
 import type { TradeMarker } from "./sparkline";
-import { computeHeatZones } from "@/lib/heatmap";
 
 interface Props {
   markers: TradeMarker[];
   timestamps: number[];
   toX: (i: number) => number;
-  toY: (v: number) => number;
-  min: number;
-  max: number;
   width: number;
-  height: number;
+  stripHeight: number; // height of the signal strip area
 }
 
-// Color + shape config per marker type
-function getMarkerStyle(m: TradeMarker) {
+function getMarkerColor(m: TradeMarker) {
   const { signal_type, position } = m;
-  if (signal_type === "entry" && position === "long")
-    return { color: "#22c55e", shape: "circle" as const, label: "ENTRY LONG" };
-  if (signal_type === "entry" && position === "short")
-    return { color: "#ef4444", shape: "circle" as const, label: "ENTRY SHORT" };
-  if (signal_type === "exited" && position === "long")
-    return { color: "#60a5fa", shape: "diamond" as const, label: "EXIT LONG" };
-  if (signal_type === "exited" && position === "short")
-    return { color: "#f97316", shape: "diamond" as const, label: "EXIT SHORT" };
-  // Holding positions
-  return { color: "#a78bfa", shape: "square" as const, label: "HOLDING" };
+  if (signal_type === "entry" && position === "long") return "#22c55e";
+  if (signal_type === "entry" && position === "short") return "#ef4444";
+  if (signal_type === "exited" && position === "long") return "#60a5fa";
+  if (signal_type === "exited" && position === "short") return "#f97316";
+  return "#a78bfa"; // holding
 }
 
-export function TradeMarkersOverlay({ markers, timestamps, toX, toY, min, max, width, height }: Props) {
+function getMarkerLabel(m: TradeMarker) {
+  const { signal_type, position } = m;
+  if (signal_type === "entry") return position === "long" ? "ENTRY LONG" : "ENTRY SHORT";
+  if (signal_type === "exited") return position === "long" ? "EXIT LONG" : "EXIT SHORT";
+  return "HOLDING";
+}
+
+export function TradeMarkersOverlay({ markers, timestamps, toX, width, stripHeight }: Props) {
   const [hovered, setHovered] = useState<number | null>(null);
 
-  const heatZones = useMemo(
-    () => (markers.length ? computeHeatZones(markers, min, max) : []),
-    [markers, min, max]
-  );
-
   // Position markers using original Discord message timestamp
-  // Only show markers that fall within the chart's visible time range
   const positioned = useMemo(() => {
     if (!timestamps.length) return [];
     const tStart = timestamps[0];
@@ -49,50 +40,36 @@ export function TradeMarkersOverlay({ markers, timestamps, toX, toY, min, max, w
     return markers
       .map((m) => {
         const mTs = new Date(m.msg_timestamp).getTime() / 1000;
-        // Skip markers outside the chart's time window
         if (mTs < tStart || mTs > tEnd) return null;
-        // Find nearest chart data point
         let mi = 0;
         for (let j = 1; j < timestamps.length; j++) {
           if (Math.abs(timestamps[j] - mTs) < Math.abs(timestamps[mi] - mTs)) mi = j;
         }
-        return { ...m, mx: toX(mi), my: toY(m.price_at_signal), style: getMarkerStyle(m) };
+        return { ...m, mx: toX(mi), color: getMarkerColor(m), label: getMarkerLabel(m) };
       })
-      .filter(Boolean) as Array<TradeMarker & { mx: number; my: number; style: ReturnType<typeof getMarkerStyle> }>;
-  }, [markers, timestamps, toX, toY]);
+      .filter(Boolean) as Array<TradeMarker & { mx: number; color: string; label: string }>;
+  }, [markers, timestamps, toX]);
 
-  const r = 4.5;
+  if (!positioned.length) return null;
+
+  const mid = stripHeight / 2;
 
   return (
-    <>
-      {/* Heatmap zones */}
-      {heatZones.map((z, i) => {
-        const y1 = toY(z.priceMax);
-        const y2 = toY(z.priceMin);
-        const heatColor = z.buyCount >= z.sellCount ? "0,200,80" : "240,60,60";
-        return (
-          <rect key={`hz-${i}`} x={0} y={y1} width={width} height={Math.max(y2 - y1, 2)}
-            fill={`rgba(${heatColor},${z.intensity * 0.15})`} rx={1} />
-        );
-      })}
+    <svg width="100%" height={stripHeight} viewBox={`0 0 ${width} ${stripHeight}`}
+      preserveAspectRatio="none" className="mt-0.5">
+      {/* Subtle baseline */}
+      <line x1={0} y1={mid} x2={width} y2={mid}
+        stroke="var(--color-terminal-muted)" strokeWidth="0.3" opacity={0.3} />
 
-      {/* Trade markers */}
+      {/* Signal ticks */}
       {positioned.map((p) => {
+        const isEntry = p.signal_type === "entry";
+        const isExit = p.signal_type === "exited";
         const isHov = hovered === p.id;
-        const sz = isHov ? r * 1.4 : r;
-        let shape: React.ReactNode;
-
-        if (p.style.shape === "circle") {
-          shape = <circle cx={p.mx} cy={p.my} r={sz} fill={p.style.color}
-            stroke={isHov ? "#fff" : "#000"} strokeWidth={isHov ? 1 : 0.5} />;
-        } else if (p.style.shape === "diamond") {
-          const d = `M${p.mx},${p.my - sz} L${p.mx + sz},${p.my} L${p.mx},${p.my + sz} L${p.mx - sz},${p.my} Z`;
-          shape = <path d={d} fill={p.style.color}
-            stroke={isHov ? "#fff" : "#000"} strokeWidth={isHov ? 1 : 0.5} />;
-        } else {
-          shape = <rect x={p.mx - sz * 0.8} y={p.my - sz * 0.8} width={sz * 1.6} height={sz * 1.6}
-            fill={p.style.color} stroke={isHov ? "#fff" : "#000"} strokeWidth={isHov ? 1 : 0.5} rx={0.5} />;
-        }
+        // Entries: tick up from baseline, exits: tick down, holding: small dot
+        const tickH = isEntry || isExit ? stripHeight * 0.8 : stripHeight * 0.4;
+        const y1 = isEntry ? mid - tickH : isExit ? mid : mid - tickH / 2;
+        const y2 = y1 + tickH;
 
         return (
           <g key={p.id}
@@ -100,9 +77,17 @@ export function TradeMarkersOverlay({ markers, timestamps, toX, toY, min, max, w
             onMouseLeave={() => setHovered(null)}
             style={{ cursor: "pointer" }}
           >
-            {/* Invisible hit area */}
-            <circle cx={p.mx} cy={p.my} r={8} fill="transparent" />
-            {shape}
+            {/* Hit area */}
+            <rect x={p.mx - 4} y={0} width={8} height={stripHeight} fill="transparent" />
+            {/* Tick line */}
+            <line x1={p.mx} y1={y1} x2={p.mx} y2={y2}
+              stroke={p.color} strokeWidth={isHov ? 2.5 : 1.5}
+              strokeLinecap="round" opacity={isHov ? 1 : 0.85} />
+            {/* Small dot at tip */}
+            {(isEntry || isExit) && (
+              <circle cx={p.mx} cy={isEntry ? y1 : y2} r={isHov ? 2 : 1.2}
+                fill={p.color} />
+            )}
           </g>
         );
       })}
@@ -111,25 +96,24 @@ export function TradeMarkersOverlay({ markers, timestamps, toX, toY, min, max, w
       {hovered !== null && (() => {
         const p = positioned.find((m) => m.id === hovered);
         if (!p) return null;
-        const tipW = 90;
+        const tipW = 95;
         const tx = p.mx + 10 + tipW > width ? p.mx - tipW - 6 : p.mx + 6;
-        const ty = Math.max(2, Math.min(p.my - 20, height - 36));
-        const time = new Date(p.created_at).toLocaleTimeString("sv-SE", {
-          hour: "2-digit", minute: "2-digit", timeZone: "America/New_York",
+        const time = new Date(p.msg_timestamp).toLocaleTimeString("sv-SE", {
+          hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm",
         });
         return (
-          <foreignObject x={tx} y={ty} width={tipW} height={36}>
+          <foreignObject x={tx} y={-28} width={tipW} height={30} style={{ overflow: "visible" }}>
             <div style={{
-              background: "rgba(0,0,0,0.85)", borderRadius: 4, padding: "2px 5px",
+              background: "rgba(0,0,0,0.9)", borderRadius: 4, padding: "2px 5px",
               fontSize: 8, lineHeight: 1.3, color: "#e4e4e7", whiteSpace: "nowrap",
-              border: `1px solid ${p.style.color}40`,
+              border: `1px solid ${p.color}50`,
             }}>
-              <div style={{ fontWeight: 700, color: p.style.color }}>{p.style.label}</div>
+              <div style={{ fontWeight: 700, color: p.color }}>{p.label}</div>
               <div>{p.author} · ${p.price_at_signal.toFixed(1)} · {time}</div>
             </div>
           </foreignObject>
         );
       })()}
-    </>
+    </svg>
   );
 }
