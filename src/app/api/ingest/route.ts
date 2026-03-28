@@ -5,6 +5,7 @@ import { savePriceSnapshots } from "@/lib/price-snapshots";
 import { scoreSignals } from "@/lib/score-signals";
 import { saveSentimentSnapshots } from "@/lib/sentiment-snapshots";
 import { saveBiasSnapshots } from "@/lib/bias-snapshots";
+import { isMarketOpen } from "@/lib/market-hours";
 
 // Discord channel IDs for FoFtyTrades
 const CHANNELS: Record<string, string> = {
@@ -92,20 +93,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 1) Fetch new Discord messages
-  const ingest = await ingestDiscord();
-  // 2) Classify unprocessed messages with GPT
-  const classify = await processUnclassified();
-  // 3) Save price snapshots (for scoring)
-  const prices = await savePriceSnapshots();
-  // 4) Score signals against actual prices
-  const scoring = await scoreSignals();
-  // 5) Save sentiment snapshots (for sparklines)
-  const sentiment = await saveSentimentSnapshots();
-  // 6) Save bias snapshots (for sparklines)
-  const bias = await saveBiasSnapshots();
+  const marketOpen = isMarketOpen();
 
-  return NextResponse.json({ ingest, ...classify, prices, scoring, sentiment, bias });
+  // 1) Always fetch new Discord messages (people chat anytime)
+  const ingest = await ingestDiscord();
+  // 2) Always classify (opinions are valid anytime)
+  const classify = await processUnclassified();
+
+  // 3-6) Only run price-dependent steps when market is open
+  // When closed: prices don't move → duplicate snapshots, meaningless scores
+  let prices = { saved: 0, skipped: "market closed" as string | number };
+  let scoring = { scored: 0, skipped: "market closed" as string | number };
+  let sentiment = { saved: 0 };
+  let bias = { saved: 0 };
+
+  if (marketOpen) {
+    prices = await savePriceSnapshots();
+    scoring = await scoreSignals();
+    sentiment = await saveSentimentSnapshots();
+    bias = await saveBiasSnapshots();
+  }
+
+  return NextResponse.json({ marketOpen, ingest, ...classify, prices, scoring, sentiment, bias });
 }
 
 export async function GET() {
