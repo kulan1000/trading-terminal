@@ -9,13 +9,15 @@ export const revalidate = 30;
 
 export default async function SentimentPage() {
   // Wrap each data source so one slow/failing API can't crash the whole page
+  const fallbackBias = { direction: "neutral" as const, score: 0, count: 0, activeCount: 0 };
+
   const [biases, hotAsset, histories, quotes, latestSignals, biasAgos] = await Promise.all([
-    Promise.all(ASSETS.map(async (asset) => ({ asset, ...(await getAssetBias(asset)) }))),
+    Promise.all(ASSETS.map(async (asset) => ({ asset, ...(await getAssetBias(asset).catch(() => fallbackBias)) }))),
     getHotAsset().catch(() => null),
-    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasHistory(asset) }))),
+    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasHistory(asset).catch(() => []) }))),
     getMarketQuotes().catch(() => [] as Awaited<ReturnType<typeof getMarketQuotes>>),
-    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getLatestSignal(asset) }))),
-    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasAgo(asset) }))),
+    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getLatestSignal(asset).catch(() => null) }))),
+    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasAgo(asset).catch(() => null) }))),
   ]);
 
   const historyMap = Object.fromEntries(histories.map((h) => [h.asset, h.data]));

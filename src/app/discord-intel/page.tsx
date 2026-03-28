@@ -27,9 +27,9 @@ export default async function DiscordIntelPage({ searchParams }: Props) {
   const hasFilters = !!(q || author || (channel && channel !== "all") || (asset && asset !== "all") || (signalType && signalType !== "all") || dateFrom || dateTo);
 
   const [messages, stats, briefing] = await Promise.all([
-    getFilteredFeed({ channel, asset, query: q, author, signalType, dateFrom, dateTo, limit: hasFilters ? 100 : 50 }),
-    getMessageStats(),
-    getDailyBriefing(),
+    getFilteredFeed({ channel, asset, query: q, author, signalType, dateFrom, dateTo, limit: hasFilters ? 100 : 50 }).catch(() => []),
+    getMessageStats().catch(() => ({ total: 0, processed: 0, signals: 0 })),
+    getDailyBriefing().catch(() => null),
   ]);
 
   const filterParts: string[] = [];
@@ -56,7 +56,7 @@ export default async function DiscordIntelPage({ searchParams }: Props) {
         </div>
       </div>
 
-      <DailyBriefingPanel data={briefing} />
+      {briefing && <DailyBriefingPanel data={briefing} />}
 
       <Suspense>
         <AdvancedSearch />

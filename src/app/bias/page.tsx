@@ -12,14 +12,16 @@ import { TraderLeaderboard } from "@/components/bias/trader-leaderboard";
 export const revalidate = 30;
 
 export default async function BiasPage() {
+  const fallbackBias = { direction: "neutral" as const, score: 0, count: 0 };
+
   const [biases, signals, messages, traderScores, targets, hotAsset, histories] = await Promise.all([
-    Promise.all(ASSETS.map(async (asset) => ({ asset, ...(await getAssetBias(asset)) }))),
-    getRecentSignals(),
-    getSignalFeed(),
-    getTraderScores(),
-    getRecentTargets(),
-    getHotAsset(),
-    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasHistory(asset) }))),
+    Promise.all(ASSETS.map(async (asset) => ({ asset, ...(await getAssetBias(asset).catch(() => fallbackBias)) }))),
+    getRecentSignals().catch(() => []),
+    getSignalFeed().catch(() => []),
+    getTraderScores().catch(() => ({} as Record<string, number>)),
+    getRecentTargets().catch(() => []),
+    getHotAsset().catch(() => null),
+    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasHistory(asset).catch(() => []) }))),
   ]);
 
   const historyMap = Object.fromEntries(histories.map((h) => [h.asset, h.data]));
