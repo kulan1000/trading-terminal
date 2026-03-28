@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { TimelineSignal } from "@/hooks/use-sentiment";
+import { fmtTime } from "@/lib/format-utils";
 
 const TYPE_SHAPE: Record<string, string> = {
   entry: "w-2.5 h-2.5 rounded-sm",
@@ -20,9 +21,7 @@ const DIR_COLOR: Record<string, string> = {
 const ASSET_FILTERS = ["All", "Gold", "Silver", "Oil"] as const;
 
 function timeLabel(time: string): string {
-  return new Date(time).toLocaleTimeString("sv-SE", {
-    hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm",
-  });
+  return fmtTime(time);
 }
 
 function minutesAgo(time: string): number {

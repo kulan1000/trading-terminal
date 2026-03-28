@@ -1,4 +1,5 @@
 import type { PositionedMarker } from "./marker-utils";
+import { fmtTime } from "@/lib/format-utils";
 
 interface Props {
   marker: PositionedMarker;
@@ -10,9 +11,7 @@ interface Props {
 
 /** Shared trade-signal tooltip used by both sparkline overlay and chart modal */
 export function MarkerTooltip({ marker: p, size = "small", expanded = false }: Props) {
-  const time = new Date(p.msg_timestamp).toLocaleTimeString("sv-SE", {
-    hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm",
-  });
+  const time = fmtTime(p.msg_timestamp);
   const date = new Date(p.msg_timestamp).toLocaleDateString("sv-SE", {
     weekday: "short", day: "numeric", month: "short", timeZone: "Europe/Stockholm",
   });

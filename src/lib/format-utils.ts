@@ -26,6 +26,13 @@ export function fmtTimeEpoch(epoch: number): string {
   });
 }
 
+/** "$3,045.20" for Gold/Silver, "$68.42" for Oil — asset-aware price formatting */
+export function fmtPrice(asset: string, price: number): string {
+  if (!price) return "—";
+  if (asset === "Oil") return `$${price.toFixed(2)}`;
+  return `$${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 export function fmtBig(n: number): string {
   if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
   if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
