@@ -8,11 +8,12 @@ import { SentimentAutoRefresh } from "@/components/bias/sentiment-auto-refresh";
 export const revalidate = 30;
 
 export default async function SentimentPage() {
+  // Wrap each data source so one slow/failing API can't crash the whole page
   const [biases, hotAsset, histories, quotes, latestSignals, biasAgos] = await Promise.all([
     Promise.all(ASSETS.map(async (asset) => ({ asset, ...(await getAssetBias(asset)) }))),
-    getHotAsset(),
+    getHotAsset().catch(() => null),
     Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasHistory(asset) }))),
-    getMarketQuotes(),
+    getMarketQuotes().catch(() => [] as Awaited<ReturnType<typeof getMarketQuotes>>),
     Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getLatestSignal(asset) }))),
     Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasAgo(asset) }))),
   ]);

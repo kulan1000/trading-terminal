@@ -48,10 +48,14 @@ async function fetchCeoDailyRef(asset: Asset): Promise<DailyRef> {
   const url = `https://new-api.ceo.ca/api/quotes/get_us_chart?symbol=${symbol}&time_period=1m`;
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
     const res = await fetch(url, {
       headers: { "User-Agent": "TradingTerminal/1.0" },
       cache: "no-store",
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
     if (!res.ok) return EMPTY_DAILY;
 
     const json = await res.json();
