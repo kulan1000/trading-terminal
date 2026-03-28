@@ -105,7 +105,7 @@ export function TradeMarkersOverlay({ markers, timestamps, toX, toY, min, max, w
       })}
 
       {/* Hover tooltip */}
-      {hovered && (() => {
+      {hovered !== null && (() => {
         const p = positioned.find((m) => m.id === hovered);
         if (!p) return null;
         const tipW = 90;
