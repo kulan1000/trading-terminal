@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { name: "Bias", href: "/bias", icon: TrendingUp },
+  { name: "Sentiment", href: "/sentiment", icon: TrendingUp },
   { name: "Scoring", href: "/scoring", icon: Trophy },
   { name: "Community", href: "/community", icon: MessageSquare },
   { name: "Discord Intel", href: "/discord-intel", icon: Search },

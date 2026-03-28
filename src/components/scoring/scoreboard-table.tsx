@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { TraderScore, ScoredSignal } from "@/hooks/use-scoring-data";
+import { winRateColor } from "@/lib/utils";
 import { TraderDrilldown } from "./trader-drilldown";
 
 type SortKey = "author" | "signals" | "winRate" | "avgScore" | "consistency";
@@ -82,7 +83,7 @@ export function ScoreboardTable({ traders, traderSignals }: Props) {
         </thead>
         <tbody>
           {sorted.map((t, i) => {
-            const wrColor = t.winRate >= 0.6 ? "text-tv-bull" : t.winRate >= 0.4 ? "text-tv-orange" : "text-tv-bear";
+            const wrColor = winRateColor(t.winRate);
             const scoreColor = t.avgScore > 0 ? "text-tv-bull" : t.avgScore < 0 ? "text-tv-bear" : "text-tv-secondary";
             const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`;
             const isExpanded = expanded === t.author;

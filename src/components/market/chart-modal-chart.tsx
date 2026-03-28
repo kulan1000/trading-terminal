@@ -3,6 +3,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import type { PositionedMarker } from "./marker-utils";
+import { fmtTimeEpoch } from "@/lib/format-utils";
 
 interface Props {
   data: number[];
@@ -97,9 +98,7 @@ export function ChartModalChart({
           const ts = timestamps[idx];
           if (!ts) continue;
           const x = toX(idx);
-          const label = new Date(ts * 1000).toLocaleTimeString("sv-SE", {
-            hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm",
-          });
+          const label = fmtTimeEpoch(ts);
           ticks.push(
             <g key={i}>
               <line x1={x} y1={H - 2} x2={x} y2={H + 4} stroke="#52525b" strokeWidth="0.5" />

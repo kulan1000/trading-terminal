@@ -6,8 +6,12 @@ import type { StockQuote } from "@/lib/data-ceo-stocks";
 
 export type SortKey = "symbol" | "price" | "changePercent" | "volume" | "vwap" | "shortVolume" | "marketCap";
 
-const SECTOR_LABELS: Record<string, string> = { gold: "Gold Miners", silver: "Silver", oil: "Oil & Gas" };
-const SECTOR_COLORS: Record<string, string> = { gold: "text-tv-yellow", silver: "text-tv-text", oil: "text-tv-orange" };
+const SECTOR_LABELS: Record<string, string> = {
+  gold: "Gold Miners", silver: "Silver", oil: "Oil & Gas",
+};
+const SECTOR_COLORS: Record<string, string> = {
+  gold: "text-tv-yellow", silver: "text-tv-text", oil: "text-tv-orange",
+};
 
 const COLUMNS: { key: SortKey; label: string; align: string }[] = [
   { key: "symbol", label: "Symbol", align: "text-left" },
@@ -44,18 +48,24 @@ export function SectorTable({
   if (quotes.length === 0) return null;
 
   return (
-    <div className="animate-fade-in rounded-lg border border-tv-border bg-tv-surface">
-      <div className="border-b border-tv-border px-5 py-3">
-        <h2 className={`font-sans text-sm font-semibold uppercase tracking-[0.5px] ${SECTOR_COLORS[sector] ?? "text-tv-text"}`}>
+    <div className="animate-fade-in overflow-hidden rounded-lg border border-tv-border bg-tv-surface">
+      {/* Glossy top sheen */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+
+      {/* Sector header */}
+      <div className="px-5 py-3">
+        <h2 className={`font-sans text-sm font-semibold uppercase tracking-wider ${SECTOR_COLORS[sector] ?? "text-tv-text"}`}>
           {SECTOR_LABELS[sector] ?? sector}
         </h2>
       </div>
+
+      {/* Table */}
       <table className="w-full font-mono text-[13px]">
         <thead>
-          <tr className="border-b border-tv-divider text-tv-secondary">
+          <tr className="border-y border-white/[0.04] bg-white/[0.02] text-tv-secondary">
             {COLUMNS.map((col) => (
               <th key={col.key}
-                className={`cursor-pointer select-none px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors hover:text-tv-text ${col.align}`}
+                className={`cursor-pointer select-none px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.1em] transition-colors hover:text-tv-text ${col.align}`}
                 onClick={() => onSort(col.key)}>
                 {col.label}
                 {sortKey === col.key && (
@@ -63,8 +73,8 @@ export function SectorTable({
                 )}
               </th>
             ))}
-            <th className="w-[110px] px-2 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.08em]">Intraday</th>
-            <th className="w-6 px-2 py-2" />
+            <th className="w-[110px] px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-[0.1em]">Intraday</th>
+            <th className="w-6 px-2 py-2.5" />
           </tr>
         </thead>
         <tbody>

@@ -1,55 +1,54 @@
-"use client";
+import { ASSETS, ASSET_PAIRS } from "@/lib/constants";
+import { getAssetBias } from "@/lib/queries";
+import { getHotAsset, getBiasHistory } from "@/lib/queries-bias";
+import { AssetBiasCard } from "@/components/bias/asset-bias-card";
+import { BiasSummary } from "@/components/bias/bias-summary";
+import { SentimentLive } from "@/components/sentiment/sentiment-live";
 
-import { useSentiment } from "@/hooks/use-sentiment";
-import { BiasGauge } from "@/components/sentiment/bias-gauge";
-import { SignalTimeline } from "@/components/sentiment/signal-timeline";
-import { SentimentAlerts } from "@/components/sentiment/sentiment-alerts";
+export const revalidate = 30;
 
-export default function SentimentPage() {
-  const { primary, extended, timeline, history, alerts, updatedAt, loading } = useSentiment();
+export default async function SentimentPage() {
+  const [biases, hotAsset, histories] = await Promise.all([
+    Promise.all(ASSETS.map(async (asset) => ({ asset, ...(await getAssetBias(asset)) }))),
+    getHotAsset(),
+    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasHistory(asset) }))),
+  ]);
+
+  const historyMap = Object.fromEntries(histories.map((h) => [h.asset, h.data]));
 
   return (
-    <div className="animate-fade-in space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
-          Short-Term Sentiment
-        </h1>
-        <div className="flex items-center gap-3 text-xs text-tv-secondary">
-          <span>60 min window · 20 min hot zone</span>
-          {updatedAt && (
-            <span className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-tv-bull" />
-              {new Date(updatedAt).toLocaleTimeString("sv-SE", {
-                hour: "2-digit", minute: "2-digit", second: "2-digit",
-                timeZone: "Europe/Stockholm",
-              })}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <span className="animate-pulse text-sm text-tv-secondary">
-            Loading sentiment data...
+    <div className="animate-fade-in space-y-6">
+      {/* Market Bias overview — server-rendered */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
+            Market Bias
+          </h1>
+          <span className="font-sans text-xs text-tv-secondary">
+            Gold &middot; Silver &middot; Oil
           </span>
         </div>
-      ) : (
-        <>
-          {/* Sentiment shift alerts */}
-          <SentimentAlerts alerts={alerts} />
 
-          {/* Bias gauges: one per asset */}
-          <div className="grid grid-cols-3 gap-4">
-            {primary.map((s, i) => (
-              <BiasGauge key={s.asset} sentiment={s} extended={extended[i]} history={history[s.asset]} />
-            ))}
-          </div>
+        <div className="grid grid-cols-3 gap-4">
+          {biases.map((b) => (
+            <AssetBiasCard
+              key={b.asset}
+              asset={b.asset}
+              pair={ASSET_PAIRS[b.asset]}
+              direction={b.direction}
+              score={b.score}
+              count={b.count}
+              isHot={hotAsset?.asset === b.asset}
+              history={historyMap[b.asset]}
+            />
+          ))}
+        </div>
 
-          {/* Signal timeline */}
-          <SignalTimeline signals={timeline} />
-        </>
-      )}
+        <BiasSummary />
+      </section>
+
+      {/* Real-time sentiment — client-rendered */}
+      <SentimentLive />
     </div>
   );
 }

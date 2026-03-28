@@ -5,7 +5,6 @@ import { useMarketData } from "@/hooks/use-market-data";
 import { useSentiment } from "@/hooks/use-sentiment";
 import { useSecondsAgo } from "@/hooks/use-seconds-ago";
 import { PriceCard } from "@/components/market/price-card";
-import { MarketOverview } from "@/components/market/market-overview";
 import { MarketStatus } from "@/components/market/market-status";
 
 export default function MarketPage() {
@@ -57,8 +56,6 @@ export default function MarketPage() {
               );
             })}
       </div>
-
-      {!loading && <MarketOverview quotes={quotes} />}
 
       <MarketStatus />
     </div>

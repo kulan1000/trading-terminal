@@ -1,4 +1,5 @@
 import type { TraderProfileData } from "@/hooks/use-trader-profile";
+import { winRateColor } from "@/lib/utils";
 
 const ASSET_COLORS: Record<string, string> = {
   Gold: "text-tv-yellow",
@@ -14,7 +15,7 @@ export function TraderStats({ data }: { data: TraderProfileData }) {
   const totalSignals = signals.length;
 
   // Score color
-  const scoreColor = winRate >= 0.6 ? "text-tv-bull" : winRate >= 0.4 ? "text-tv-orange" : "text-tv-bear";
+  const scoreColor = winRateColor(winRate);
 
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

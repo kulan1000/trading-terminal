@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { SparklineTooltip } from "./sparkline-tooltip";
 import { TradeMarkersOverlay } from "./trade-markers-overlay";
+import { fmtTimeEpoch } from "@/lib/format-utils";
 
 export interface TradeMarker {
   id: number;
@@ -90,7 +91,7 @@ export function Sparkline({
   const hx = hover !== null ? toX(hover) : 0;
   const hy = hover !== null ? toY(data[hover]) : 0;
   const hTime = hover !== null && timestamps?.[hover]
-    ? new Date(timestamps[hover] * 1000).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm" })
+    ? fmtTimeEpoch(timestamps[hover])
     : null;
 
   return (
