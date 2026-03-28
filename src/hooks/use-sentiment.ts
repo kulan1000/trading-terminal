@@ -14,17 +14,25 @@ export interface TimelineSignal {
   time: string;
 }
 
+export interface SentimentHistoryPoint {
+  net_score: number;
+  confidence: number;
+  bias: string;
+  created_at: string;
+}
+
 interface SentimentData {
   primary: AssetSentiment[];
   extended: AssetSentiment[];
   timeline: TimelineSignal[];
+  history: Record<string, SentimentHistoryPoint[]>;
   window: number;
   updatedAt: string;
 }
 
 export function useSentiment() {
   const [data, setData] = useState<SentimentData>({
-    primary: [], extended: [], timeline: [], window: 60, updatedAt: "",
+    primary: [], extended: [], timeline: [], history: {}, window: 60, updatedAt: "",
   });
   const [loading, setLoading] = useState(true);
 

@@ -3,6 +3,7 @@ import { processUnclassified } from "@/lib/classify-batch";
 import { pairTrades } from "@/lib/trade-pairing";
 import { savePriceSnapshots } from "@/lib/price-snapshots";
 import { scoreSignals } from "@/lib/score-signals";
+import { saveSentimentSnapshots } from "@/lib/sentiment-snapshots";
 
 // Vercel Cron calls this every 5 minutes
 export async function GET(request: Request) {
@@ -23,5 +24,8 @@ export async function GET(request: Request) {
   // 4) Score signals using time-horizon method
   const scoring = await scoreSignals();
 
-  return NextResponse.json({ snapshots, ...classify, ...pairing, scoring });
+  // 5) Save sentiment snapshots (for sparkline history)
+  const sentiment = await saveSentimentSnapshots();
+
+  return NextResponse.json({ snapshots, ...classify, ...pairing, scoring, sentiment });
 }

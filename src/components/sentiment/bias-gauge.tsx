@@ -1,6 +1,8 @@
 "use client";
 
 import type { AssetSentiment } from "@/lib/sentiment-engine";
+import type { SentimentHistoryPoint } from "@/hooks/use-sentiment";
+import { SentimentSparkline } from "./sentiment-sparkline";
 import { ASSET_PAIRS, DIRECTION_COLOR } from "@/lib/constants";
 import type { Asset } from "@/lib/types";
 
@@ -35,9 +37,10 @@ function ConfidenceDots({ value }: { value: number }) {
 interface Props {
   sentiment: AssetSentiment;
   extended?: AssetSentiment;
+  history?: SentimentHistoryPoint[];
 }
 
-export function BiasGauge({ sentiment: s, extended: ext }: Props) {
+export function BiasGauge({ sentiment: s, extended: ext, history }: Props) {
   const pair = ASSET_PAIRS[s.asset as Asset] ?? s.asset;
   const biasColor = DIRECTION_COLOR[s.bias] ?? "text-tv-text";
   const accelLabel = s.acceleration > 1.5 ? "ACCELERATING" : s.acceleration < 0.5 ? "FADING" : "STEADY";
@@ -70,6 +73,14 @@ export function BiasGauge({ sentiment: s, extended: ext }: Props) {
           </span>
         </div>
       </div>
+
+      {/* Sparkline: sentiment history */}
+      {history && (
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-[10px] text-tv-muted">2h trend</span>
+          <SentimentSparkline points={history} width={160} height={32} />
+        </div>
+      )}
 
       {/* Pressure bar */}
       <div className="mb-1">

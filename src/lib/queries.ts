@@ -159,9 +159,10 @@ export async function getHotAsset(): Promise<{ asset: Asset; count: number } | n
     .select("asset")
     .gte("created_at", since);
 
-  if (!data?.length) return null;
+  const rows = (data ?? []) as Array<{ asset: string }>;
+  if (!rows.length) return null;
   const counts: Record<string, number> = {};
-  for (const s of data) {
+  for (const s of rows) {
     counts[s.asset] = (counts[s.asset] || 0) + 1;
   }
   const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];

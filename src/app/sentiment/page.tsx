@@ -5,7 +5,7 @@ import { BiasGauge } from "@/components/sentiment/bias-gauge";
 import { SignalTimeline } from "@/components/sentiment/signal-timeline";
 
 export default function SentimentPage() {
-  const { primary, extended, timeline, updatedAt, loading } = useSentiment();
+  const { primary, extended, timeline, history, updatedAt, loading } = useSentiment();
 
   return (
     <div className="animate-fade-in space-y-4">
@@ -38,7 +38,7 @@ export default function SentimentPage() {
           {/* Bias gauges: one per asset */}
           <div className="grid grid-cols-3 gap-4">
             {primary.map((s, i) => (
-              <BiasGauge key={s.asset} sentiment={s} extended={extended[i]} />
+              <BiasGauge key={s.asset} sentiment={s} extended={extended[i]} history={history[s.asset]} />
             ))}
           </div>
 

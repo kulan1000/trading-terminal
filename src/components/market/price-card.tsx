@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { MarketQuote } from "@/lib/market-data";
+import type { AssetSentiment } from "@/lib/sentiment-engine";
 import { changeColor } from "@/lib/utils";
 import { AnimatedPrice } from "@/components/ui/animated-price";
 import { Sparkline } from "./sparkline";
@@ -12,12 +13,19 @@ const PAIRS: Record<string, string> = {
   Gold: "XAUUSD", Silver: "XAGUSD", Oil: "WTI",
 };
 
+const BIAS_STYLE: Record<string, { label: string; bg: string; text: string }> = {
+  bullish: { label: "BULLISH", bg: "bg-tv-bull/10", text: "text-tv-bull" },
+  bearish: { label: "BEARISH", bg: "bg-tv-bear/10", text: "text-tv-bear" },
+  neutral: { label: "NEUTRAL", bg: "bg-tv-orange/10", text: "text-tv-orange" },
+};
+
 interface PriceCardProps {
   quote: MarketQuote;
   pair: string;
+  sentiment?: AssetSentiment;
 }
 
-export function PriceCard({ quote, pair }: PriceCardProps) {
+export function PriceCard({ quote, pair, sentiment }: PriceCardProps) {
   const [expanded, setExpanded] = useState(false);
   const isUp = quote.change >= 0;
   const color = changeColor(quote.change);
@@ -102,12 +110,19 @@ export function PriceCard({ quote, pair }: PriceCardProps) {
         </div>
       )}
 
-      {/* Marker count badge */}
-      {markers.length > 0 && (
-        <div className="px-4 pb-2 text-[10px] text-tv-muted">
-          {markers.length} trade signal{markers.length !== 1 ? "s" : ""} (48h)
-        </div>
-      )}
+      {/* Marker count + sentiment badge */}
+      <div className="flex items-center justify-between px-4 pb-2">
+        {markers.length > 0 ? (
+          <span className="text-[10px] text-tv-muted">
+            {markers.length} trade signal{markers.length !== 1 ? "s" : ""} (48h)
+          </span>
+        ) : <span />}
+        {sentiment && sentiment.signalCount > 0 && (
+          <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${BIAS_STYLE[sentiment.bias]?.bg ?? ""} ${BIAS_STYLE[sentiment.bias]?.text ?? "text-tv-secondary"}`}>
+            {BIAS_STYLE[sentiment.bias]?.label ?? "—"} {sentiment.confidence.toFixed(1)}
+          </span>
+        )}
+      </div>
     </div>
     </>
   );

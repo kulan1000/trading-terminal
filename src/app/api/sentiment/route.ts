@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { calcSentiment, WINDOWS } from "@/lib/sentiment-engine";
 import type { RawSignal } from "@/lib/sentiment-engine";
+import { getSentimentHistory } from "@/lib/sentiment-snapshots";
 import { ASSETS } from "@/lib/constants";
 
 export const revalidate = 15; // refresh every 15s for near-realtime
@@ -35,10 +36,21 @@ export async function GET() {
     time: s.created_at,
   }));
 
+  // Sentiment history for sparklines (last 2 hours per asset)
+  const historyResults = await Promise.all(
+    ASSETS.map(async (asset) => ({
+      asset,
+      points: await getSentimentHistory(asset, 2),
+    }))
+  );
+  const history: Record<string, Array<{ net_score: number; confidence: number; bias: string; created_at: string }>> = {};
+  for (const h of historyResults) history[h.asset] = h.points;
+
   return NextResponse.json({
     primary,
     extended,
     timeline,
+    history,
     window: WINDOWS.primary,
     updatedAt: new Date().toISOString(),
   });
