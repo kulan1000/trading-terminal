@@ -113,14 +113,14 @@ export function Sparkline({
         )}
       </svg>
 
-      {/* Signal strip below chart: clean colored ticks for entries/exits */}
+      {/* Signal strip below chart */}
       {markers?.length ? (
         <TradeMarkersOverlay
           markers={markers}
           timestamps={timestamps ?? []}
           toX={toX}
           width={width}
-          stripHeight={16}
+          stripHeight={28}
         />
       ) : null}
 
