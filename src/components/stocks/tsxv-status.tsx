@@ -82,20 +82,20 @@ export function TsxvStatus() {
   }, []);
 
   return (
-    <div className="flex items-center gap-2 font-mono text-xs">
+    <div className="flex items-center gap-2.5 font-sans text-[12px]">
       <span
         className={`inline-block h-2 w-2 rounded-full ${
-          state.open ? "animate-pulse bg-terminal-green" : "bg-terminal-red"
+          state.open ? "animate-pulse bg-tv-bull" : "bg-tv-bear"
         }`}
       />
-      <span className="text-terminal-text">{state.label}</span>
+      <span className="font-medium text-white/70">{state.label}</span>
       {state.countdown && (
-        <span className="text-terminal-muted">
+        <span className="text-white/30">
           {state.open ? "closes in " : "opens in "}
           {state.countdown}
         </span>
       )}
-      <span className="text-terminal-muted/60">{state.localTime}</span>
+      <span className="font-mono text-[11px] text-white/20">{state.localTime}</span>
     </div>
   );
 }

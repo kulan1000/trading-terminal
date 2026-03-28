@@ -35,7 +35,7 @@ export default function StocksPage() {
     <div className="animate-fade-in space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
+          <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">
             Stocks — Watchlist
           </h1>
           <button onClick={() => setShowAdd(true)}

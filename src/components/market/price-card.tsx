@@ -57,7 +57,7 @@ export function PriceCard({ quote, pair, sentiment, variant = "default" }: Price
         />
       )}
       <div
-        className={`animate-fade-in cursor-pointer overflow-hidden rounded-lg border ${borderColor} bg-tv-surface font-mono transition-all duration-200 hover:border-tv-border-hover hover:bg-tv-elevated ${isHero ? `${glowColor} hover:scale-[1.005]` : ""}`}
+        className={`animate-fade-in cursor-pointer overflow-hidden rounded-xl border ${borderColor} bg-[#111111] transition-all duration-200 hover:border-white/[0.12] hover:bg-[#151515] ${isHero ? `${glowColor} hover:scale-[1.005]` : ""}`}
         onClick={() => setExpanded(true)}
       >
         {/* Asset accent bar on top + glossy sheen */}
@@ -69,7 +69,7 @@ export function PriceCard({ quote, pair, sentiment, variant = "default" }: Price
         {/* Header row */}
         <div className={`flex items-baseline justify-between ${isHero ? "px-5 pt-4" : "px-4 pt-3"}`}>
           <div className="flex items-center gap-3">
-            <span className={`font-sans ${isHero ? "text-base font-semibold" : "text-xs"} text-tv-heading`}>
+            <span className={`font-sans ${isHero ? "text-[15px] font-semibold" : "text-[13px] font-medium"} text-white`}>
               {quote.asset} — {pair}
             </span>
             {sentiment && sentiment.signalCount > 0 && (
@@ -78,7 +78,7 @@ export function PriceCard({ quote, pair, sentiment, variant = "default" }: Price
               </span>
             )}
           </div>
-          <span className="text-xs text-tv-secondary">
+          <span className="font-mono text-[11px] text-white/30">
             {quote.volume > 0 ? `Vol: ${(quote.volume / 1000).toFixed(0)}K` : ""}
           </span>
         </div>
@@ -87,9 +87,9 @@ export function PriceCard({ quote, pair, sentiment, variant = "default" }: Price
         <div className={`flex items-baseline gap-3 ${isHero ? "px-5 pt-2" : "px-4 pt-1"}`}>
           <AnimatedPrice
             value={quote.price}
-            className={`${isHero ? "text-4xl" : "text-3xl"} font-bold text-tv-heading`}
+            className={`font-mono ${isHero ? "text-[36px]" : "text-[28px]"} font-bold tabular-nums text-white`}
           />
-          <span className={`${isHero ? "text-base" : "text-sm"} font-semibold ${color}`}>
+          <span className={`font-mono ${isHero ? "text-[14px]" : "text-[12px]"} font-medium tabular-nums ${color}`}>
             {arrow}{" "}
             <AnimatedPrice value={Math.abs(quote.change)} className="" />
             {" ("}
@@ -99,9 +99,9 @@ export function PriceCard({ quote, pair, sentiment, variant = "default" }: Price
         </div>
 
         {/* High / Low */}
-        <div className={`flex gap-4 ${isHero ? "px-5 pt-1" : "px-4 pt-1"} text-xs text-tv-secondary`}>
-          <span>H: <AnimatedPrice value={quote.high} className="text-tv-text" /></span>
-          <span>L: <AnimatedPrice value={quote.low} className="text-tv-text" /></span>
+        <div className={`flex gap-4 ${isHero ? "px-5 pt-1" : "px-4 pt-1"} font-mono text-[11px] text-white/30`}>
+          <span>H: <AnimatedPrice value={quote.high} className="text-white/60" /></span>
+          <span>L: <AnimatedPrice value={quote.low} className="text-white/60" /></span>
         </div>
 
         {/* Intraday chart — bigger for hero variant */}
@@ -119,7 +119,7 @@ export function PriceCard({ quote, pair, sentiment, variant = "default" }: Price
         {/* Marker count */}
         <div className={`flex items-center justify-between ${isHero ? "px-5 pb-3" : "px-4 pb-2"}`}>
           {markers.length > 0 ? (
-            <span className="text-[10px] text-tv-muted">
+            <span className="font-sans text-[10px] text-white/20">
               {markers.length} trade signal{markers.length !== 1 ? "s" : ""} (48h)
             </span>
           ) : <span />}

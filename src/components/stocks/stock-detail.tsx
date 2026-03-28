@@ -6,8 +6,8 @@ import { fmtNum, fmtBig } from "@/lib/format-utils";
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4">
-      <span className="font-sans text-tv-secondary">{label}</span>
-      <span className="tabular-nums text-tv-text">{value}</span>
+      <span className="font-sans text-[12px] text-white/35">{label}</span>
+      <span className="font-mono text-[12px] tabular-nums text-white/70">{value}</span>
     </div>
   );
 }
@@ -18,18 +18,18 @@ function RangeBar({ low, high, current, label }: { low: number; high: number; cu
   const pct = Math.max(0, Math.min(100, ((current - low) / range) * 100));
 
   return (
-    <div className="space-y-1">
-      <div className="flex justify-between font-sans text-tv-secondary">
-        <span>{label}</span>
-        <span className="font-mono tabular-nums">{fmtNum(low)} — {fmtNum(high)}</span>
+    <div className="space-y-1.5">
+      <div className="flex justify-between">
+        <span className="font-sans text-[12px] text-white/35">{label}</span>
+        <span className="font-mono text-[11px] tabular-nums text-white/50">{fmtNum(low)} — {fmtNum(high)}</span>
       </div>
-      <div className="relative h-1.5 w-full rounded-full bg-tv-border/50">
+      <div className="relative h-1.5 w-full rounded-full bg-white/[0.06]">
         <div
-          className="absolute top-0 left-0 h-full rounded-full bg-tv-bull/40"
+          className="absolute top-0 left-0 h-full rounded-full bg-tv-bull/30"
           style={{ width: `${pct}%` }}
         />
         <div
-          className="absolute top-1/2 h-2.5 w-0.5 -translate-y-1/2 rounded bg-tv-text"
+          className="absolute top-1/2 h-2.5 w-0.5 -translate-y-1/2 rounded bg-white"
           style={{ left: `${pct}%` }}
         />
       </div>
@@ -40,15 +40,15 @@ function RangeBar({ low, high, current, label }: { low: number; high: number; cu
 export function StockDetail({ q }: { q: StockQuote }) {
   if (!q.hasCeoData) {
     return (
-      <div className="px-4 py-3 text-xs text-tv-secondary">
+      <div className="px-6 py-4 font-sans text-[12px] text-white/30">
         Limited data for {q.symbol} — only price from CEO.ca chart (15min delay)
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-3 gap-6 px-4 py-3 font-mono text-xs">
-      <div className="space-y-1.5">
+    <div className="grid grid-cols-3 gap-8 px-6 py-4">
+      <div className="space-y-2">
         <Stat label="Prev Close" value={fmtNum(q.prevClose)} />
         <Stat label="Day High" value={fmtNum(q.dayHigh)} />
         <Stat label="Day Low" value={fmtNum(q.dayLow)} />
@@ -61,7 +61,7 @@ export function StockDetail({ q }: { q: StockQuote }) {
         )}
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Stat label="Market Cap" value={fmtBig(q.marketCap)} />
         <Stat label="Shares" value={q.sharesOutstanding > 0 ? `${(q.sharesOutstanding / 1e6).toFixed(1)}M` : "—"} />
         <Stat label="EPS" value={q.eps !== 0 ? fmtNum(q.eps) : "—"} />
@@ -70,7 +70,7 @@ export function StockDetail({ q }: { q: StockQuote }) {
         <Stat label="Liabilities" value={fmtBig(q.liabilities)} />
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Stat label="Avg Vol (30d)" value={q.avgVolume > 0 ? `${(q.avgVolume / 1e3).toFixed(0)}K` : "—"} />
         <Stat label="$ Volume" value={q.dollarVolume > 0 ? fmtBig(q.dollarVolume) : "—"} />
         <Stat label="Beta" value={q.beta > 0 ? fmtNum(q.beta, 2) : "—"} />
@@ -84,7 +84,7 @@ export function StockDetail({ q }: { q: StockQuote }) {
         )}
       </div>
 
-      <div className="col-span-3 space-y-2 border-t border-tv-divider pt-2">
+      <div className="col-span-3 space-y-3 border-t border-white/[0.04] pt-3">
         <RangeBar low={q.dayLow} high={q.dayHigh} current={q.price} label="Day Range" />
         <RangeBar low={q.yearLow} high={q.yearHigh} current={q.price} label="52 Week Range" />
       </div>

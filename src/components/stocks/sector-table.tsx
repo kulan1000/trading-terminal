@@ -9,14 +9,17 @@ export type SortKey = "symbol" | "price" | "changePercent" | "volume" | "vwap" |
 const SECTOR_LABELS: Record<string, string> = {
   gold: "Gold Miners", silver: "Silver", oil: "Oil & Gas",
 };
+const SECTOR_ACCENT: Record<string, string> = {
+  gold: "#FFD700", silver: "#C0C5CE", oil: "#5C3D1A",
+};
 const SECTOR_COLORS: Record<string, string> = {
-  gold: "text-tv-yellow", silver: "text-tv-text", oil: "text-tv-orange",
+  gold: "text-yellow-400", silver: "text-gray-300", oil: "text-orange-400",
 };
 
 const COLUMNS: { key: SortKey; label: string; align: string }[] = [
   { key: "symbol", label: "Symbol", align: "text-left" },
   { key: "price", label: "Price", align: "text-right" },
-  { key: "changePercent", label: "Change", align: "text-right" },
+  { key: "changePercent", label: "Change", align: "text-center" },
   { key: "volume", label: "Vol / Avg", align: "text-right" },
   { key: "vwap", label: "VWAP", align: "text-right" },
   { key: "shortVolume", label: "Shorts", align: "text-right" },
@@ -47,25 +50,27 @@ export function SectorTable({
   const sorted = useMemo(() => sortQuotes(quotes, sortKey, sortAsc), [quotes, sortKey, sortAsc]);
   if (quotes.length === 0) return null;
 
+  const accent = SECTOR_ACCENT[sector] ?? "#2962FF";
+
   return (
-    <div className="animate-fade-in overflow-hidden rounded-lg border border-tv-border bg-tv-surface">
-      {/* Glossy top sheen */}
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+    <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
+      {/* Sector accent line */}
+      <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} />
 
       {/* Sector header */}
-      <div className="px-5 py-3">
-        <h2 className={`font-sans text-sm font-semibold uppercase tracking-wider ${SECTOR_COLORS[sector] ?? "text-tv-text"}`}>
+      <div className="px-6 py-4">
+        <h2 className={`font-sans text-[15px] font-semibold tracking-wide ${SECTOR_COLORS[sector] ?? "text-white"}`}>
           {SECTOR_LABELS[sector] ?? sector}
         </h2>
       </div>
 
       {/* Table */}
-      <table className="w-full font-mono text-[13px]">
+      <table className="w-full text-[13px]">
         <thead>
-          <tr className="border-y border-white/[0.04] bg-white/[0.02] text-tv-secondary">
+          <tr className="border-y border-white/[0.04] bg-white/[0.015]">
             {COLUMNS.map((col) => (
               <th key={col.key}
-                className={`cursor-pointer select-none px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.1em] transition-colors hover:text-tv-text ${col.align}`}
+                className={`cursor-pointer select-none px-6 py-2.5 font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40 transition-colors hover:text-white/70 ${col.align}`}
                 onClick={() => onSort(col.key)}>
                 {col.label}
                 {sortKey === col.key && (
@@ -73,8 +78,10 @@ export function SectorTable({
                 )}
               </th>
             ))}
-            <th className="w-[110px] px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-[0.1em]">Intraday</th>
-            <th className="w-6 px-2 py-2.5" />
+            <th className="w-[100px] px-3 py-2.5 font-sans text-left text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">
+              Intraday
+            </th>
+            <th className="w-8" />
           </tr>
         </thead>
         <tbody>

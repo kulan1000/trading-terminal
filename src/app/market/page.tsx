@@ -16,7 +16,7 @@ export default function MarketPage() {
     <div className="animate-fade-in space-y-4">
       <div className="flex items-baseline justify-between">
         <div className="flex items-center gap-2.5">
-          <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
+          <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">
             Market — Live Prices
           </h1>
           {!loading && lastUpdated && (
@@ -26,7 +26,7 @@ export default function MarketPage() {
             </span>
           )}
         </div>
-        <span className="font-mono text-xs text-tv-secondary">
+        <span className="font-sans text-[12px] text-white/40">
           {loading
             ? "Loading..."
             : lastUpdated
