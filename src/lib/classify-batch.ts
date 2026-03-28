@@ -61,7 +61,7 @@ export async function processUnclassified(limit = 50) {
 
     const results = await classifyMessage(msg.content, msg.channel, contextMessages, marketOpen);
     for (const result of results) {
-      if (result.asset && result.direction && result.confidence) {
+      if (result.asset && result.direction && result.confidence != null) {
         // Hard safety net: block entry/exited when market is closed
         // GPT should already handle this via prompt, but this prevents any leaks
         let sigType = result.signal_type ?? "opinion";

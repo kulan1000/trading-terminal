@@ -27,11 +27,11 @@ const COMMODITY_KEYWORDS = new RegExp(
     // Oil
     "\\boil\\b", "crude", "wti", "brent", "\\bcl\\b", "uso", "uco", "sco",
     "olja", "energy", "petroleum", "opec", "ukoil",
-    // General
-    "commodit", "metal", "long", "short", "bull", "bear",
-    "bought", "sold", "buying", "selling", "position", "trade",
-    "entry", "exit", "profit", "loss", "stop", "target",
-    "calls", "puts", "option",
+    // General (word-bounded to reduce false positives)
+    "commodit", "\\bmetal", "\\blong\\b", "\\bshort\\b", "bull", "bear",
+    "\\bbought\\b", "\\bsold\\b", "\\bbuying\\b", "\\bselling\\b", "\\bposition\\b", "\\btrade",
+    "\\bentry\\b", "\\bexit", "\\bprofit", "\\bloss\\b", "\\bstop\\b", "\\btarget",
+    "\\bcalls\\b", "\\bputs\\b", "\\boption",
   ].join("|"),
   "i"
 );

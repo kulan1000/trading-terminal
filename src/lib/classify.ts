@@ -41,7 +41,11 @@ export async function classifyMessage(
     response_format: { type: "json_object" },
   });
 
-  const text = response.choices[0]?.message?.content ?? "";
+  const choice = response.choices[0];
+  if (choice?.finish_reason === "length") {
+    console.warn("[classify] Response truncated (hit max_tokens). Message:", content.slice(0, 80));
+  }
+  const text = choice?.message?.content ?? "";
   try {
     const raw = JSON.parse(text);
     // JSON mode returns an object — extract signals array
@@ -59,7 +63,8 @@ export async function classifyMessage(
         seen.add(key);
         return true;
       });
-  } catch {
+  } catch (err) {
+    console.error("[classify] JSON parse error:", err, "Raw response:", text.slice(0, 200));
     return [];
   }
 }
