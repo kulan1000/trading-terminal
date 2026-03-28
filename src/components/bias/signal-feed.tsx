@@ -1,11 +1,12 @@
 import Link from "next/link";
 import type { FeedMessage, SignalTag } from "@/lib/types";
 import { ASSET_TAG_COLORS } from "@/lib/constants";
+import { fmtTime } from "@/lib/format-utils";
 
 const STRENGTH_STYLE: Record<string, string> = {
-  strong: "border-l-2 border-tv-blue",
-  medium: "border-l-2 border-tv-secondary",
-  weak: "border-l border-tv-border opacity-80",
+  strong: "border-l-2 border-l-[#2962FF]",
+  medium: "border-l-2 border-l-white/20",
+  weak: "border-l border-l-white/10 opacity-80",
 };
 
 function ActionTag({ signal }: { signal: SignalTag }) {
@@ -13,12 +14,12 @@ function ActionTag({ signal }: { signal: SignalTag }) {
 
   if (!signal_type || signal_type === "opinion") {
     const dir: Record<string, { label: string; cls: string }> = {
-      bullish: { label: "BULLISH", cls: "bg-tv-bull/20 text-tv-bull" },
-      bearish: { label: "BEARISH", cls: "bg-tv-bear/20 text-tv-bear" },
-      neutral: { label: "NEUTRAL", cls: "bg-tv-orange/20 text-tv-orange" },
+      bullish: { label: "BULLISH", cls: "bg-[#26A69A]/15 text-[#26A69A]" },
+      bearish: { label: "BEARISH", cls: "bg-[#EF5350]/15 text-[#EF5350]" },
+      neutral: { label: "NEUTRAL", cls: "bg-[#FF9800]/15 text-[#FF9800]" },
     };
     const d = dir[direction] ?? dir.neutral;
-    return <span className={`rounded-[4px] px-1.5 py-0.5 font-mono text-[11px] font-semibold ${d.cls}`}>{d.label}</span>;
+    return <span className={`rounded-md px-2 py-0.5 font-sans text-[10px] font-bold ${d.cls}`}>{d.label}</span>;
   }
 
   const posLabel = position === "short" ? "SHORT" : "LONG";
@@ -27,46 +28,46 @@ function ActionTag({ signal }: { signal: SignalTag }) {
   const combos: Record<string, { label: string; cls: string }> = {
     "entry-long": {
       label: "ENTRY LONG",
-      cls: "bg-tv-bull/25 text-tv-bull ring-1 ring-tv-bull/40",
+      cls: "bg-[#26A69A]/25 text-[#26A69A] ring-1 ring-[#26A69A]/40",
     },
     "entry-short": {
       label: "ENTRY SHORT",
-      cls: "bg-tv-bear/25 text-tv-bear ring-1 ring-tv-bear/40",
+      cls: "bg-[#EF5350]/25 text-[#EF5350] ring-1 ring-[#EF5350]/40",
     },
     "position-long": {
       label: "CONVICTION LONG",
-      cls: "bg-tv-bull/10 text-tv-bull ring-1 ring-tv-bull/20",
+      cls: "bg-[#26A69A]/10 text-[#26A69A] ring-1 ring-[#26A69A]/20",
     },
     "position-short": {
       label: "CONVICTION SHORT",
-      cls: "bg-tv-bear/10 text-tv-bear ring-1 ring-tv-bear/20",
+      cls: "bg-[#EF5350]/10 text-[#EF5350] ring-1 ring-[#EF5350]/20",
     },
     "target-long": {
       label: "TARGET",
-      cls: "bg-tv-blue/20 text-tv-blue ring-1 ring-tv-blue/30",
+      cls: "bg-[#2962FF]/20 text-[#2962FF] ring-1 ring-[#2962FF]/30",
     },
     "target-short": {
       label: "TARGET",
-      cls: "bg-tv-blue/20 text-tv-blue ring-1 ring-tv-blue/30",
+      cls: "bg-[#2962FF]/20 text-[#2962FF] ring-1 ring-[#2962FF]/30",
     },
     "exited-long": {
       label: "EXIT LONG",
-      cls: "bg-tv-input/50 text-tv-secondary ring-1 ring-tv-border",
+      cls: "bg-white/[0.04] text-white/50 ring-1 ring-white/[0.06]",
     },
     "exited-short": {
       label: "EXIT SHORT",
-      cls: "bg-tv-input/50 text-tv-secondary ring-1 ring-tv-border",
+      cls: "bg-white/[0.04] text-white/50 ring-1 ring-white/[0.06]",
     },
   };
 
   const key = `${signal_type}-${position ?? (isShort ? "short" : "long")}`;
   const combo = combos[key] ?? {
     label: `${signal_type.toUpperCase()} ${posLabel}`,
-    cls: "bg-tv-input text-tv-secondary",
+    cls: "bg-white/[0.04] text-white/50",
   };
 
   return (
-    <span className={`rounded-[4px] px-1.5 py-0.5 font-mono text-[11px] font-semibold uppercase ${combo.cls}`}>
+    <span className={`rounded-md px-2 py-0.5 font-sans text-[10px] font-bold uppercase ${combo.cls}`}>
       {combo.label}
     </span>
   );
@@ -74,15 +75,15 @@ function ActionTag({ signal }: { signal: SignalTag }) {
 
 function SignalRow({ signal, index }: { signal: SignalTag; index: number }) {
   return (
-    <div key={index} className="mt-1 flex flex-wrap items-center gap-1">
+    <div key={index} className="mt-1.5 flex flex-wrap items-center gap-1.5">
       <span
-        className={`rounded-[4px] px-1.5 py-0.5 font-mono text-[11px] font-semibold uppercase ${ASSET_TAG_COLORS[signal.asset] ?? "bg-tv-input text-tv-secondary"}`}
+        className={`rounded-md px-2 py-0.5 font-sans text-[10px] font-bold uppercase ${ASSET_TAG_COLORS[signal.asset] ?? "bg-white/[0.04] text-white/50"}`}
       >
         {signal.asset}
       </span>
       <ActionTag signal={signal} />
       {signal.interpretation && (
-        <span className="ml-1 max-w-[60%] truncate text-[10px] italic text-tv-secondary">
+        <span className="ml-1 max-w-[60%] truncate font-sans text-[10px] italic text-white/40">
           {signal.interpretation}
         </span>
       )}
@@ -92,9 +93,9 @@ function SignalRow({ signal, index }: { signal: SignalTag; index: number }) {
 
 function ScoreBadge({ winRate }: { winRate: number }) {
   const pct = Math.round(winRate * 100);
-  const color = winRate >= 0.6 ? "text-tv-bull bg-tv-bull/15" : winRate >= 0.4 ? "text-tv-orange bg-tv-orange/15" : "text-tv-bear bg-tv-bear/15";
+  const color = winRate >= 0.6 ? "text-[#26A69A] bg-[#26A69A]/15" : winRate >= 0.4 ? "text-[#FF9800] bg-[#FF9800]/15" : "text-[#EF5350] bg-[#EF5350]/15";
   return (
-    <span className={`rounded-[4px] px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums ${color}`} title={`Win rate: ${pct}%`}>
+    <span className={`rounded-md px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums ${color}`} title={`Win rate: ${pct}%`}>
       {pct}%
     </span>
   );
@@ -107,36 +108,38 @@ interface FeedProps {
 
 export function SignalFeed({ messages, traderScores }: FeedProps) {
   return (
-    <div className="animate-fade-in rounded-lg border border-tv-border bg-tv-surface p-5">
-      <h3 className="mb-4 font-sans text-sm font-semibold uppercase tracking-[0.5px] text-tv-heading">
-        Signal Feed
-      </h3>
-      <div className="space-y-3">
+    <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
+      {/* Glossy sheen */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+
+      <div className="px-5 pt-4 pb-3">
+        <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">
+          Signal Feed
+        </h3>
+      </div>
+
+      <div className="space-y-2.5 px-5 pb-5">
         {messages.map((m) => {
           const topStrength = m.assets[0]?.strength ?? "medium";
           return (
             <div
               key={m.id}
-              className={`rounded-md border border-tv-border/60 bg-tv-bg/50 p-3 transition-all duration-150 hover:border-tv-border-hover hover:bg-tv-elevated/30 ${STRENGTH_STYLE[topStrength] ?? ""}`}
+              className={`rounded-lg border border-white/[0.04] bg-white/[0.02] p-4 transition-all duration-150 hover:border-white/[0.08] hover:bg-white/[0.035] ${STRENGTH_STYLE[topStrength] ?? ""}`}
             >
-              <div className="flex items-center gap-1.5 text-xs">
+              <div className="flex items-center gap-1.5">
                 <Link href={`/trader/${encodeURIComponent(m.author)}`}
-                  className="font-sans font-bold text-tv-blue transition-colors hover:text-tv-blue-hover hover:underline">
+                  className="font-sans text-[13px] font-semibold text-white transition-colors hover:text-[#2962FF] hover:underline">
                   {m.author}
                 </Link>
                 {traderScores?.[m.author] != null && (
                   <ScoreBadge winRate={traderScores[m.author]} />
                 )}
-                <span className="text-tv-secondary">#{m.channel}</span>
-                <span className="ml-auto font-mono text-tv-muted">
-                  {new Date(m.timestamp).toLocaleTimeString("sv-SE", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    timeZone: "Europe/Stockholm",
-                  })}
+                <span className="font-sans text-[11px] text-white/25">#{m.channel}</span>
+                <span className="ml-auto font-mono text-[11px] text-white/20">
+                  {fmtTime(m.timestamp)}
                 </span>
               </div>
-              <p className="mt-1 text-xs leading-relaxed text-tv-text">
+              <p className="mt-1.5 font-sans text-[12px] leading-relaxed text-white/60">
                 {m.content}
               </p>
               {m.assets.map((a, i) => (
@@ -146,7 +149,7 @@ export function SignalFeed({ messages, traderScores }: FeedProps) {
           );
         })}
         {!messages.length && (
-          <p className="text-xs italic text-tv-secondary">No signals yet</p>
+          <p className="font-sans text-[12px] italic text-white/30">No signals yet</p>
         )}
       </div>
     </div>

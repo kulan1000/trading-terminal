@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import type { Asset } from "@/lib/types";
-import { DIRECTION_COLOR, DIRECTION_BG, ASSET_PAIRS } from "@/lib/constants";
+import { ASSET_PAIRS } from "@/lib/constants";
+import { fmtPrice } from "@/lib/format-utils";
 import { BiasSparkline } from "./bias-sparkline";
 import { BiasDetailModal } from "./bias-detail-modal";
 
@@ -28,11 +29,23 @@ interface Props {
   biases: BiasData[];
 }
 
-function formatPrice(asset: string, price: number) {
-  if (!price) return "—";
-  if (asset === "Oil") return `$${price.toFixed(2)}`;
-  return `$${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
+const DIR_TEXT: Record<string, string> = {
+  bullish: "text-[#26A69A]",
+  bearish: "text-[#EF5350]",
+  neutral: "text-[#FF9800]",
+};
+
+const DIR_GLOW: Record<string, string> = {
+  bullish: "shadow-[0_0_50px_-8px_rgba(38,166,154,0.3),0_0_20px_-4px_rgba(38,166,154,0.12)]",
+  bearish: "shadow-[0_0_50px_-8px_rgba(239,83,80,0.3),0_0_20px_-4px_rgba(239,83,80,0.12)]",
+  neutral: "",
+};
+
+const DIR_ACCENT: Record<string, string> = {
+  bullish: "#26A69A",
+  bearish: "#EF5350",
+  neutral: "#FF9800",
+};
 
 export function MarketBiasSection({ biases }: Props) {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
@@ -45,70 +58,72 @@ export function MarketBiasSection({ biases }: Props) {
           const changePos = b.change >= 0;
           const bullPct = b.score;
           const bearPct = 100 - b.score;
+          const accent = DIR_ACCENT[b.direction] ?? "#FF9800";
 
           return (
             <button
               key={b.asset}
               onClick={() => setSelectedAsset(b.asset)}
-              className={`group animate-fade-in cursor-pointer rounded-lg border p-5 text-left transition-all duration-200 hover:border-tv-border-hover hover:scale-[1.01] ${DIRECTION_BG[b.direction]} ${
-                b.direction === "bullish" ? "shadow-[0_0_30px_-10px_rgba(38,166,154,0.2)]" :
-                b.direction === "bearish" ? "shadow-[0_0_30px_-10px_rgba(239,83,80,0.2)]" :
-                ""
-              }`}
+              className={`group animate-fade-in cursor-pointer overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111] text-left transition-all duration-200 hover:border-white/[0.12] hover:bg-[#151515] hover:scale-[1.005] ${DIR_GLOW[b.direction] ?? ""}`}
             >
-              {/* Top: Asset name + price */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-sans text-sm font-semibold uppercase tracking-[0.5px] text-tv-secondary">
-                    {b.asset} — {ASSET_PAIRS[b.asset]}
-                  </h3>
-                  {b.isHot && (
-                    <span className="animate-pulse rounded-full bg-tv-orange/20 px-2 py-0.5 text-[9px] font-bold uppercase text-tv-orange ring-1 ring-tv-orange/30">
-                      Hot
-                    </span>
+              {/* Accent gradient line */}
+              <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} />
+
+              <div className="px-5 pt-4 pb-4">
+                {/* Top: Asset name + price */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-sans text-[13px] font-medium text-white/50">
+                      {b.asset} — {ASSET_PAIRS[b.asset]}
+                    </h3>
+                    {b.isHot && (
+                      <span className="animate-pulse rounded-md bg-[#FF9800]/20 px-2 py-0.5 font-sans text-[9px] font-bold uppercase text-[#FF9800] ring-1 ring-[#FF9800]/30">
+                        Hot
+                      </span>
+                    )}
+                  </div>
+                  {b.price > 0 && (
+                    <div className="text-right">
+                      <span className="font-mono text-[13px] font-bold tabular-nums text-white">
+                        {fmtPrice(b.asset, b.price)}
+                      </span>
+                      <span className={`ml-1.5 font-mono text-[11px] font-semibold tabular-nums ${changePos ? "text-[#26A69A]" : "text-[#EF5350]"}`}>
+                        {changePos ? "+" : ""}{b.changePercent.toFixed(2)}%
+                      </span>
+                    </div>
                   )}
                 </div>
-                {b.price > 0 && (
-                  <div className="text-right">
-                    <span className="font-mono text-sm font-bold text-tv-heading">
-                      {formatPrice(b.asset, b.price)}
-                    </span>
-                    <span className={`ml-1.5 font-mono text-[11px] font-semibold ${changePos ? "text-tv-bull" : "text-tv-bear"}`}>
-                      {changePos ? "+" : ""}{b.changePercent.toFixed(2)}%
-                    </span>
+
+                {/* Middle: Direction + score */}
+                <div className="mt-2 flex items-end justify-between">
+                  <div>
+                    <p className={`font-sans text-[22px] font-bold ${DIR_TEXT[b.direction] ?? "text-[#FF9800]"}`}>
+                      {b.direction.toUpperCase()}
+                    </p>
+                    {b.history.length >= 2 && <BiasSparkline data={b.history} />}
                   </div>
-                )}
-              </div>
+                  <div className="text-right">
+                    <p className="font-mono text-[28px] font-bold tabular-nums text-white">{b.score}%</p>
+                    <p className="font-sans text-[12px] text-white/30">{b.count} signaler</p>
+                  </div>
+                </div>
 
-              {/* Middle: Direction + score */}
-              <div className="mt-2 flex items-end justify-between">
-                <div>
-                  <p className={`font-sans text-2xl font-bold ${DIRECTION_COLOR[b.direction]}`}>
-                    {b.direction.toUpperCase()}
-                  </p>
-                  {b.history.length >= 2 && <BiasSparkline data={b.history} />}
+                {/* Bull/Bear ratio bar */}
+                <div className="mt-3">
+                  <div className="flex h-1.5 w-full overflow-hidden rounded-full">
+                    <div className="bg-[#26A69A]/60 transition-all duration-500" style={{ width: `${b.direction === "neutral" ? 50 : bullPct}%` }} />
+                    <div className="bg-[#EF5350]/60 transition-all duration-500" style={{ width: `${b.direction === "neutral" ? 50 : bearPct}%` }} />
+                  </div>
+                  <div className="mt-1 flex justify-between font-mono text-[10px]">
+                    <span className="text-[#26A69A]/70">BULL {b.direction === "neutral" ? "50" : bullPct}%</span>
+                    <span className="text-[#EF5350]/70">BEAR {b.direction === "neutral" ? "50" : bearPct}%</span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-mono text-2xl font-bold text-tv-heading">{b.score}%</p>
-                  <p className="font-mono text-xs text-tv-secondary">{b.count} signaler</p>
-                </div>
-              </div>
 
-              {/* Bull/Bear ratio bar */}
-              <div className="mt-3">
-                <div className="flex h-1.5 w-full overflow-hidden rounded-full">
-                  <div className="bg-tv-bull/60 transition-all duration-500" style={{ width: `${b.direction === "neutral" ? 50 : bullPct}%` }} />
-                  <div className="bg-tv-bear/60 transition-all duration-500" style={{ width: `${b.direction === "neutral" ? 50 : bearPct}%` }} />
+                {/* Hover hint */}
+                <div className="mt-1 font-sans text-[10px] uppercase tracking-[0.08em] text-white/20 opacity-0 transition-opacity group-hover:opacity-100">
+                  Klicka för detaljer →
                 </div>
-                <div className="mt-1 flex justify-between text-[10px] font-mono">
-                  <span className="text-tv-bull/70">BULL {b.direction === "neutral" ? "50" : bullPct}%</span>
-                  <span className="text-tv-bear/70">BEAR {b.direction === "neutral" ? "50" : bearPct}%</span>
-                </div>
-              </div>
-
-              {/* Hover hint */}
-              <div className="mt-1 text-[10px] uppercase tracking-wider text-tv-muted opacity-0 transition-opacity group-hover:opacity-100">
-                Klicka för detaljer →
               </div>
             </button>
           );

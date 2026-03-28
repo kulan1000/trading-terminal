@@ -1,5 +1,3 @@
-import { DIRECTION_COLOR } from "@/lib/constants";
-
 interface Signal {
   id: number;
   asset: string;
@@ -9,35 +7,43 @@ interface Signal {
   discord_messages: { author: string; content: string } | null;
 }
 
+const DIR_BADGE: Record<string, string> = {
+  bullish: "bg-[#26A69A]/15 text-[#26A69A]",
+  bearish: "bg-[#EF5350]/15 text-[#EF5350]",
+  neutral: "bg-[#FF9800]/15 text-[#FF9800]",
+};
+
 export function RecentSignals({ signals }: { signals: Signal[] }) {
   return (
-    <div className="animate-fade-in rounded-lg border border-tv-border bg-tv-surface p-5">
-      <h3 className="mb-4 font-sans text-sm font-semibold uppercase tracking-[0.5px] text-tv-heading">
-        Recent Signals
-      </h3>
-      <div className="space-y-0">
+    <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
+      {/* Glossy sheen */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+
+      <div className="px-5 pt-4 pb-3">
+        <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">
+          Recent Signals
+        </h3>
+      </div>
+
+      <div className="px-5 pb-4">
         {signals.map((s) => (
-          <div key={s.id} className="flex items-center gap-3 rounded-md px-2 py-1.5 font-mono text-xs transition-colors hover:bg-tv-elevated/50">
-            <span className="w-12 shrink-0 font-bold text-tv-text">
+          <div key={s.id} className="flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-white/[0.025]">
+            <span className="w-12 shrink-0 font-sans text-[13px] font-semibold text-white">
               {s.asset}
             </span>
-            <span className={`w-16 shrink-0 rounded-[4px] px-1.5 py-0.5 text-center text-[11px] font-semibold ${
-              s.direction === "bullish" ? "bg-tv-bull/15 text-tv-bull" :
-              s.direction === "bearish" ? "bg-tv-bear/15 text-tv-bear" :
-              "bg-tv-orange/15 text-tv-orange"
-            }`}>
+            <span className={`w-16 shrink-0 rounded-md px-2.5 py-0.5 text-center font-sans text-[10px] font-bold ${DIR_BADGE[s.direction] ?? DIR_BADGE.neutral}`}>
               {s.direction.toUpperCase()}
             </span>
-            <span className="w-10 shrink-0 tabular-nums text-tv-secondary">
+            <span className="w-10 shrink-0 font-mono text-[12px] tabular-nums text-white/50">
               {Math.round(s.confidence * 100)}%
             </span>
-            <span className="truncate font-sans text-tv-secondary">
-              {s.discord_messages?.author ?? "—"}
+            <span className="truncate font-sans text-[12px] text-white/30">
+              {s.discord_messages?.author ?? <span className="text-white/20">&mdash;</span>}
             </span>
           </div>
         ))}
         {!signals.length && (
-          <p className="text-xs italic text-tv-secondary">No signals yet</p>
+          <p className="font-sans text-[12px] italic text-white/30">No signals yet</p>
         )}
       </div>
     </div>

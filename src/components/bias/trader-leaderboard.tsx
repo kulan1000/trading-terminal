@@ -11,6 +11,14 @@ interface Trader {
   score: number;
 }
 
+const COLUMNS = [
+  { label: "#", align: "text-center" },
+  { label: "Trader", align: "text-left" },
+  { label: "Trades", align: "text-right" },
+  { label: "Win Rate", align: "text-right" },
+  { label: "PnL", align: "text-right" },
+];
+
 export function TraderLeaderboard() {
   const [traders, setTraders] = useState<Trader[]>([]);
 
@@ -23,35 +31,56 @@ export function TraderLeaderboard() {
 
   if (!traders.length) {
     return (
-      <div className="rounded-lg border border-tv-border bg-tv-surface p-5">
-        <h3 className="mb-2 font-sans text-sm font-semibold uppercase tracking-[0.5px] text-tv-heading">
-          Trader Ranking
-        </h3>
-        <p className="text-xs text-tv-muted">
-          No completed trades yet. Rankings appear after entries are paired with exits.
-        </p>
+      <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+        <div className="px-5 pt-4 pb-4">
+          <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">
+            Trader Ranking
+          </h3>
+          <p className="mt-3 font-sans text-[12px] text-white/30">
+            No completed trades yet. Rankings appear after entries are paired with exits.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="animate-fade-in rounded-lg border border-tv-border bg-tv-surface p-5">
-      <h3 className="mb-4 font-sans text-sm font-semibold uppercase tracking-[0.5px] text-tv-heading">
-        Trader Ranking
-      </h3>
-      <div className="space-y-1.5">
+    <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
+      {/* Glossy sheen */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+
+      <div className="px-5 pt-4 pb-3">
+        <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">
+          Trader Ranking
+        </h3>
+      </div>
+
+      {/* Table header */}
+      <div className="grid grid-cols-[40px_1fr_80px_80px_90px] border-y border-white/[0.04] bg-white/[0.015] px-5 py-2.5">
+        {COLUMNS.map((col) => (
+          <span key={col.label} className={`font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40 ${col.align}`}>
+            {col.label}
+          </span>
+        ))}
+      </div>
+
+      {/* Table rows */}
+      <div>
         {traders.map((t, i) => {
-          const pnlColor = t.total_pnl >= 0 ? "text-tv-bull" : "text-tv-bear";
-          const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
+          const pnlColor = t.total_pnl >= 0 ? "text-[#26A69A]" : "text-[#EF5350]";
+          const wrColor = t.win_rate >= 0.6 ? "text-[#26A69A]" : t.win_rate >= 0.4 ? "text-[#FF9800]" : "text-[#EF5350]";
+          const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`;
+
           return (
-            <div key={t.discord_user} className="flex items-center gap-2 font-mono text-xs">
-              <span className="w-6 text-center">{medal}</span>
-              <span className="flex-1 truncate font-sans text-tv-text">{t.discord_user}</span>
-              <span className="text-tv-secondary">{t.total_trades} trades</span>
-              <span className="w-12 text-right text-tv-orange">
+            <div key={t.discord_user} className="grid grid-cols-[40px_1fr_80px_80px_90px] items-center border-b border-white/[0.03] px-5 py-3 transition-colors hover:bg-white/[0.025]">
+              <span className="text-center font-sans text-[13px] text-white/50">{medal}</span>
+              <span className="truncate font-sans text-[14px] font-semibold text-white">{t.discord_user}</span>
+              <span className="text-right font-mono text-[13px] tabular-nums text-white/50">{t.total_trades}</span>
+              <span className={`text-right font-mono text-[13px] tabular-nums ${wrColor}`}>
                 {(t.win_rate * 100).toFixed(0)}%
               </span>
-              <span className={`w-16 text-right ${pnlColor}`}>
+              <span className={`text-right font-mono text-[13px] font-medium tabular-nums ${pnlColor}`}>
                 {t.total_pnl >= 0 ? "+" : ""}{t.total_pnl.toFixed(1)}
               </span>
             </div>

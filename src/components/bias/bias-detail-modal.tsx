@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { DIRECTION_COLOR, ASSET_PAIRS } from "@/lib/constants";
+import { ASSET_PAIRS } from "@/lib/constants";
+import { fmtPrice } from "@/lib/format-utils";
 import type { Asset } from "@/lib/types";
 import { BiasDetailChart } from "./bias-detail-chart";
 import { BiasDetailSignals } from "./bias-detail-signals";
@@ -48,11 +49,11 @@ interface Props {
   onClose: () => void;
 }
 
-function formatPrice(asset: string, price: number) {
-  if (!price) return "—";
-  if (asset === "Oil") return `$${price.toFixed(2)}`;
-  return `$${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
+const DIR_BADGE: Record<string, string> = {
+  bullish: "bg-[#26A69A]/20 text-[#26A69A]",
+  bearish: "bg-[#EF5350]/20 text-[#EF5350]",
+  neutral: "bg-[#FF9800]/20 text-[#FF9800]",
+};
 
 export function BiasDetailModal({ asset, direction, score, count, price, changePercent, onClose }: Props) {
   const [data, setData] = useState<BiasDetailData | null>(null);
@@ -72,44 +73,42 @@ export function BiasDetailModal({ asset, direction, score, count, price, changeP
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose]);
 
-  const dirColor = DIRECTION_COLOR[direction as keyof typeof DIRECTION_COLOR] ?? "text-tv-orange";
   const changePos = changePercent >= 0;
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative z-10 mx-4 flex max-h-[85vh] w-full max-w-[900px] flex-col overflow-hidden rounded-xl border border-tv-border bg-tv-bg shadow-2xl animate-fade-in">
+      <div className="animate-fade-in relative z-10 mx-4 flex max-h-[85vh] w-full max-w-[900px] flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-[#0a0a0a] shadow-2xl">
+        {/* Glossy sheen */}
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+
         {/* Header with price */}
-        <div className="flex items-center justify-between border-b border-tv-border px-6 py-4">
+        <div className="flex items-center justify-between border-b border-white/[0.04] px-6 py-4">
           <div>
             <div className="flex items-center gap-3">
-              <h2 className="font-sans text-lg font-bold text-tv-heading">
+              <h2 className="font-sans text-[18px] font-bold text-white">
                 {asset} — {ASSET_PAIRS[asset]}
               </h2>
-              <span className={`rounded-[4px] px-2 py-0.5 text-xs font-bold ${
-                direction === "bullish" ? "bg-tv-bull/20 text-tv-bull" :
-                direction === "bearish" ? "bg-tv-bear/20 text-tv-bear" :
-                "bg-tv-orange/20 text-tv-orange"
-              }`}>
+              <span className={`rounded-md px-2.5 py-0.5 font-sans text-[10px] font-bold ${DIR_BADGE[direction] ?? DIR_BADGE.neutral}`}>
                 {direction.toUpperCase()} {score}%
               </span>
             </div>
             <div className="mt-1 flex items-center gap-3">
               {price > 0 && (
-                <span className="font-mono text-xl font-bold text-tv-heading">
-                  {formatPrice(asset, price)}
+                <span className="font-mono text-[20px] font-bold tabular-nums text-white">
+                  {fmtPrice(asset, price)}
                 </span>
               )}
               {price > 0 && (
-                <span className={`font-mono text-sm font-semibold ${changePos ? "text-tv-bull" : "text-tv-bear"}`}>
+                <span className={`font-mono text-[13px] font-semibold tabular-nums ${changePos ? "text-[#26A69A]" : "text-[#EF5350]"}`}>
                   {changePos ? "+" : ""}{changePercent.toFixed(2)}%
                 </span>
               )}
-              <span className="text-xs text-tv-secondary">{count} signaler</span>
+              <span className="font-sans text-[12px] text-white/30">{count} signaler</span>
             </div>
           </div>
-          <button onClick={onClose} className="rounded-md p-1.5 text-tv-secondary transition-colors hover:bg-tv-elevated hover:text-tv-text">
+          <button onClick={onClose} className="rounded-md p-1.5 text-white/40 transition-colors hover:bg-white/[0.04] hover:text-white">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
@@ -117,26 +116,28 @@ export function BiasDetailModal({ asset, direction, score, count, price, changeP
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        <div className="flex-1 space-y-5 overflow-y-auto p-6">
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <span className="animate-pulse text-sm text-tv-secondary">Laddar detaljerad vy...</span>
+              <span className="animate-pulse font-sans text-[13px] text-white/30">Laddar detaljerad vy...</span>
             </div>
           ) : data ? (
             <>
-              {/* Stats bar */}
               {data.stats && <StatsBar stats={data.stats} />}
               <BiasDetailChart history={data.history} />
               <BiasDetailSignals signals={data.signals} />
-              <div className="rounded-lg border border-tv-border bg-tv-surface p-4">
-                <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-tv-heading">
-                  AI Analys
-                </h4>
-                <p className="text-sm leading-relaxed text-tv-text">{data.summary}</p>
+              <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
+                <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+                <div className="px-5 pt-4 pb-4">
+                  <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">
+                    AI Analys
+                  </h4>
+                  <p className="mt-2 font-sans text-[13px] leading-relaxed text-white/70">{data.summary}</p>
+                </div>
               </div>
             </>
           ) : (
-            <p className="text-center text-sm text-tv-secondary">Kunde inte ladda data.</p>
+            <p className="text-center font-sans text-[13px] text-white/30">Kunde inte ladda data.</p>
           )}
         </div>
       </div>
@@ -146,20 +147,23 @@ export function BiasDetailModal({ asset, direction, score, count, price, changeP
 }
 
 function StatsBar({ stats }: { stats: Stats }) {
-  const bullPct = stats.total > 0 ? Math.round((stats.bullish / stats.total) * 100) : 50;
+  const items = [
+    { label: "Bullish", value: stats.bullish, cls: "text-[#26A69A]" },
+    { label: "Bearish", value: stats.bearish, cls: "text-[#EF5350]" },
+    { label: "Entries", value: stats.entries, cls: "text-[#2962FF]" },
+    { label: "Exits", value: stats.exits, cls: "text-white/50" },
+    { label: "Traders", value: stats.uniqueTraders, cls: "text-white" },
+  ];
 
   return (
     <div className="grid grid-cols-5 gap-3">
-      {[
-        { label: "Bullish", value: stats.bullish, cls: "text-tv-bull" },
-        { label: "Bearish", value: stats.bearish, cls: "text-tv-bear" },
-        { label: "Entries", value: stats.entries, cls: "text-tv-blue" },
-        { label: "Exits", value: stats.exits, cls: "text-tv-secondary" },
-        { label: "Traders", value: stats.uniqueTraders, cls: "text-tv-heading" },
-      ].map((s) => (
-        <div key={s.label} className="rounded-lg border border-tv-border bg-tv-surface p-3 text-center">
-          <p className={`font-mono text-lg font-bold ${s.cls}`}>{s.value}</p>
-          <p className="text-[10px] uppercase tracking-wider text-tv-muted">{s.label}</p>
+      {items.map((s) => (
+        <div key={s.label} className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111] text-center">
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+          <div className="p-3">
+            <p className={`font-mono text-[18px] font-bold tabular-nums ${s.cls}`}>{s.value}</p>
+            <p className="font-sans text-[10px] font-medium uppercase tracking-[0.08em] text-white/40">{s.label}</p>
+          </div>
         </div>
       ))}
     </div>
