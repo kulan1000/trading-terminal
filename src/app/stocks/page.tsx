@@ -17,6 +17,79 @@ const SECTOR_COLORS: Record<string, string> = {
   oil: "text-orange-400",
 };
 
+function fmtNum(n: number, decimals = 2): string {
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
+
+function fmtBig(n: number): string {
+  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
+  return n.toString();
+}
+
+function fmtVol(v: number): string {
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(0)}K`;
+  if (v > 0) return v.toString();
+  return "—";
+}
+
+function StockRow({ q }: { q: StockQuote }) {
+  const color = changeColor(q.change);
+  return (
+    <tr className="border-b border-terminal-border/50 transition-colors hover:bg-terminal-accent/5">
+      {/* Symbol + Name */}
+      <td className="px-4 py-2">
+        <span className="font-semibold text-terminal-text">{q.symbol}</span>
+        <span className="ml-2 text-terminal-muted">{q.name}</span>
+      </td>
+      {/* Price */}
+      <td className="px-4 py-2 text-right tabular-nums text-terminal-text">
+        {fmtNum(q.price)}
+      </td>
+      {/* Change */}
+      <td className={`px-4 py-2 text-right tabular-nums ${color}`}>
+        {q.change >= 0 ? "▲ +" : "▼ "}
+        {fmtNum(q.change)}
+      </td>
+      {/* Change % */}
+      <td className={`px-4 py-2 text-right tabular-nums ${color}`}>
+        {q.changePercent >= 0 ? "+" : ""}
+        {fmtNum(q.changePercent)}%
+      </td>
+      {/* Volume */}
+      <td className="px-4 py-2 text-right tabular-nums text-terminal-muted">
+        {fmtVol(q.volume)}
+      </td>
+      {/* VWAP */}
+      <td className="px-4 py-2 text-right tabular-nums text-terminal-muted">
+        {q.hasCeoData && q.vwap > 0 ? fmtNum(q.vwap, 4) : "—"}
+      </td>
+      {/* Shorts */}
+      <td className="px-4 py-2 text-right tabular-nums">
+        {q.hasCeoData && q.shortVolume > 0 ? (
+          <span className="text-terminal-muted">
+            {fmtBig(q.shortVolume)}
+            {q.shortChange !== 0 && (
+              <span className={q.shortChange > 0 ? "ml-1 text-terminal-red" : "ml-1 text-terminal-green"}>
+                {q.shortChange > 0 ? "↑" : "↓"}
+              </span>
+            )}
+          </span>
+        ) : "—"}
+      </td>
+      {/* Market Cap */}
+      <td className="px-4 py-2 text-right tabular-nums text-terminal-muted">
+        {q.marketCap > 0 ? fmtBig(q.marketCap) : "—"}
+      </td>
+    </tr>
+  );
+}
+
 function SectorTable({ sector, quotes }: { sector: string; quotes: StockQuote[] }) {
   if (quotes.length === 0) return null;
 
@@ -35,34 +108,14 @@ function SectorTable({ sector, quotes }: { sector: string; quotes: StockQuote[] 
             <th className="px-4 py-2 text-right font-medium">Change</th>
             <th className="px-4 py-2 text-right font-medium">%</th>
             <th className="px-4 py-2 text-right font-medium">Volume</th>
+            <th className="px-4 py-2 text-right font-medium">VWAP</th>
+            <th className="px-4 py-2 text-right font-medium">Shorts</th>
+            <th className="px-4 py-2 text-right font-medium">MCap</th>
           </tr>
         </thead>
-        <tbody className="px-4">
+        <tbody>
           {quotes.map((q) => (
-            <tr key={q.symbol} className="border-b border-terminal-border/50 transition-colors hover:bg-terminal-accent/5">
-              <td className="px-4 py-2">
-                <span className="font-semibold text-terminal-text">{q.symbol}</span>
-                <span className="ml-2 text-terminal-muted">{q.name}</span>
-              </td>
-              <td className="px-4 py-2 text-right tabular-nums text-terminal-text">
-                {q.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </td>
-              <td className={`px-4 py-2 text-right tabular-nums ${changeColor(q.change)}`}>
-                {q.change >= 0 ? "▲ +" : "▼ "}
-                {q.change.toFixed(2)}
-              </td>
-              <td className={`px-4 py-2 text-right tabular-nums ${changeColor(q.change)}`}>
-                {q.changePercent >= 0 ? "+" : ""}
-                {q.changePercent.toFixed(2)}%
-              </td>
-              <td className="px-4 py-2 text-right tabular-nums text-terminal-muted">
-                {q.volume > 0
-                  ? q.volume >= 1_000_000
-                    ? `${(q.volume / 1_000_000).toFixed(1)}M`
-                    : `${(q.volume / 1_000).toFixed(0)}K`
-                  : "—"}
-              </td>
-            </tr>
+            <StockRow key={q.symbol} q={q} />
           ))}
         </tbody>
       </table>
@@ -74,7 +127,7 @@ export default function StocksPage() {
   const { quotes, loading, lastUpdated } = useStockData();
   const secondsAgo = useSecondsAgo(lastUpdated);
 
-  const sectors = ["gold", "silver", "oil"];
+  const sectors = ["silver", "gold", "oil"];
   const grouped = sectors.reduce(
     (acc, s) => ({ ...acc, [s]: quotes.filter((q) => q.sector === s) }),
     {} as Record<string, StockQuote[]>
@@ -90,7 +143,7 @@ export default function StocksPage() {
           {loading
             ? "Loading…"
             : lastUpdated
-              ? `Updated ${secondsAgo}s ago · ${lastUpdated.toLocaleTimeString()}`
+              ? `Updated ${secondsAgo}s ago · CEO.ca`
               : ""}
         </span>
       </div>
