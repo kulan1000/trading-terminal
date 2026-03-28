@@ -33,6 +33,31 @@ export function fmtPrice(asset: string, price: number): string {
   return `$${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+/** "5m sedan" / "2h sedan" / "1d sedan" — relative time in Swedish */
+export function fmtAgo(iso: string): string {
+  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 60) return `${mins}m sedan`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours}h sedan`;
+  return `${Math.round(hours / 24)}d sedan`;
+}
+
+/** "5m ago" / "2h ago" / "1d ago" — relative time in English */
+export function fmtAgoEn(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const hours = Math.floor(diff / 3_600_000);
+  if (hours < 1) return `${Math.floor(diff / 60_000)}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+/** "5m" / "2h" — compact relative time, no suffix */
+export function fmtAgoShort(iso: string): string {
+  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 60) return `${mins}m`;
+  return `${Math.round(mins / 60)}h`;
+}
+
 export function fmtBig(n: number): string {
   if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
   if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
