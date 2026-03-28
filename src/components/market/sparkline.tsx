@@ -108,7 +108,7 @@ export function Sparkline({
             markers={markers}
             timestamps={timestamps ?? []}
             toX={toX} toY={toY}
-            min={min} max={max} width={width}
+            min={min} max={max} width={width} height={height}
           />
         ) : null}
 
