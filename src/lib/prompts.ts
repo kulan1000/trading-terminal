@@ -156,6 +156,24 @@ Do NOT rely only on keywords. Use GPT reasoning:
 
 SARCASM/HUMOR: If obviously sarcastic ("yeah sure gold to the moon lol"), classify as weak opinion or skip if truly meaningless.
 
+EMOJI & SLANG PATTERNS:
+- 🚀🔥📈 after commodity mention → weak bullish opinion (0.15-0.25)
+- 💀📉🩸 after commodity mention → weak bearish opinion (0.15-0.25)
+- "LFG gold" / "send it" = bullish opinion, NOT entry (no trade action)
+- "rekt" / "got wrecked" = could be exited (stopped out) if they had a position
+- "lfg" / "LFG" = bullish excitement, opinion only
+- "gg" / "GG" after loss = possible exited (got stopped)
+- "diamond hands" / "💎🙌" = position (holding through pain)
+- "paper hands" = exited (sold due to fear)
+
+CONVERSATION CONTEXT RULES:
+When RECENT CONTEXT messages are provided:
+- Use them to resolve ambiguous "it", "this", "the trade" references
+- If someone replies to a gold discussion with "I'm in too" → entry on the discussed asset
+- If context shows a debate about direction, a simple "agree" = opinion matching the discussed direction
+- Do NOT let context override clear signals in the main message
+- Context is for disambiguation only, not for inventing signals
+
 ═══════════════════════════════════════
 COMMON MISTAKES — LEARN FROM THESE
 ═══════════════════════════════════════
@@ -186,6 +204,16 @@ MISTAKE 5: Tagging general market commentary as a commodity signal
 ✅ CORRECT: This is generic market commentary. No specific commodity is mentioned. Return {"signals": [{"has_signal": false}]}.
 RULE: If the message does NOT mention a specific commodity (Gold/Silver/Oil) or their tickers/proxies, it is NOT a signal. General macro talk ("market is dumping", "risk off", "bonds ripping") without a commodity reference = has_signal: false. Do NOT infer a commodity from vague market talk unless the channel context strongly implies it.
 
+MISTAKE 6: Double-counting entry + position from the same message
+❌ WRONG: "bought gold at 3050, holding for 3200" → entry signal + position signal
+✅ CORRECT: This is ONE action: an entry with a target. Return entry + target signals only.
+RULE: If a message describes entering AND holding, it is an entry (the trade is happening). Do NOT add a separate position signal for the same action. Position is for messages where the entry already happened BEFORE this message.
+
+MISTAKE 7: Treating DCA/adding as new entry vs existing position
+❌ WRONG: "adding more to my gold position" → position (just holding)
+✅ CORRECT: "adding" = deploying NEW capital = entry signal. They are increasing their position.
+RULE: "adding", "scaling in", "averaging down", "buying more" = entry (new capital). "still holding", "keeping my position" = position (no new capital).
+
 ═══════════════════════════════════════
 DIRECTION RULES
 ═══════════════════════════════════════
@@ -199,6 +227,23 @@ For exited signals: direction reflects the EXITED position's direction:
 - "took profits on gold longs" → direction: bullish (was a bullish trade)
 - "covered my oil short" → direction: bearish (was a bearish trade)
 - "I'm out of silver" → direction from context, or neutral if unclear
+
+═══════════════════════════════════════
+CONFIDENCE CALIBRATION
+═══════════════════════════════════════
+
+Confidence = how CERTAIN you are about the classification, NOT how bullish/bearish.
+
+0.85-1.0: Crystal clear action with explicit details ("just bought 100 shares of GDX at 42.50")
+0.70-0.85: Clear action, minor ambiguity ("went long gold here" — clear entry, but no size/price)
+0.50-0.70: Likely interpretation but room for doubt ("loaded up today" — probably entry but could be adding)
+0.30-0.50: Reasonable guess, significant ambiguity ("looking good, might add" — leaning bullish opinion)
+0.10-0.30: Vague hint, barely a signal ("metals interesting" — weak, indirect)
+
+COMMON OVER-CONFIDENCE MISTAKES:
+- "bought gold" with no context → 0.65-0.75, NOT 0.9 (could be physical, ETF, etc.)
+- Emoji-only reactions (🚀🔥) → 0.15-0.25 at most
+- One-word messages ("bullish") → 0.20-0.35
 
 ═══════════════════════════════════════
 STRENGTH GUIDE
