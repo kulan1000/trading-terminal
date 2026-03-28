@@ -4,7 +4,7 @@ import { ASSET_TAG_COLORS } from "@/lib/constants";
 export function MessageList({ messages }: { messages: FeedMessage[] }) {
   if (!messages.length) {
     return (
-      <p className="py-8 text-center text-sm text-tv-text-secondary">
+      <p className="py-8 text-center text-sm text-tv-secondary">
         No messages found.
       </p>
     );
@@ -23,9 +23,9 @@ export function MessageList({ messages }: { messages: FeedMessage[] }) {
         return (
           <div
             key={msg.id}
-            className="flex items-start gap-2 border-b border-tv-divider px-1 py-2 transition-colors hover:bg-tv-hover/50"
+            className="flex items-start gap-2 border-b border-tv-divider px-1 py-2 transition-colors hover:bg-tv-elevated/50"
           >
-            <span className="shrink-0 font-mono text-xs text-tv-text-subtle">{time}</span>
+            <span className="shrink-0 font-mono text-xs text-tv-muted">{time}</span>
             <span className="shrink-0 text-xs text-tv-orange">
               #{msg.channel}
             </span>
@@ -39,16 +39,16 @@ export function MessageList({ messages }: { messages: FeedMessage[] }) {
               {msg.assets.map((a, i) => (
                 <span
                   key={`${a.asset}-${i}`}
-                  className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${ASSET_TAG_COLORS[a.asset] ?? "bg-tv-input text-tv-text-secondary"} ${a.strength === "weak" ? "opacity-60" : ""}`}
+                  className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${ASSET_TAG_COLORS[a.asset] ?? "bg-tv-input text-tv-secondary"} ${a.strength === "weak" ? "opacity-60" : ""}`}
                   title={a.interpretation ?? undefined}
                 >
                   {a.asset}
                 </span>
               ))}
               {msg.processed ? (
-                <span className="text-tv-green" title="Processed">●</span>
+                <span className="text-tv-bull" title="Processed">●</span>
               ) : (
-                <span className="text-tv-text-secondary" title="Unprocessed">○</span>
+                <span className="text-tv-secondary" title="Unprocessed">○</span>
               )}
             </span>
           </div>

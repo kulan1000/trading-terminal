@@ -44,18 +44,18 @@ export function SectorTable({
   if (quotes.length === 0) return null;
 
   return (
-    <div className="animate-fade-in rounded-[6px] border border-tv-border bg-tv-surface">
-      <div className="border-b border-tv-border px-4 py-2">
-        <h2 className={`font-sans text-xs font-bold uppercase tracking-wider ${SECTOR_COLORS[sector] ?? "text-tv-text"}`}>
+    <div className="animate-fade-in rounded-lg border border-tv-border bg-tv-surface">
+      <div className="border-b border-tv-border px-5 py-3">
+        <h2 className={`font-sans text-sm font-semibold uppercase tracking-[0.5px] ${SECTOR_COLORS[sector] ?? "text-tv-text"}`}>
           {SECTOR_LABELS[sector] ?? sector}
         </h2>
       </div>
       <table className="w-full font-mono text-[13px]">
         <thead>
-          <tr className="border-b border-tv-divider text-tv-text-secondary">
+          <tr className="border-b border-tv-divider text-tv-secondary">
             {COLUMNS.map((col) => (
               <th key={col.key}
-                className={`cursor-pointer select-none px-4 py-2 text-[11px] font-medium uppercase tracking-wider transition-colors hover:text-tv-text ${col.align}`}
+                className={`cursor-pointer select-none px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors hover:text-tv-text ${col.align}`}
                 onClick={() => onSort(col.key)}>
                 {col.label}
                 {sortKey === col.key && (
@@ -63,7 +63,7 @@ export function SectorTable({
                 )}
               </th>
             ))}
-            <th className="w-[110px] px-2 py-2 text-left text-[11px] font-medium uppercase tracking-wider">Intraday</th>
+            <th className="w-[110px] px-2 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.08em]">Intraday</th>
             <th className="w-6 px-2 py-2" />
           </tr>
         </thead>

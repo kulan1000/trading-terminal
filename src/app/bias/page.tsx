@@ -19,10 +19,10 @@ export default async function BiasPage() {
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-text-bright">
+        <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
           Market Bias
         </h1>
-        <span className="font-sans text-xs text-tv-text-secondary">
+        <span className="font-sans text-xs text-tv-secondary">
           Gold &middot; Silver &middot; Oil
         </span>
       </div>

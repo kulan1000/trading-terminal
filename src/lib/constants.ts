@@ -10,22 +10,22 @@ export const ASSET_PAIRS: Record<Asset, string> = {
 
 // Centralized direction → color mapping (used by bias cards, signals, trades)
 export const DIRECTION_COLOR: Record<Direction | "long" | "short", string> = {
-  bullish: "text-tv-green",
-  bearish: "text-tv-red",
+  bullish: "text-tv-bull",
+  bearish: "text-tv-bear",
   neutral: "text-tv-orange",
-  long: "text-tv-green",
-  short: "text-tv-red",
+  long: "text-tv-bull",
+  short: "text-tv-bear",
 };
 
 export const DIRECTION_BG: Record<Direction, string> = {
-  bullish: "bg-tv-green/10 border-tv-green/20",
-  bearish: "bg-tv-red/10 border-tv-red/20",
+  bullish: "bg-tv-bull/10 border-tv-bull/20",
+  bearish: "bg-tv-bear/10 border-tv-bear/20",
   neutral: "bg-tv-orange/10 border-tv-orange/20",
 };
 
 // Asset tag colors for signal feed & message list
 export const ASSET_TAG_COLORS: Record<string, string> = {
   Gold: "bg-tv-yellow/20 text-tv-yellow",
-  Silver: "bg-tv-text-secondary/20 text-tv-text",
+  Silver: "bg-tv-secondary/20 text-tv-text",
   Oil: "bg-tv-orange/20 text-tv-orange",
 };

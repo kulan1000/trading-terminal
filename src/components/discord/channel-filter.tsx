@@ -21,29 +21,29 @@ export function ChannelFilter() {
 
   return (
     <div className="flex flex-wrap items-center gap-3 font-sans text-xs">
-      <span className="text-tv-text-secondary">Channel:</span>
+      <span className="text-tv-secondary">Channel:</span>
       {CHANNELS.map((ch) => (
         <button
           key={ch}
           onClick={() => navigate(ch, activeAsset)}
-          className={`rounded-[4px] px-2 py-1 transition-all duration-150 ${
+          className={`rounded-[6px] px-2.5 py-1 transition-all duration-150 ${
             activeChannel === ch
               ? "bg-tv-blue/20 text-tv-blue"
-              : "text-tv-text-secondary hover:bg-tv-hover hover:text-tv-text"
+              : "text-tv-secondary hover:bg-tv-elevated hover:text-tv-text"
           }`}
         >
           {ch === "all" ? "All" : `#${ch}`}
         </button>
       ))}
-      <span className="ml-4 text-tv-text-secondary">Asset:</span>
+      <span className="ml-4 text-tv-secondary">Asset:</span>
       {ASSETS.map((a) => (
         <button
           key={a}
           onClick={() => navigate(activeChannel, a)}
-          className={`rounded-[4px] px-2 py-1 transition-all duration-150 ${
+          className={`rounded-[6px] px-2.5 py-1 transition-all duration-150 ${
             activeAsset === a
               ? "bg-tv-blue/20 text-tv-blue"
-              : "text-tv-text-secondary hover:bg-tv-hover hover:text-tv-text"
+              : "text-tv-secondary hover:bg-tv-elevated hover:text-tv-text"
           }`}
         >
           {a}

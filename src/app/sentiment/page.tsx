@@ -1,0 +1,51 @@
+"use client";
+
+import { useSentiment } from "@/hooks/use-sentiment";
+import { BiasGauge } from "@/components/sentiment/bias-gauge";
+import { SignalTimeline } from "@/components/sentiment/signal-timeline";
+
+export default function SentimentPage() {
+  const { primary, extended, timeline, updatedAt, loading } = useSentiment();
+
+  return (
+    <div className="animate-fade-in space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
+          Short-Term Sentiment
+        </h1>
+        <div className="flex items-center gap-3 text-xs text-tv-secondary">
+          <span>60 min window · 20 min hot zone</span>
+          {updatedAt && (
+            <span className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-tv-bull" />
+              {new Date(updatedAt).toLocaleTimeString("sv-SE", {
+                hour: "2-digit", minute: "2-digit", second: "2-digit",
+                timeZone: "Europe/Stockholm",
+              })}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <span className="animate-pulse text-sm text-tv-secondary">
+            Loading sentiment data...
+          </span>
+        </div>
+      ) : (
+        <>
+          {/* Bias gauges: one per asset */}
+          <div className="grid grid-cols-3 gap-4">
+            {primary.map((s, i) => (
+              <BiasGauge key={s.asset} sentiment={s} extended={extended[i]} />
+            ))}
+          </div>
+
+          {/* Signal timeline */}
+          <SignalTimeline signals={timeline} />
+        </>
+      )}
+    </div>
+  );
+}

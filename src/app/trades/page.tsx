@@ -13,7 +13,7 @@ export default async function TradesPage() {
 
   return (
     <div className="animate-fade-in space-y-4">
-      <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-text-bright">
+      <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
         Trades — Log & P&L
       </h1>
       <TradeStats {...stats} />

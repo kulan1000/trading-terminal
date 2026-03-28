@@ -14,6 +14,7 @@ import {
   Briefcase,
   ChevronLeft,
   ChevronRight,
+  LayoutDashboard,
 } from "lucide-react";
 
 const navItems = [
@@ -33,15 +34,18 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`flex h-screen flex-col bg-tv-black transition-all duration-200 ${
+      className={`flex h-screen flex-col border-r border-tv-border bg-tv-sidebar transition-[width] duration-200 ${
         expanded ? "w-60" : "w-[60px]"
       }`}
     >
       {/* Logo */}
-      <div className="flex h-14 items-center justify-between px-4">
-        <span className="text-sm font-bold tracking-wider text-tv-blue">
-          {expanded ? "TRADING TERMINAL" : "TT"}
-        </span>
+      <div className="flex h-14 items-center gap-3 px-4">
+        <LayoutDashboard size={20} strokeWidth={1.8} className="shrink-0 text-tv-blue" />
+        {expanded && (
+          <span className="truncate text-[13px] font-bold tracking-wider text-tv-heading">
+            TRADING TERMINAL
+          </span>
+        )}
       </div>
 
       {/* Nav items */}
@@ -55,10 +59,10 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               title={expanded ? undefined : item.name}
-              className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-[13px] font-medium transition-all duration-150 ${
+              className={`mx-0 flex h-11 items-center gap-3 rounded-[6px] px-4 text-[13px] font-medium transition-all duration-150 ${
                 isActive
-                  ? "bg-tv-blue/15 text-tv-blue"
-                  : "text-tv-text-secondary hover:bg-tv-hover hover:text-tv-text"
+                  ? "bg-tv-blue/12 text-tv-blue"
+                  : "text-tv-secondary hover:bg-tv-elevated hover:text-tv-text"
               }`}
             >
               <Icon size={18} strokeWidth={1.8} className="shrink-0" />
@@ -68,17 +72,18 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Live indicator + Toggle */}
-      <div className="border-t border-tv-border px-3 py-3">
-        <div className="flex items-center gap-2 text-xs text-tv-text-secondary">
-          <span className="h-2 w-2 rounded-full bg-tv-green" />
+      {/* Live indicator */}
+      <div className="border-t border-tv-border px-4 py-3">
+        <div className="flex items-center gap-2 text-xs text-tv-secondary">
+          <span className="h-2 w-2 rounded-full bg-tv-bull" />
           {expanded && <span className="font-mono text-[11px]">LIVE</span>}
         </div>
       </div>
 
+      {/* Toggle */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex h-10 items-center justify-center border-t border-tv-border text-tv-text-secondary transition-colors hover:bg-tv-hover hover:text-tv-text"
+        className="flex h-10 items-center justify-center border-t border-tv-border text-tv-secondary transition-colors hover:bg-tv-elevated hover:text-tv-text"
       >
         {expanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
       </button>

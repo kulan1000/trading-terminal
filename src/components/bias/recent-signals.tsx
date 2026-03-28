@@ -11,8 +11,8 @@ interface Signal {
 
 export function RecentSignals({ signals }: { signals: Signal[] }) {
   return (
-    <div className="animate-fade-in rounded-[6px] border border-tv-border bg-tv-surface p-4">
-      <h3 className="mb-3 font-sans text-xs font-medium uppercase tracking-wider text-tv-text-secondary">
+    <div className="animate-fade-in rounded-lg border border-tv-border bg-tv-surface p-5">
+      <h3 className="mb-4 font-sans text-sm font-semibold uppercase tracking-[0.5px] text-tv-heading">
         Recent Signals
       </h3>
       <div className="space-y-2">
@@ -21,19 +21,19 @@ export function RecentSignals({ signals }: { signals: Signal[] }) {
             <span className="w-12 shrink-0 font-bold text-tv-text">
               {s.asset}
             </span>
-            <span className={`w-16 shrink-0 font-medium ${DIRECTION_COLOR[s.direction as keyof typeof DIRECTION_COLOR] ?? "text-tv-text-secondary"}`}>
+            <span className={`w-16 shrink-0 font-medium ${DIRECTION_COLOR[s.direction as keyof typeof DIRECTION_COLOR] ?? "text-tv-secondary"}`}>
               {s.direction.toUpperCase()}
             </span>
-            <span className="w-10 shrink-0 text-tv-text-secondary">
+            <span className="w-10 shrink-0 text-tv-secondary">
               {Math.round(s.confidence * 100)}%
             </span>
-            <span className="truncate font-sans text-tv-text-secondary">
+            <span className="truncate font-sans text-tv-secondary">
               {s.discord_messages?.author ?? "—"}
             </span>
           </div>
         ))}
         {!signals.length && (
-          <p className="text-xs italic text-tv-text-secondary">No signals yet</p>
+          <p className="text-xs italic text-tv-secondary">No signals yet</p>
         )}
       </div>
     </div>

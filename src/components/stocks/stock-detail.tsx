@@ -6,7 +6,7 @@ import { fmtNum, fmtBig } from "@/lib/format-utils";
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4">
-      <span className="font-sans text-tv-text-secondary">{label}</span>
+      <span className="font-sans text-tv-secondary">{label}</span>
       <span className="tabular-nums text-tv-text">{value}</span>
     </div>
   );
@@ -19,13 +19,13 @@ function RangeBar({ low, high, current, label }: { low: number; high: number; cu
 
   return (
     <div className="space-y-1">
-      <div className="flex justify-between font-sans text-tv-text-secondary">
+      <div className="flex justify-between font-sans text-tv-secondary">
         <span>{label}</span>
         <span className="font-mono tabular-nums">{fmtNum(low)} — {fmtNum(high)}</span>
       </div>
       <div className="relative h-1.5 w-full rounded-full bg-tv-border/50">
         <div
-          className="absolute top-0 left-0 h-full rounded-full bg-tv-green/40"
+          className="absolute top-0 left-0 h-full rounded-full bg-tv-bull/40"
           style={{ width: `${pct}%` }}
         />
         <div
@@ -40,7 +40,7 @@ function RangeBar({ low, high, current, label }: { low: number; high: number; cu
 export function StockDetail({ q }: { q: StockQuote }) {
   if (!q.hasCeoData) {
     return (
-      <div className="px-4 py-3 text-xs text-tv-text-secondary">
+      <div className="px-4 py-3 text-xs text-tv-secondary">
         Limited data for {q.symbol} — only price from CEO.ca chart (15min delay)
       </div>
     );

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const tabs = [
   { name: "Bias", href: "/bias" },
+  { name: "Sentiment", href: "/sentiment" },
   { name: "Scoring", href: "/scoring" },
   { name: "Community", href: "/community" },
   { name: "Discord Intel", href: "/discord-intel" },

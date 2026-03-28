@@ -43,48 +43,48 @@ export function AddStockDialog({ open, onClose, onAdd }: AddStockDialogProps) {
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
-        className="animate-fade-in w-full max-w-sm space-y-4 rounded-[6px] border border-tv-border bg-tv-bg p-6"
+        className="animate-fade-in w-full max-w-sm space-y-4 rounded-lg border border-tv-border bg-tv-bg p-6"
       >
-        <h3 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-text-bright">
+        <h3 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
           Add Stock
         </h3>
 
         <div className="space-y-1">
-          <label className="font-sans text-xs text-tv-text-secondary">CEO.ca Symbol</label>
+          <label className="font-sans text-xs text-tv-secondary">CEO.ca Symbol</label>
           <input
             type="text"
             value={ceoSymbol}
             onChange={(e) => setCeoSymbol(e.target.value)}
             placeholder="e.g. CDPR.V or WTI"
-            className="w-full rounded-[6px] border border-tv-border bg-tv-input px-3 py-1.5 font-mono text-sm text-tv-text placeholder:text-tv-text-subtle focus:border-tv-blue focus:outline-none"
+            className="w-full rounded-[6px] border border-tv-border bg-tv-input px-3 py-1.5 font-mono text-sm text-tv-text placeholder:text-tv-muted focus:border-tv-blue focus:outline-none focus:[box-shadow:0_0_0_2px_rgba(41,98,255,0.12)]"
             autoFocus
           />
-          <p className="text-[10px] text-tv-text-subtle">TSX-V stocks end with .V</p>
+          <p className="text-[10px] text-tv-muted">TSX-V stocks end with .V</p>
         </div>
 
         <div className="space-y-1">
-          <label className="font-sans text-xs text-tv-text-secondary">Company Name</label>
+          <label className="font-sans text-xs text-tv-secondary">Company Name</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Silver Tiger Metals"
-            className="w-full rounded-[6px] border border-tv-border bg-tv-input px-3 py-1.5 font-sans text-sm text-tv-text placeholder:text-tv-text-subtle focus:border-tv-blue focus:outline-none"
+            className="w-full rounded-[6px] border border-tv-border bg-tv-input px-3 py-1.5 font-sans text-sm text-tv-text placeholder:text-tv-muted focus:border-tv-blue focus:outline-none focus:[box-shadow:0_0_0_2px_rgba(41,98,255,0.12)]"
           />
         </div>
 
         <div className="space-y-1">
-          <label className="font-sans text-xs text-tv-text-secondary">Sector</label>
+          <label className="font-sans text-xs text-tv-secondary">Sector</label>
           <div className="flex gap-2">
             {(["gold", "silver", "oil"] as const).map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => setSector(s)}
-                className={`rounded-[4px] px-3 py-1 font-sans text-xs font-medium capitalize transition-all duration-150 ${
+                className={`rounded-[6px] px-3 py-1.5 font-sans text-xs font-medium capitalize transition-all duration-150 ${
                   sector === s
                     ? "bg-tv-blue/20 text-tv-blue"
-                    : "bg-tv-surface text-tv-text-secondary hover:text-tv-text"
+                    : "bg-tv-surface text-tv-secondary hover:text-tv-text"
                 }`}
               >
                 {s}
@@ -94,21 +94,21 @@ export function AddStockDialog({ open, onClose, onAdd }: AddStockDialogProps) {
         </div>
 
         {error && (
-          <p className="text-xs text-tv-red">{error}</p>
+          <p className="text-xs text-tv-bear">{error}</p>
         )}
 
         <div className="flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-[4px] px-3 py-1.5 font-sans text-xs text-tv-text-secondary transition-colors hover:text-tv-text"
+            className="rounded-[6px] px-3 py-1.5 font-sans text-xs text-tv-secondary transition-colors hover:text-tv-text"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving || !ceoSymbol.trim() || !name.trim()}
-            className="rounded-[4px] bg-tv-blue px-4 py-1.5 font-sans text-xs font-medium text-white transition-colors hover:bg-tv-blue/80 disabled:opacity-50"
+            className="rounded-[6px] bg-tv-blue px-4 py-2 font-sans text-xs font-medium text-white transition-colors hover:bg-tv-blue-hover disabled:opacity-50"
           >
             {saving ? "Adding..." : "Add"}
           </button>

@@ -14,7 +14,7 @@ export function MarketOverview({ quotes }: MarketOverviewProps) {
       {hasData ? (
         <table className="w-full font-mono text-[13px]">
           <thead>
-            <tr className="border-b border-tv-divider text-tv-text-secondary">
+            <tr className="border-b border-tv-divider text-tv-secondary">
               <th className="pb-2 text-left text-[11px] font-medium uppercase tracking-wider">Asset</th>
               <th className="pb-2 text-right text-[11px] font-medium uppercase tracking-wider">Price</th>
               <th className="pb-2 text-right text-[11px] font-medium uppercase tracking-wider">Change</th>
@@ -31,7 +31,7 @@ export function MarketOverview({ quotes }: MarketOverviewProps) {
               return (
                 <tr
                   key={q.asset}
-                  className="border-b border-tv-divider transition-colors hover:bg-tv-hover"
+                  className="border-b border-tv-divider transition-colors hover:bg-tv-elevated"
                 >
                   <td className="py-1.5 font-semibold text-tv-text">
                     {q.asset}
@@ -56,7 +56,7 @@ export function MarketOverview({ quotes }: MarketOverviewProps) {
                   <td className="py-1.5 text-right tabular-nums text-tv-text">
                     {q.low.toLocaleString()}
                   </td>
-                  <td className="py-1.5 text-right tabular-nums text-tv-text-secondary">
+                  <td className="py-1.5 text-right tabular-nums text-tv-secondary">
                     {q.volume > 0
                       ? `${(q.volume / 1000).toFixed(0)}K`
                       : "—"}
@@ -67,7 +67,7 @@ export function MarketOverview({ quotes }: MarketOverviewProps) {
           </tbody>
         </table>
       ) : (
-        <p className="text-tv-text-secondary">
+        <p className="text-tv-secondary">
           Market data unavailable. Prices update every 15 seconds.
         </p>
       )}

@@ -27,16 +27,16 @@ export default async function DiscordIntelPage({ searchParams }: Props) {
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex items-baseline justify-between">
-        <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-text-bright">
+        <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
           Discord Intel
         </h1>
-        <div className="flex gap-4 font-mono text-xs text-tv-text-secondary">
+        <div className="flex gap-4 font-mono text-xs text-tv-secondary">
           <span>
             Messages: <span className="text-tv-text">{stats.total}</span>
           </span>
           <span>
             Processed:{" "}
-            <span className="text-tv-green">{stats.processed}</span>
+            <span className="text-tv-bull">{stats.processed}</span>
           </span>
           <span>
             Signals:{" "}

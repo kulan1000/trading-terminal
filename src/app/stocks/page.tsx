@@ -35,17 +35,17 @@ export default function StocksPage() {
     <div className="animate-fade-in space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-text-bright">
+          <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
             Stocks — Watchlist
           </h1>
           <button onClick={() => setShowAdd(true)}
-            className="rounded-[4px] bg-tv-blue/15 px-2 py-0.5 font-sans text-xs font-medium text-tv-blue transition-colors hover:bg-tv-blue/25">
+            className="rounded-[6px] bg-tv-blue/15 px-2.5 py-1 font-sans text-xs font-medium text-tv-blue transition-colors hover:bg-tv-blue/25">
             + Add
           </button>
         </div>
         <div className="flex items-center gap-4">
           <TsxvStatus />
-          <span className="font-mono text-xs text-tv-text-secondary">
+          <span className="font-mono text-xs text-tv-secondary">
             {loading ? "Loading..." : lastUpdated ? `${secondsAgo}s ago` : ""}
           </span>
         </div>
@@ -54,7 +54,7 @@ export default function StocksPage() {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-40 animate-skeleton rounded-[6px] border border-tv-border bg-tv-surface" />
+            <div key={i} className="h-40 animate-skeleton rounded-lg border border-tv-border bg-tv-surface" />
           ))}
         </div>
       ) : (

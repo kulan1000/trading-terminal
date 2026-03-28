@@ -11,8 +11,8 @@ function VolumeCell({ volume, avgVolume }: { volume: number; avgVolume: number }
   const barPct = Math.min(ratio, 3) / 3 * 100;
   const isHigh = ratio >= 1.5;
   const isLow = ratio > 0 && ratio < 0.5;
-  const barColor = isHigh ? "bg-tv-green/50" : isLow ? "bg-tv-red/30" : "bg-tv-text-secondary/30";
-  const textColor = isHigh ? "text-tv-green" : "";
+  const barColor = isHigh ? "bg-tv-bull/50" : isLow ? "bg-tv-bear/30" : "bg-tv-secondary/30";
+  const textColor = isHigh ? "text-tv-bull" : "";
 
   return (
     <div className="flex flex-col items-end gap-0.5">
@@ -30,8 +30,8 @@ function VolumeCell({ volume, avgVolume }: { volume: number; avgVolume: number }
 }
 
 function changeBg(change: number): string {
-  if (change > 0) return "bg-tv-green/8";
-  if (change < 0) return "bg-tv-red/8";
+  if (change > 0) return "bg-tv-bull/8";
+  if (change < 0) return "bg-tv-bear/8";
   return "";
 }
 
@@ -47,7 +47,7 @@ export function StockRow({
   return (
     <>
       <tr
-        className="group cursor-pointer border-b border-tv-divider transition-colors hover:bg-tv-hover"
+        className="group cursor-pointer border-b border-tv-divider transition-colors hover:bg-tv-elevated"
         onClick={onToggle}
       >
         <td className="px-4 py-1.5">
@@ -60,7 +60,7 @@ export function StockRow({
           >
             {q.symbol}
           </a>
-          <span className="ml-2 font-sans text-tv-text-secondary">{q.name}</span>
+          <span className="ml-2 font-sans text-tv-secondary">{q.name}</span>
         </td>
         <td className="px-4 py-1.5 text-right tabular-nums text-tv-text">
           {fmtNum(q.price)}
@@ -68,34 +68,34 @@ export function StockRow({
         <td className={`px-4 py-1.5 text-right tabular-nums ${color} ${changeBg(q.change)}`}>
           {q.change >= 0 ? "+" : ""}{fmtNum(q.change)} ({q.changePercent >= 0 ? "+" : ""}{fmtNum(q.changePercent)}%)
         </td>
-        <td className="px-4 py-1.5 text-right tabular-nums text-tv-text-secondary">
+        <td className="px-4 py-1.5 text-right tabular-nums text-tv-secondary">
           <VolumeCell volume={q.volume} avgVolume={q.avgVolume} />
         </td>
-        <td className="px-4 py-1.5 text-right tabular-nums text-tv-text-secondary">
+        <td className="px-4 py-1.5 text-right tabular-nums text-tv-secondary">
           {q.hasCeoData && q.vwap > 0 ? fmtNum(q.vwap, 4) : "—"}
         </td>
         <td className="px-4 py-1.5 text-right tabular-nums">
           {q.hasCeoData && q.shortVolume > 0 ? (
-            <span className="text-tv-text-secondary">
+            <span className="text-tv-secondary">
               {fmtBig(q.shortVolume)}
               {q.shortChange !== 0 && (
-                <span className={q.shortChange > 0 ? "ml-1 text-tv-red" : "ml-1 text-tv-green"}>
+                <span className={q.shortChange > 0 ? "ml-1 text-tv-bear" : "ml-1 text-tv-bull"}>
                   {q.shortChange > 0 ? "↑" : "↓"}
                 </span>
               )}
             </span>
           ) : "—"}
         </td>
-        <td className="px-4 py-1.5 text-right tabular-nums text-tv-text-secondary">
+        <td className="px-4 py-1.5 text-right tabular-nums text-tv-secondary">
           {q.marketCap > 0 ? fmtBig(q.marketCap) : "—"}
         </td>
         <td className="px-2 py-1.5">
           <StockSparkline data={q.sparkline} change={q.change} />
         </td>
-        <td className="w-6 px-2 py-1.5 text-tv-text-secondary">
+        <td className="w-6 px-2 py-1.5 text-tv-secondary">
           <button
             onClick={(e) => { e.stopPropagation(); onRemove(); }}
-            className="hidden text-tv-text-subtle transition-colors hover:text-tv-red group-hover:inline-block"
+            className="hidden text-tv-muted transition-colors hover:text-tv-bear group-hover:inline-block"
             title="Remove from watchlist"
           >
             ×

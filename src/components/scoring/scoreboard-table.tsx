@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { TraderScore, ScoredSignal } from "@/hooks/use-scoring-data";
+import { TraderDrilldown } from "./trader-drilldown";
 
 type SortKey = "author" | "signals" | "winRate" | "avgScore" | "consistency";
 
@@ -23,64 +24,6 @@ const COLS: { key: SortKey; label: string; align: string }[] = [
   { key: "consistency", label: "Consistent", align: "text-right" },
 ];
 
-function ScoreCell({ value }: { value: number | null }) {
-  if (value == null) return <span className="text-tv-text-subtle">—</span>;
-  const color = value > 0 ? "text-tv-green" : value < 0 ? "text-tv-red" : "text-tv-text-secondary";
-  return <span className={color}>{value > 0 ? "+" : ""}{value.toFixed(2)}%</span>;
-}
-
-function TraderDrilldown({ signals }: { signals: ScoredSignal[] }) {
-  return (
-    <tr>
-      <td colSpan={6} className="bg-tv-bg/50 px-4 py-2">
-        <table className="w-full font-mono text-[12px]">
-          <thead>
-            <tr className="text-tv-text-subtle">
-              <th className="pb-1 text-left">Type</th>
-              <th className="pb-1 text-left">Asset</th>
-              <th className="pb-1 text-left">Dir</th>
-              <th className="pb-1 text-right">30m</th>
-              <th className="pb-1 text-right">1h</th>
-              <th className="pb-1 text-right">2h</th>
-              <th className="pb-1 text-right">4h</th>
-              <th className="pb-1 text-right">Score</th>
-            </tr>
-          </thead>
-          <tbody>
-            {signals.map((s, i) => (
-              <tr key={i} className="border-t border-tv-divider/50">
-                <td className="py-1">
-                  <span className={
-                    s.signalType === "entry"
-                      ? "rounded bg-tv-blue/15 px-1.5 py-0.5 text-tv-blue"
-                      : "rounded bg-tv-orange/15 px-1.5 py-0.5 text-tv-orange"
-                  }>
-                    {s.signalType === "entry" ? "ENTRY" : "EXIT"}
-                  </span>
-                </td>
-                <td className="py-1 uppercase text-tv-blue">{s.asset}</td>
-                <td className="py-1">
-                  <span className={s.position === "long" ? "text-tv-green" : "text-tv-red"}>
-                    {s.position ?? "—"}
-                  </span>
-                </td>
-                <td className="py-1 text-right"><ScoreCell value={s.score30m} /></td>
-                <td className="py-1 text-right"><ScoreCell value={s.score1h} /></td>
-                <td className="py-1 text-right"><ScoreCell value={s.score2h} /></td>
-                <td className="py-1 text-right"><ScoreCell value={s.score4h} /></td>
-                <td className="py-1 text-right">
-                  <ScoreCell value={s.weightedScore} />
-                  {s.consistent && <span className="ml-1 text-[9px] text-tv-green" title="Consistent">✦</span>}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </td>
-    </tr>
-  );
-}
-
 interface Props {
   traders: TraderScore[];
   traderSignals: Record<string, ScoredSignal[]>;
@@ -100,11 +43,11 @@ export function ScoreboardTable({ traders, traderSignals }: Props) {
 
   if (!traders.length) {
     return (
-      <div className="rounded-[6px] border border-tv-border bg-tv-surface p-6">
-        <h3 className="mb-2 font-sans text-xs font-semibold uppercase tracking-wider text-tv-text-secondary">
+      <div className="rounded-lg border border-tv-border bg-tv-surface p-5">
+        <h3 className="mb-2 font-sans text-sm font-semibold uppercase tracking-[0.5px] text-tv-heading">
           Scoreboard
         </h3>
-        <p className="text-xs text-tv-text-subtle">
+        <p className="text-xs text-tv-muted">
           Inga traders med minst 3 scorade signaler ännu. Scoring börjar automatiskt
           efter att prisdata samlats in (30m/1h/2h/4h efter signal).
         </p>
@@ -113,22 +56,22 @@ export function ScoreboardTable({ traders, traderSignals }: Props) {
   }
 
   return (
-    <div className="animate-fade-in rounded-[6px] border border-tv-border bg-tv-surface p-4">
-      <h3 className="mb-3 font-sans text-xs font-semibold uppercase tracking-wider text-tv-text-secondary">
+    <div className="animate-fade-in rounded-lg border border-tv-border bg-tv-surface p-5">
+      <h3 className="mb-4 font-sans text-sm font-semibold uppercase tracking-[0.5px] text-tv-heading">
         Scoreboard
-        <span className="ml-2 text-[10px] font-normal text-tv-text-subtle">
+        <span className="ml-2 text-[10px] font-normal text-tv-muted">
           Tidshorisonter: 30m · 1h · 2h · 4h
         </span>
       </h3>
       <table className="w-full font-mono text-[13px]">
         <thead>
-          <tr className="border-b border-tv-divider text-tv-text-secondary">
-            <th className="w-8 pb-2 text-center text-[11px] font-medium uppercase tracking-wider">#</th>
+          <tr className="border-b border-tv-divider text-tv-secondary">
+            <th className="w-8 pb-2 text-center text-[11px] font-semibold uppercase tracking-[0.08em]">#</th>
             {COLS.map((c) => (
               <th
                 key={c.key}
                 onClick={() => handleSort(c.key)}
-                className={`cursor-pointer pb-2 text-[11px] font-medium uppercase tracking-wider transition-colors hover:text-tv-text ${c.align}`}
+                className={`cursor-pointer pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors hover:text-tv-text ${c.align}`}
               >
                 {c.label}
                 {sortKey === c.key && <span className="ml-1 text-tv-blue">{sortAsc ? "▲" : "▼"}</span>}
@@ -138,8 +81,8 @@ export function ScoreboardTable({ traders, traderSignals }: Props) {
         </thead>
         <tbody>
           {sorted.map((t, i) => {
-            const wrColor = t.winRate >= 0.6 ? "text-tv-green" : t.winRate >= 0.4 ? "text-tv-orange" : "text-tv-red";
-            const scoreColor = t.avgScore > 0 ? "text-tv-green" : t.avgScore < 0 ? "text-tv-red" : "text-tv-text-secondary";
+            const wrColor = t.winRate >= 0.6 ? "text-tv-bull" : t.winRate >= 0.4 ? "text-tv-orange" : "text-tv-bear";
+            const scoreColor = t.avgScore > 0 ? "text-tv-bull" : t.avgScore < 0 ? "text-tv-bear" : "text-tv-secondary";
             const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`;
             const isExpanded = expanded === t.author;
             return (
@@ -147,16 +90,16 @@ export function ScoreboardTable({ traders, traderSignals }: Props) {
                 <tr
                   key={t.author}
                   onClick={() => setExpanded(isExpanded ? null : t.author)}
-                  className={`cursor-pointer border-b border-tv-divider transition-colors hover:bg-tv-hover ${isExpanded ? "bg-tv-hover" : ""}`}
+                  className={`cursor-pointer border-b border-tv-divider transition-colors hover:bg-tv-elevated ${isExpanded ? "bg-tv-elevated" : ""}`}
                 >
                   <td className="py-1.5 text-center">{medal}</td>
                   <td className="py-1.5 font-sans text-tv-text">
                     {t.author}
-                    <span className="ml-1.5 text-[10px] text-tv-text-subtle">{isExpanded ? "▾" : "▸"}</span>
+                    <span className="ml-1.5 text-[10px] text-tv-muted">{isExpanded ? "▾" : "▸"}</span>
                   </td>
-                  <td className="py-1.5 text-right text-tv-text-secondary">
+                  <td className="py-1.5 text-right text-tv-secondary">
                     {t.signals}
-                    <span className="ml-1 text-[10px] text-tv-text-subtle">
+                    <span className="ml-1 text-[10px] text-tv-muted">
                       ({t.entries}E {t.exits}X)
                     </span>
                   </td>
@@ -166,9 +109,9 @@ export function ScoreboardTable({ traders, traderSignals }: Props) {
                   <td className={`py-1.5 text-right ${scoreColor}`}>
                     {t.avgScore > 0 ? "+" : ""}{t.avgScore.toFixed(2)}%
                   </td>
-                  <td className="py-1.5 text-right text-tv-text-secondary">
+                  <td className="py-1.5 text-right text-tv-secondary">
                     {t.consistency}/{t.signals}
-                    <span className="ml-1 text-[9px] text-tv-green">✦</span>
+                    <span className="ml-1 text-[9px] text-tv-bull">✦</span>
                   </td>
                 </tr>
                 {isExpanded && traderSignals[t.author] && (

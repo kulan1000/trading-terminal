@@ -53,7 +53,7 @@ export default function ScoringPage() {
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-text-bright">
+        <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
           Trader Scoring
         </h1>
         <div className="flex items-center gap-3">
@@ -65,14 +65,14 @@ export default function ScoringPage() {
                 className={`rounded px-2.5 py-1 font-sans text-[11px] font-medium uppercase tracking-wider transition-colors ${
                   asset === a
                     ? "bg-tv-blue text-white"
-                    : "bg-tv-input text-tv-text-secondary hover:text-tv-text"
+                    : "bg-tv-input text-tv-secondary hover:text-tv-text"
                 }`}
               >
                 {a}
               </button>
             ))}
           </div>
-          <span className="text-xs text-tv-text-secondary">
+          <span className="text-xs text-tv-secondary">
             30m · 1h · 2h · 4h efter signal
           </span>
         </div>
@@ -80,7 +80,7 @@ export default function ScoringPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <span className="animate-pulse text-sm text-tv-text-secondary">Loading scoring data...</span>
+          <span className="animate-pulse text-sm text-tv-secondary">Loading scoring data...</span>
         </div>
       ) : (
         <>

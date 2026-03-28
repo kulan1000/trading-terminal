@@ -14,10 +14,10 @@ export default function MarketPage() {
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex items-baseline justify-between">
-        <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-text-bright">
+        <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
           Market — Live Prices
         </h1>
-        <span className="font-mono text-xs text-tv-text-secondary">
+        <span className="font-mono text-xs text-tv-secondary">
           {loading
             ? "Loading..."
             : lastUpdated
@@ -31,7 +31,7 @@ export default function MarketPage() {
           ? Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="h-32 animate-skeleton rounded-[6px] border border-tv-border bg-tv-surface"
+                className="h-32 animate-skeleton rounded-lg border border-tv-border bg-tv-surface"
               />
             ))
           : quotes.map((q) => (
