@@ -36,7 +36,7 @@ function SectorTable({
             <th className="w-[110px] px-2 py-2 text-left font-medium">Intraday</th>
             <th className="px-4 py-2 text-right font-medium">Price</th>
             <th className="px-4 py-2 text-right font-medium">Change</th>
-            <th className="px-4 py-2 text-right font-medium">Volume</th>
+            <th className="px-4 py-2 text-right font-medium">Vol / Avg</th>
             <th className="px-4 py-2 text-right font-medium">VWAP</th>
             <th className="px-4 py-2 text-right font-medium">Shorts</th>
             <th className="px-4 py-2 text-right font-medium">MCap</th>
