@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { TraderScore, ScoredSignal } from "@/hooks/use-scoring-data";
 import { TraderDrilldown } from "./trader-drilldown";
 
@@ -94,7 +95,11 @@ export function ScoreboardTable({ traders, traderSignals }: Props) {
                 >
                   <td className="py-1.5 text-center">{medal}</td>
                   <td className="py-1.5 font-sans text-tv-text">
-                    {t.author}
+                    <Link href={`/trader/${encodeURIComponent(t.author)}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-tv-blue transition-colors hover:text-tv-blue-hover hover:underline">
+                      {t.author}
+                    </Link>
                     <span className="ml-1.5 text-[10px] text-tv-muted">{isExpanded ? "▾" : "▸"}</span>
                   </td>
                   <td className="py-1.5 text-right text-tv-secondary">

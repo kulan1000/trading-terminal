@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { FeedMessage, SignalTag } from "@/lib/types";
 import { ASSET_TAG_COLORS } from "@/lib/constants";
 
@@ -119,7 +120,10 @@ export function SignalFeed({ messages, traderScores }: FeedProps) {
               className={`rounded-md border border-tv-border/60 bg-tv-bg/50 p-3 transition-all duration-150 hover:border-tv-border-hover hover:bg-tv-elevated/30 ${STRENGTH_STYLE[topStrength] ?? ""}`}
             >
               <div className="flex items-center gap-1.5 text-xs">
-                <span className="font-sans font-bold text-tv-blue">{m.author}</span>
+                <Link href={`/trader/${encodeURIComponent(m.author)}`}
+                  className="font-sans font-bold text-tv-blue transition-colors hover:text-tv-blue-hover hover:underline">
+                  {m.author}
+                </Link>
                 {traderScores?.[m.author] != null && (
                   <ScoreBadge winRate={traderScores[m.author]} />
                 )}

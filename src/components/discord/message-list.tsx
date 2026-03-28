@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { FeedMessage } from "@/lib/types";
 import { ASSET_TAG_COLORS } from "@/lib/constants";
 
@@ -49,7 +50,10 @@ export function MessageList({ messages, highlight }: Props) {
             className="flex items-start gap-2 border-b border-tv-divider px-1 py-2 transition-colors hover:bg-tv-elevated/50">
             <span className="shrink-0 font-mono text-xs text-tv-muted">{time}</span>
             <span className="shrink-0 text-xs text-tv-orange">#{msg.channel}</span>
-            <span className="shrink-0 font-sans text-xs font-semibold text-tv-blue">{msg.author}</span>
+            <Link href={`/trader/${encodeURIComponent(msg.author)}`}
+              className="shrink-0 font-sans text-xs font-semibold text-tv-blue transition-colors hover:text-tv-blue-hover hover:underline">
+              {msg.author}
+            </Link>
             <span className="flex-1 text-xs leading-relaxed text-tv-text">
               <HighlightText text={msg.content} highlight={highlight} />
             </span>
