@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { DetailSignal } from "./bias-detail-modal";
+import type { DetailSignal } from "./bias-detail-types";
 import { fmtTime, fmtAgo } from "@/lib/format-utils";
 
 const TYPE_LABELS: Record<string, { label: string; cls: string }> = {

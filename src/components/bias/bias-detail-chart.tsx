@@ -2,22 +2,11 @@
 
 import { fmtTime } from "@/lib/format-utils";
 import type { Asset } from "@/lib/types";
+import { CHART_W as W, CHART_H as H, CHART_PAD as PAD, timeToX, isoToX, yAxisLabels, pointsToPath } from "./chart-utils";
 
-interface HistoryPoint {
-  score: number;
-  direction: string;
-  created_at: string;
-}
-
-export interface SignalMarker {
-  direction: string;
-  created_at: string;
-}
-
-export interface PricePoint {
-  ts: number; // epoch seconds
-  price: number;
-}
+interface HistoryPoint { score: number; direction: string; created_at: string }
+export interface SignalMarker { direction: string; created_at: string }
+export interface PricePoint { ts: number; price: number }
 
 interface Props {
   history: HistoryPoint[];
@@ -27,20 +16,7 @@ interface Props {
   asset?: Asset;
 }
 
-const W = 820;
-const H = 220;
-const PAD = { top: 10, right: 55, bottom: 30, left: 40 };
-
-function timeToX(ms: number, start: number, span: number, chartW: number, padLeft: number): number {
-  const pct = Math.max(0, Math.min(1, (ms - start) / span));
-  return padLeft + pct * chartW;
-}
-
-function isoToX(iso: string, start: number, span: number, chartW: number, padLeft: number): number {
-  return timeToX(new Date(iso).getTime(), start, span, chartW, padLeft);
-}
-
-export function BiasDetailChart({ history, signals, intradayPrices, price, asset }: Props) {
+export function BiasDetailChart({ history, signals, intradayPrices, asset }: Props) {
   if (history.length < 2) {
     return (
       <div className="flex h-[200px] items-center justify-center overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
@@ -52,7 +28,6 @@ export function BiasDetailChart({ history, signals, intradayPrices, price, asset
   const now = Date.now();
   const sixH = 6 * 60 * 60 * 1000;
   const start = now - sixH;
-  const span = sixH;
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
 
@@ -63,13 +38,13 @@ export function BiasDetailChart({ history, signals, intradayPrices, price, asset
   const bMax = Math.max(...scores, 70) + 5;
   const bRange = bMax - bMin || 1;
 
-  const biasPoints = filtered.map((h) => {
-    const x = isoToX(h.created_at, start, span, chartW, PAD.left);
-    const y = PAD.top + chartH - ((h.score - bMin) / bRange) * chartH;
-    return { x, y, ...h };
-  });
+  const biasPoints = filtered.map((h) => ({
+    x: isoToX(h.created_at, start, sixH, chartW, PAD.left),
+    y: PAD.top + chartH - ((h.score - bMin) / bRange) * chartH,
+    ...h,
+  }));
 
-  const biasLine = biasPoints.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const biasLine = pointsToPath(biasPoints);
   const biasArea = biasPoints.length > 0
     ? `${biasLine} L${biasPoints[biasPoints.length - 1].x.toFixed(1)},${PAD.top + chartH} L${biasPoints[0].x.toFixed(1)},${PAD.top + chartH} Z`
     : "";
@@ -95,38 +70,23 @@ export function BiasDetailChart({ history, signals, intradayPrices, price, asset
     const pMaxP = pMax + pPad;
     const pRange = pMaxP - pMinP || 1;
 
-    const pricePoints = pd.map((p) => {
-      const x = timeToX(p.ts * 1000, start, span, chartW, PAD.left);
-      const y = PAD.top + chartH - ((p.price - pMinP) / pRange) * chartH;
-      return { x, y };
-    });
+    const pricePoints = pd.map((p) => ({
+      x: timeToX(p.ts * 1000, start, sixH, chartW, PAD.left),
+      y: PAD.top + chartH - ((p.price - pMinP) / pRange) * chartH,
+    }));
 
-    priceLine = pricePoints.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
-
-    // Right Y-axis labels for price
-    priceYLabels = Array.from({ length: 5 }, (_, i) => {
-      const val = pMinP + (pRange * i) / 4;
-      const y = PAD.top + chartH - (i / 4) * chartH;
-      return { val, y };
-    });
+    priceLine = pointsToPath(pricePoints);
+    priceYLabels = yAxisLabels(pMinP, pRange, 5, PAD.top, chartH);
   }
 
-  // --- Y-axis labels (bias %) ---
-  const yLabels = Array.from({ length: 5 }, (_, i) => {
-    const val = bMin + (bRange * i) / 4;
-    const y = PAD.top + chartH - (i / 4) * chartH;
-    return { val: Math.round(val), y };
-  });
+  const yLabels = yAxisLabels(bMin, bRange, 5, PAD.top, chartH).map((l) => ({ ...l, val: Math.round(l.val) }));
+  const fiftyY = PAD.top + chartH - ((50 - bMin) / bRange) * chartH;
 
   // --- X-axis: hourly marks ---
-  const xLabels = Array.from({ length: 7 }, (_, i) => {
-    const t = start + i * 60 * 60 * 1000;
-    const x = PAD.left + (i / 6) * chartW;
-    const time = fmtTime(new Date(t).toISOString());
-    return { x, time };
-  });
-
-  const fiftyY = PAD.top + chartH - ((50 - bMin) / bRange) * chartH;
+  const xLabels = Array.from({ length: 7 }, (_, i) => ({
+    x: PAD.left + (i / 6) * chartW,
+    time: fmtTime(new Date(start + i * 60 * 60 * 1000).toISOString()),
+  }));
 
   // --- Signal markers ---
   const markers = (signals ?? []).filter((s) => {
@@ -134,7 +94,6 @@ export function BiasDetailChart({ history, signals, intradayPrices, price, asset
     return t >= start && t <= now;
   });
 
-  // Market closed note
   const showClosedNote = hasPriceData && intradayPrices!.length > 0 &&
     (now / 1000 - intradayPrices![intradayPrices!.length - 1].ts) > 3600;
 
@@ -144,12 +103,8 @@ export function BiasDetailChart({ history, signals, intradayPrices, price, asset
       <div className="px-5 pt-4 pb-4">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">
-              Bias-trend 6h
-            </h4>
-            {showClosedNote && (
-              <span className="font-sans text-[9px] text-white/20">· Börsen stängd — senaste prisdata kan vara gammal</span>
-            )}
+            <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">Bias-trend 6h</h4>
+            {showClosedNote && <span className="font-sans text-[9px] text-white/20">· Börsen stängd — senaste prisdata kan vara gammal</span>}
           </div>
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 font-sans text-[10px] text-white/30">
@@ -169,24 +124,17 @@ export function BiasDetailChart({ history, signals, intradayPrices, price, asset
           </div>
         </div>
         <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
-          {/* Grid */}
           {yLabels.map((yl) => (
             <line key={yl.val} x1={PAD.left} y1={yl.y} x2={W - PAD.right} y2={yl.y} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
           ))}
           <line x1={PAD.left} y1={fiftyY} x2={W - PAD.right} y2={fiftyY} stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeDasharray="4 3" />
-
-          {/* Bias area + line */}
           {biasArea && <path d={biasArea} fill={fillColor} />}
           {biasLine && <path d={biasLine} fill="none" stroke={lineColor} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />}
-
-          {/* Price line (real intraday data) */}
           {hasPriceData && priceLine && (
             <path d={priceLine} fill="none" stroke="#2962FF" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" opacity="0.5" />
           )}
-
-          {/* Signal opinion markers */}
           {markers.map((s, i) => {
-            const mx = isoToX(s.created_at, start, span, chartW, PAD.left);
+            const mx = isoToX(s.created_at, start, sixH, chartW, PAD.left);
             const isBull = s.direction === "bullish";
             const color = isBull ? "#26A69A" : "#EF5350";
             const my = isBull ? PAD.top + 8 : PAD.top + chartH - 8;
@@ -198,34 +146,22 @@ export function BiasDetailChart({ history, signals, intradayPrices, price, asset
               </g>
             );
           })}
-
-          {/* Current bias dot */}
           {biasPoints.length > 0 && (
             <>
               <circle cx={last.x} cy={last.y} r="4" fill={lineColor} />
               <circle cx={last.x} cy={last.y} r="7" fill={lineColor} opacity="0.2" />
             </>
           )}
-
-          {/* Left Y-axis: bias % */}
           {yLabels.map((yl) => (
-            <text key={yl.val} x={PAD.left - 6} y={yl.y + 3} textAnchor="end" className="fill-white/20 font-mono text-[10px]">
-              {yl.val}%
-            </text>
+            <text key={yl.val} x={PAD.left - 6} y={yl.y + 3} textAnchor="end" className="fill-white/20 font-mono text-[10px]">{yl.val}%</text>
           ))}
-
-          {/* Right Y-axis: price $ */}
           {hasPriceData && priceYLabels.map((pl, i) => (
             <text key={`p-${i}`} x={W - PAD.right + 6} y={pl.y + 3} textAnchor="start" className="fill-[#2962FF]/40 font-mono text-[9px]">
               {asset === "Oil" ? pl.val.toFixed(1) : pl.val.toFixed(0)}
             </text>
           ))}
-
-          {/* X-axis */}
           {xLabels.map((xl, i) => (
-            <text key={i} x={xl.x} y={H - 4} textAnchor="middle" className="fill-white/20 font-mono text-[10px]">
-              {xl.time}
-            </text>
+            <text key={i} x={xl.x} y={H - 4} textAnchor="middle" className="fill-white/20 font-mono text-[10px]">{xl.time}</text>
           ))}
         </svg>
       </div>
