@@ -20,7 +20,11 @@ interface AssetBiasCardProps {
 
 export function AssetBiasCard({ asset, pair, direction, score, count, isHot, history }: AssetBiasCardProps) {
   return (
-    <div className={`animate-fade-in rounded-lg border p-5 transition-all duration-150 hover:border-tv-border-hover ${DIRECTION_BG[direction]}`}>
+    <div className={`animate-fade-in rounded-lg border p-5 transition-all duration-200 hover:border-tv-border-hover ${DIRECTION_BG[direction]} ${
+      direction === "bullish" ? "shadow-[0_0_30px_-10px_rgba(38,166,154,0.2)]" :
+      direction === "bearish" ? "shadow-[0_0_30px_-10px_rgba(239,83,80,0.2)]" :
+      ""
+    }`}>
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">

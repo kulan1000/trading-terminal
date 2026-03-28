@@ -103,14 +103,18 @@ export async function getSignalFeed(limit = 20): Promise<FeedMessage[]> {
   return toFeedMessages((data ?? []) as RawMessageWithSignals[]);
 }
 
-// Filtered signal feed for Discord Intel (channel + asset filters)
+// Filtered signal feed for Discord Intel (channel + asset + author + date + type filters)
 export async function getFilteredFeed(options?: {
   channel?: string;
   asset?: string;
   query?: string;
+  author?: string;
+  signalType?: string;
+  dateFrom?: string;
+  dateTo?: string;
   limit?: number;
 }): Promise<FeedMessage[]> {
-  const { channel, asset, query, limit = 50 } = options ?? {};
+  const { channel, asset, query, author, signalType, dateFrom, dateTo, limit = 50 } = options ?? {};
 
   let q = supabase
     .from("discord_messages")
@@ -119,15 +123,34 @@ export async function getFilteredFeed(options?: {
     .limit(limit);
 
   if (channel && channel !== "all") q = q.eq("channel", channel);
+  if (author) q = q.ilike("author", `%${author}%`);
   if (query) q = q.ilike("content", `%${query}%`);
+  if (dateFrom) q = q.gte("timestamp", dateFrom);
+  if (dateTo) q = q.lte("timestamp", dateTo);
 
   const { data } = await q;
-  const feed = toFeedMessages((data ?? []) as RawMessageWithSignals[]);
+  let feed = toFeedMessages((data ?? []) as RawMessageWithSignals[]);
 
   if (asset && asset !== "all") {
-    return feed.filter((m) => m.assets.some((a) => a.asset === asset));
+    feed = feed.filter((m) => m.assets.some((a) => a.asset === asset));
+  }
+  if (signalType && signalType !== "all") {
+    feed = feed.filter((m) => m.assets.some((a) => a.signal_type === signalType));
   }
   return feed;
+}
+
+// Get unique authors for autocomplete
+export async function getActiveAuthors(): Promise<string[]> {
+  const { data } = await supabase
+    .from("signals")
+    .select("author")
+    .not("author", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  const authors = [...new Set(((data ?? []) as Array<{ author: string }>).map((r) => r.author))];
+  return authors.sort();
 }
 
 // ─── Targets: recent price targets from traders ─────────────────

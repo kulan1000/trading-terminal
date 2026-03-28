@@ -28,12 +28,12 @@ export default function MarketPage() {
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="space-y-4">
         {loading
           ? Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="h-32 animate-skeleton rounded-lg border border-tv-border bg-tv-surface"
+                className="h-48 animate-skeleton rounded-lg border border-tv-border bg-tv-surface"
               />
             ))
           : quotes.map((q) => {
@@ -44,6 +44,7 @@ export default function MarketPage() {
                   quote={q}
                   pair={ASSET_PAIRS[q.asset]}
                   sentiment={s}
+                  variant="hero"
                 />
               );
             })}

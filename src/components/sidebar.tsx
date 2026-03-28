@@ -14,7 +14,7 @@ import {
   Briefcase,
   ChevronLeft,
   ChevronRight,
-  LayoutDashboard,
+  Gem,
 } from "lucide-react";
 
 const navItems = [
@@ -40,10 +40,12 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div className="flex h-14 items-center gap-3 px-4">
-        <LayoutDashboard size={20} strokeWidth={1.8} className="shrink-0 text-tv-blue" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-tv-blue/15">
+          <Gem size={16} strokeWidth={2} className="text-tv-blue" />
+        </div>
         {expanded && (
           <span className="truncate text-[13px] font-bold tracking-wider text-tv-heading">
-            TRADING TERMINAL
+            TT
           </span>
         )}
       </div>

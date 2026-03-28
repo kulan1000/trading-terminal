@@ -116,7 +116,7 @@ export function SignalFeed({ messages, traderScores }: FeedProps) {
           return (
             <div
               key={m.id}
-              className={`border-b border-tv-divider pb-2 pl-2 last:border-0 ${STRENGTH_STYLE[topStrength] ?? ""}`}
+              className={`rounded-md border border-tv-border/60 bg-tv-bg/50 p-3 transition-all duration-150 hover:border-tv-border-hover hover:bg-tv-elevated/30 ${STRENGTH_STYLE[topStrength] ?? ""}`}
             >
               <div className="flex items-center gap-1.5 text-xs">
                 <span className="font-sans font-bold text-tv-blue">{m.author}</span>
