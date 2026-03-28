@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { DailyBriefing } from "@/lib/queries-briefing";
-import { DIRECTION_COLOR, ASSET_TAG_COLORS } from "@/lib/constants";
+import { ASSET_TAG_COLORS } from "@/lib/constants";
 import { fmtTime } from "@/lib/format-utils";
 
 const DIR_LABEL: Record<string, string> = {

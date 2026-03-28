@@ -1,14 +1,7 @@
 "use client";
 
 import type { OpenPosition } from "@/hooks/use-scoring-data";
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const hours = Math.floor(diff / 3_600_000);
-  if (hours < 1) return `${Math.floor(diff / 60_000)}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
+import { fmtAgoEn } from "@/lib/format-utils";
 
 export function OpenPositions({ positions }: { positions: OpenPosition[] }) {
   if (!positions.length) {
@@ -70,7 +63,7 @@ export function OpenPositions({ positions }: { positions: OpenPosition[] }) {
               <td className="px-5 py-3 text-right font-mono text-[13px] tabular-nums text-white">
                 {p.price_at_signal != null ? `$${p.price_at_signal.toFixed(2)}` : <span className="text-white/20">—</span>}
               </td>
-              <td className="px-5 py-3 text-right font-mono text-[11px] text-white/20">{timeAgo(p.created_at)}</td>
+              <td className="px-5 py-3 text-right font-mono text-[11px] text-white/20">{fmtAgoEn(p.created_at)}</td>
             </tr>
           ))}
         </tbody>

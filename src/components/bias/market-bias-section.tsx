@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Asset } from "@/lib/types";
 import { ASSET_PAIRS } from "@/lib/constants";
-import { fmtPrice } from "@/lib/format-utils";
+import { fmtPrice, fmtAgo } from "@/lib/format-utils";
 import { BiasSparkline } from "./bias-sparkline";
 import { BiasDetailModal } from "./bias-detail-modal";
 
@@ -64,12 +64,6 @@ const DIR_ACCENT: Record<string, string> = {
   neutral: "#FF9800",
 };
 
-function timeAgo(iso: string) {
-  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-  if (mins < 60) return `${mins}m sedan`;
-  const hours = Math.round(mins / 60);
-  return hours < 24 ? `${hours}h sedan` : `${Math.round(hours / 24)}d sedan`;
-}
 
 const TYPE_SHORT: Record<string, string> = { entry: "ENTRY", exited: "EXIT", position: "HOLD", opinion: "OPINION", target: "TARGET" };
 
@@ -161,7 +155,7 @@ export function MarketBiasSection({ biases }: Props) {
                       {b.latestSignal.position ? ` ${b.latestSignal.position.toUpperCase()}` : ""}
                     </span>
                     <span className="truncate font-sans text-[10px] text-white/40">{b.latestSignal.author}</span>
-                    <span className="ml-auto shrink-0 font-mono text-[9px] text-white/20">{timeAgo(b.latestSignal.created_at)}</span>
+                    <span className="ml-auto shrink-0 font-mono text-[9px] text-white/20">{fmtAgo(b.latestSignal.created_at)}</span>
                   </div>
                 )}
 

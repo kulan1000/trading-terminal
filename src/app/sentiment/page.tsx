@@ -1,4 +1,4 @@
-import { ASSETS, ASSET_PAIRS } from "@/lib/constants";
+import { ASSETS } from "@/lib/constants";
 import { getAssetBias } from "@/lib/queries";
 import { getHotAsset, getBiasHistory, getLatestSignal, getBiasAgo } from "@/lib/queries-bias";
 import { getMarketQuotes } from "@/lib/market-data";

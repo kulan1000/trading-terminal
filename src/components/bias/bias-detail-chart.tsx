@@ -1,6 +1,6 @@
 "use client";
 
-import { fmtTime, fmtPrice } from "@/lib/format-utils";
+import { fmtTime } from "@/lib/format-utils";
 import type { Asset } from "@/lib/types";
 
 interface HistoryPoint {

@@ -1,19 +1,12 @@
 "use client";
 
 import type { ScoredSignal } from "@/hooks/use-scoring-data";
+import { fmtAgoEn } from "@/lib/format-utils";
 
 function ScoreCell({ value }: { value: number | null }) {
   if (value == null) return <span className="text-white/20">—</span>;
   const color = value > 0 ? "text-[#26A69A]" : value < 0 ? "text-[#EF5350]" : "text-white/50";
   return <span className={`font-mono tabular-nums ${color}`}>{value > 0 ? "+" : ""}{value.toFixed(2)}%</span>;
-}
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const hours = Math.floor(diff / 3_600_000);
-  if (hours < 1) return `${Math.floor(diff / 60_000)}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
 }
 
 export function RecentScored({ signals }: { signals: ScoredSignal[] }) {
@@ -81,7 +74,7 @@ export function RecentScored({ signals }: { signals: ScoredSignal[] }) {
               <td className="px-5 py-3 text-right text-[13px]">
                 <ScoreCell value={s.weightedScore} />
                 {s.consistent && <span className="ml-1 text-[9px] text-[#26A69A]">✦</span>}
-                <span className="ml-1.5 font-mono text-[10px] text-white/20">{timeAgo(s.scoredAt)}</span>
+                <span className="ml-1.5 font-mono text-[10px] text-white/20">{fmtAgoEn(s.scoredAt)}</span>
               </td>
             </tr>
           ))}

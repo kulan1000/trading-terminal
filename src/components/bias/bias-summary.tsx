@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ASSETS, ASSET_TAG_COLORS } from "@/lib/constants";
+import { ASSET_TAG_COLORS } from "@/lib/constants";
 
 interface AssetSummary {
   asset: string;

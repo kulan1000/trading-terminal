@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fmtAgo, fmtPrice } from "@/lib/format-utils";
+import { fmtAgo } from "@/lib/format-utils";
 
 interface Credibility {
   discord_user: string;

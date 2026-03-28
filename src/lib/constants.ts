@@ -17,12 +17,6 @@ export const DIRECTION_COLOR: Record<Direction | "long" | "short", string> = {
   short: "text-tv-bear",
 };
 
-export const DIRECTION_BG: Record<Direction, string> = {
-  bullish: "bg-tv-bull/10 border-tv-bull/20",
-  bearish: "bg-tv-bear/10 border-tv-bear/20",
-  neutral: "bg-tv-orange/10 border-tv-orange/20",
-};
-
 // Asset tag colors for signal feed & message list
 export const ASSET_TAG_COLORS: Record<string, string> = {
   Gold: "bg-tv-yellow/20 text-tv-yellow",

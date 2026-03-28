@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { DetailSignal } from "./bias-detail-modal";
-import { fmtTime } from "@/lib/format-utils";
+import { fmtTime, fmtAgo } from "@/lib/format-utils";
 
 const TYPE_LABELS: Record<string, { label: string; cls: string }> = {
   entry: { label: "ENTRY", cls: "bg-[#26A69A]/20 text-[#26A69A] ring-1 ring-[#26A69A]/30" },
@@ -12,13 +12,6 @@ const TYPE_LABELS: Record<string, { label: string; cls: string }> = {
   target: { label: "TARGET", cls: "bg-[#2962FF]/20 text-[#2962FF] ring-1 ring-[#2962FF]/30" },
 };
 
-function timeSince(iso: string) {
-  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-  if (mins < 60) return `${mins}m sedan`;
-  const hours = Math.round(mins / 60);
-  if (hours < 24) return `${hours}h sedan`;
-  return `${Math.round(hours / 24)}d sedan`;
-}
 
 function groupByTime(signals: DetailSignal[]) {
   const now = Date.now();
@@ -71,7 +64,7 @@ function SignalCard({ s }: { s: DetailSignal }) {
           </span>
         )}
         <span className="ml-auto font-mono text-[11px] text-white/20">
-          {fmtTime(s.created_at)} <span className="text-[10px]">({timeSince(s.created_at)})</span>
+          {fmtTime(s.created_at)} <span className="text-[10px]">({fmtAgo(s.created_at)})</span>
         </span>
       </div>
 
