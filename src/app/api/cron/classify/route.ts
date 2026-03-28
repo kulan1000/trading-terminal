@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { processUnclassified } from "@/lib/classify-batch";
 import { pairTrades } from "@/lib/trade-pairing";
+import { savePriceSnapshots } from "@/lib/price-snapshots";
+import { scoreSignals } from "@/lib/score-signals";
 
 // Vercel Cron calls this every 5 minutes
 export async function GET(request: Request) {
@@ -9,10 +11,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // 1) Save price snapshots (for time-horizon scoring)
+  const snapshots = await savePriceSnapshots();
+
+  // 2) Classify new messages
   const classify = await processUnclassified();
 
-  // After classifying, try to pair entries with exits
+  // 3) Pair entries with exits (legacy)
   const pairing = await pairTrades();
 
-  return NextResponse.json({ ...classify, ...pairing });
+  // 4) Score signals using time-horizon method
+  const scoring = await scoreSignals();
+
+  return NextResponse.json({ snapshots, ...classify, ...pairing, scoring });
 }

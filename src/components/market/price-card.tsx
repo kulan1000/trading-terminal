@@ -23,8 +23,8 @@ export function PriceCard({ quote, pair }: PriceCardProps) {
   const color = changeColor(quote.change);
   const arrow = isUp ? "▲" : "▼";
   const borderColor = isUp
-    ? "border-terminal-green/30"
-    : "border-terminal-red/30";
+    ? "border-tv-green/30"
+    : "border-tv-red/30";
 
   const markers = useTradeMarkers(quote.asset);
 
@@ -39,15 +39,15 @@ export function PriceCard({ quote, pair }: PriceCardProps) {
       />
     )}
     <div
-      className={`rounded-lg border ${borderColor} bg-terminal-surface font-mono cursor-pointer transition-colors hover:border-terminal-text/20`}
+      className={`animate-fade-in cursor-pointer rounded-[6px] border ${borderColor} bg-tv-surface font-mono transition-all duration-150 hover:border-tv-border-hover hover:bg-tv-hover`}
       onClick={() => setExpanded(true)}
     >
       {/* Header: asset name + volume */}
       <div className="flex items-baseline justify-between px-4 pt-3">
-        <span className="text-xs text-terminal-muted">
+        <span className="font-sans text-xs text-tv-text-secondary">
           {quote.asset} — {pair}
         </span>
-        <span className="text-xs text-terminal-muted">
+        <span className="text-xs text-tv-text-secondary">
           {quote.volume > 0
             ? `Vol: ${(quote.volume / 1000).toFixed(0)}K`
             : ""}
@@ -58,7 +58,7 @@ export function PriceCard({ quote, pair }: PriceCardProps) {
       <div className="flex items-baseline gap-3 px-4 pt-1">
         <AnimatedPrice
           value={quote.price}
-          className="text-3xl font-bold text-terminal-text"
+          className="text-3xl font-bold text-tv-text-bright"
         />
         <span className={`text-sm font-semibold ${color}`}>
           {arrow}{" "}
@@ -73,24 +73,24 @@ export function PriceCard({ quote, pair }: PriceCardProps) {
       </div>
 
       {/* High / Low */}
-      <div className="flex gap-4 px-4 pt-1 text-xs text-terminal-muted">
+      <div className="flex gap-4 px-4 pt-1 text-xs text-tv-text-secondary">
         <span>
           H:{" "}
           <AnimatedPrice
             value={quote.high}
-            className="text-terminal-text"
+            className="text-tv-text"
           />
         </span>
         <span>
           L:{" "}
           <AnimatedPrice
             value={quote.low}
-            className="text-terminal-text"
+            className="text-tv-text"
           />
         </span>
       </div>
 
-      {/* Intraday chart — full width at bottom, with trade markers */}
+      {/* Intraday chart */}
       {quote.sparkline && quote.sparkline.length > 2 && (
         <div className="mt-2 px-1 pb-1">
           <Sparkline
@@ -104,7 +104,7 @@ export function PriceCard({ quote, pair }: PriceCardProps) {
 
       {/* Marker count badge */}
       {markers.length > 0 && (
-        <div className="px-4 pb-2 text-[10px] text-terminal-muted">
+        <div className="px-4 pb-2 text-[10px] text-tv-text-subtle">
           {markers.length} trade signal{markers.length !== 1 ? "s" : ""} (48h)
         </div>
       )}

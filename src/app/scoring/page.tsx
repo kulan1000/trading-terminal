@@ -4,48 +4,51 @@ import { useState } from "react";
 import { useScoringData } from "@/hooks/use-scoring-data";
 import { ScoreboardTable } from "@/components/scoring/scoreboard-table";
 import { OpenPositions } from "@/components/scoring/open-positions";
-import { RecentTrades } from "@/components/scoring/recent-trades";
+import { RecentScored } from "@/components/scoring/recent-trades";
 
 const ASSETS = ["all", "gold", "silver", "oil"] as const;
 type AssetFilter = (typeof ASSETS)[number];
 
 export default function ScoringPage() {
-  const { scoreboard, openPositions, recentTrades, traderTrades, loading } = useScoringData();
+  const { scoreboard, openPositions, recentScored, traderSignals, loading } = useScoringData();
   const [asset, setAsset] = useState<AssetFilter>("all");
 
-  // Filter trades by asset, then recompute scoreboard
-  const filteredTrades = asset === "all"
-    ? recentTrades
-    : recentTrades.filter((t) => t.asset === asset);
-
-  const filteredTraderTrades = asset === "all"
-    ? traderTrades
+  // Filter by asset
+  const filteredSignals = asset === "all"
+    ? traderSignals
     : Object.fromEntries(
-        Object.entries(traderTrades).map(([k, v]) => [k, v.filter((t) => t.asset === asset)])
+        Object.entries(traderSignals).map(([k, v]) => [
+          k, v.filter((s) => s.asset.toLowerCase() === asset),
+        ])
       );
 
-  // Recompute scoreboard when filtered
   const filteredScoreboard = asset === "all"
     ? scoreboard
     : scoreboard
-        .map((s) => {
-          const trades = filteredTraderTrades[s.author] ?? [];
-          const wins = trades.filter((t) => t.pnl > 0).length;
-          const totalPnl = trades.reduce((sum, t) => sum + t.pnl, 0);
+        .map((t) => {
+          const sigs = filteredSignals[t.author] ?? [];
+          const wins = sigs.filter((s) => s.weightedScore > 0).length;
+          const total = sigs.reduce((sum, s) => sum + s.weightedScore, 0);
+          const consistent = sigs.filter((s) => s.consistent).length;
           return {
-            ...s,
-            trades: trades.length,
+            ...t,
+            signals: sigs.length,
             wins,
-            totalPnl,
-            avgPnl: trades.length > 0 ? totalPnl / trades.length : 0,
-            winRate: trades.length > 0 ? wins / trades.length : 0,
+            totalScore: total,
+            avgScore: sigs.length > 0 ? total / sigs.length : 0,
+            winRate: sigs.length > 0 ? wins / sigs.length : 0,
+            consistency: consistent,
           };
         })
-        .filter((s) => s.trades >= 1);
+        .filter((t) => t.signals >= 1);
+
+  const filteredRecent = asset === "all"
+    ? recentScored
+    : recentScored.filter((s) => s.asset.toLowerCase() === asset);
 
   const filteredOpen = asset === "all"
     ? openPositions
-    : openPositions.filter((p) => p.asset === asset);
+    : openPositions.filter((p) => p.asset.toLowerCase() === asset);
 
   return (
     <div className="animate-fade-in space-y-4">
@@ -70,7 +73,7 @@ export default function ScoringPage() {
             ))}
           </div>
           <span className="text-xs text-tv-text-secondary">
-            Entry/exit-signaler från Discord
+            30m · 1h · 2h · 4h efter signal
           </span>
         </div>
       </div>
@@ -81,10 +84,10 @@ export default function ScoringPage() {
         </div>
       ) : (
         <>
-          <ScoreboardTable traders={filteredScoreboard} traderTrades={filteredTraderTrades} />
+          <ScoreboardTable traders={filteredScoreboard} traderSignals={filteredSignals} />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <OpenPositions positions={filteredOpen} />
-            <RecentTrades trades={filteredTrades} />
+            <RecentScored signals={filteredRecent} />
           </div>
         </>
       )}

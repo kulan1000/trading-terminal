@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 
 export interface TraderScore {
   author: string;
-  trades: number;
+  signals: number;
+  entries: number;
+  exits: number;
   wins: number;
-  totalPnl: number;
-  avgPnl: number;
+  totalScore: number;
+  avgScore: number;
   winRate: number;
+  consistency: number;
 }
 
 export interface OpenPosition {
@@ -20,28 +23,31 @@ export interface OpenPosition {
   created_at: string;
 }
 
-export interface RecentTrade {
+export interface ScoredSignal {
   author: string;
   asset: string;
-  position: string;
-  entryPrice: number;
-  exitPrice: number;
-  pnl: number;
-  pnlPercent: number;
-  entryTime: string;
-  exitTime: string;
+  signalType: string;
+  position: string | null;
+  priceAtSignal: number;
+  score30m: number | null;
+  score1h: number | null;
+  score2h: number | null;
+  score4h: number | null;
+  weightedScore: number;
+  consistent: boolean;
+  scoredAt: string;
 }
 
 interface ScoringData {
   scoreboard: TraderScore[];
   openPositions: OpenPosition[];
-  recentTrades: RecentTrade[];
-  traderTrades: Record<string, RecentTrade[]>;
+  recentScored: ScoredSignal[];
+  traderSignals: Record<string, ScoredSignal[]>;
 }
 
 export function useScoringData() {
   const [data, setData] = useState<ScoringData>({
-    scoreboard: [], openPositions: [], recentTrades: [], traderTrades: {},
+    scoreboard: [], openPositions: [], recentScored: [], traderSignals: {},
   });
   const [loading, setLoading] = useState(true);
 
