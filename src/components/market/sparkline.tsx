@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { SparklineTooltip } from "./sparkline-tooltip";
 import { TradeMarkersOverlay } from "./trade-markers-overlay";
 
@@ -12,13 +12,13 @@ export interface TradeMarker {
   direction: string;
   price_at_signal: number;
   created_at: string;
-  msg_timestamp: string; // original Discord message time — used for chart positioning
-  content: string; // original Discord message text
+  msg_timestamp: string;
+  content: string;
 }
 
 interface SparklineProps {
   data: number[];
-  timestamps?: number[]; // epoch seconds
+  timestamps?: number[];
   width?: number;
   height?: number;
   className?: string;
@@ -29,13 +29,31 @@ interface SparklineProps {
 export function Sparkline({
   data,
   timestamps,
-  width = 280,
+  width: defaultWidth = 280,
   height = 56,
   className,
   markers,
 }: SparklineProps) {
   const [hover, setHover] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [measuredWidth, setMeasuredWidth] = useState<number>(defaultWidth);
+
+  // Measure actual container width so the viewBox matches the rendered size
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = entry.contentRect.width;
+        if (w > 0) setMeasuredWidth(Math.round(w));
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const width = measuredWidth;
 
   const onMove = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {
@@ -51,7 +69,6 @@ export function Sparkline({
 
   if (data.length < 2) return null;
 
-  // Y-range from price data only (markers are in separate strip now)
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = max - min || 1;
@@ -67,7 +84,7 @@ export function Sparkline({
 
   const openY = toY(data[0]);
   const fillPath = `M${points[0]} ${points.join(" L")} L${width},${height} L0,${height} Z`;
-  const gradId = `intra-${isUp ? "up" : "dn"}`;
+  const gradId = `intra-${isUp ? "up" : "dn"}-${width}`;
 
   // Hover calculations — Stockholm time
   const hx = hover !== null ? toX(hover) : 0;
@@ -77,13 +94,13 @@ export function Sparkline({
     : null;
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
       <svg
         ref={svgRef}
         width="100%"
         height={height}
         viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="none"
+        preserveAspectRatio="xMidYMid meet"
         className={`cursor-crosshair ${className ?? ""}`}
         onMouseMove={onMove}
         onMouseLeave={() => setHover(null)}

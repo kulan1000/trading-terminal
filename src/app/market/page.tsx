@@ -16,9 +16,17 @@ export default function MarketPage() {
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex items-baseline justify-between">
-        <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
-          Market — Live Prices
-        </h1>
+        <div className="flex items-center gap-2.5">
+          <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
+            Market — Live Prices
+          </h1>
+          {!loading && lastUpdated && (
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-tv-bull opacity-50" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-tv-bull" />
+            </span>
+          )}
+        </div>
         <span className="font-mono text-xs text-tv-secondary">
           {loading
             ? "Loading..."

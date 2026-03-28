@@ -23,15 +23,32 @@ export function ChartModal({ quote, pair, markers, onClose }: Props) {
   const [hover, setHover] = useState<number | null>(null);
   const [hoveredMarker, setHoveredMarker] = useState<number | null>(null);
   const [selectedMarker, setSelectedMarker] = useState<number | null>(null);
+  const [phase, setPhase] = useState<"entering" | "open" | "leaving" | "gone">("entering");
+
+  // Enter animation
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setPhase("open"));
+    });
+  }, []);
+
+  // Close with exit animation
+  const handleClose = useCallback(() => {
+    setPhase("leaving");
+    setTimeout(() => {
+      setPhase("gone");
+      onClose();
+    }, 250);
+  }, [onClose]);
 
   // Close on Escape
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose(); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  }, [handleClose]);
 
-  // Prevent body scroll while modal is open
+  // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
@@ -65,19 +82,44 @@ export function ChartModal({ quote, pair, markers, onClose }: Props) {
 
   const changeCol = changeColor(quote.change);
   const arrow = quote.change >= 0 ? "▲" : "▼";
+  const isVisible = phase === "open";
+
+  if (phase === "gone") return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClick={handleClose}
+      style={{ perspective: "1200px" }}
+    >
+      {/* Backdrop */}
       <div
-        className="relative z-10 w-[95vw] max-w-[960px] rounded-xl border border-terminal-border bg-terminal-surface/98 font-mono shadow-2xl backdrop-blur-md"
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        style={{
+          opacity: isVisible ? 1 : 0,
+          transition: "opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        }}
+      />
+
+      {/* Modal panel — centered with smooth scale+slide animation */}
+      <div
+        className="relative z-10 w-[95vw] max-w-[960px] rounded-xl border border-tv-border bg-tv-surface font-mono shadow-2xl backdrop-blur-md"
+        style={{
+          opacity: isVisible ? 1 : 0,
+          transform: isVisible
+            ? "scale(1) translateY(0)"
+            : "scale(0.92) translateY(24px)",
+          transition: isVisible
+            ? "opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)"
+            : "opacity 0.2s ease-in, transform 0.2s ease-in",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-terminal-border/50 px-6 py-4">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-tv-border/50 px-6 py-4">
           <div className="flex items-baseline gap-4">
-            <span className="text-sm text-terminal-muted">{quote.asset} — {pair}</span>
-            <span className="text-2xl font-bold text-terminal-text">
+            <span className="text-sm text-tv-muted">{quote.asset} — {pair}</span>
+            <span className="text-2xl font-bold text-tv-text">
               {quote.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
             <span className={`text-sm font-semibold ${changeCol}`}>
@@ -89,12 +131,12 @@ export function ChartModal({ quote, pair, markers, onClose }: Props) {
               {MARKER_LEGEND.map((l) => (
                 <div key={l.label} className="flex items-center gap-1.5">
                   <div className="h-2 w-2 rounded-full" style={{ background: l.color }} />
-                  <span className="text-[10px] text-terminal-muted">{l.label}</span>
+                  <span className="text-[10px] text-tv-muted">{l.label}</span>
                 </div>
               ))}
             </div>
-            <button onClick={onClose}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-terminal-muted transition-colors hover:bg-terminal-border/30 hover:text-terminal-text">
+            <button onClick={handleClose}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-tv-muted transition-colors hover:bg-terminal-border/30 hover:text-tv-text">
               ✕
             </button>
           </div>
@@ -113,15 +155,15 @@ export function ChartModal({ quote, pair, markers, onClose }: Props) {
 
           {/* Hover price tooltip */}
           {hover !== null && (
-            <div className="pointer-events-none absolute top-4 rounded-md border border-terminal-border bg-terminal-surface/95 px-3 py-1.5 font-mono text-xs shadow-lg backdrop-blur-sm"
+            <div className="pointer-events-none absolute top-4 rounded-md border border-tv-border bg-tv-surface/95 px-3 py-1.5 font-mono text-xs shadow-lg backdrop-blur-sm"
               style={{ left: hx > W * 0.75 ? `calc(${(hx / W) * 100}% - 130px)` : `calc(${(hx / W) * 100}% + 12px)` }}>
-              <div className="font-semibold text-terminal-text">
+              <div className="font-semibold text-tv-text">
                 {data[hover].toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
               <div className={data[hover] >= data[0] ? "text-terminal-green" : "text-terminal-red"}>
                 {(data[hover] - data[0] >= 0 ? "+" : "")}{(data[hover] - data[0]).toFixed(2)}
               </div>
-              {hTime && <div className="text-terminal-muted">{hTime}</div>}
+              {hTime && <div className="text-tv-muted">{hTime}</div>}
             </div>
           )}
 
@@ -166,7 +208,7 @@ export function ChartModal({ quote, pair, markers, onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-terminal-border/30 px-6 py-2.5 text-[11px] text-terminal-muted">
+        <div className="border-t border-tv-border/30 px-6 py-2.5 text-[11px] text-tv-muted">
           {positioned.length} trade signal{positioned.length !== 1 ? "s" : ""} (48h) · Click a dot to see original message · ESC to close
         </div>
       </div>

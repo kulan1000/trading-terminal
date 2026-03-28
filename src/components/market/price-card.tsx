@@ -13,6 +13,13 @@ const PAIRS: Record<string, string> = {
   Gold: "XAUUSD", Silver: "XAGUSD", Oil: "WTI",
 };
 
+/** Asset-specific ambient glow + border accent + top accent bar color */
+const ASSET_GLOW: Record<string, { glow: string; border: string; accent: string }> = {
+  Gold:   { glow: "shadow-[0_0_60px_-6px_rgba(255,193,37,0.35),0_0_20px_-4px_rgba(255,193,37,0.15)]",  border: "border-yellow-500/30", accent: "#FFD700" },
+  Silver: { glow: "shadow-[0_0_60px_-6px_rgba(192,197,206,0.30),0_0_20px_-4px_rgba(192,197,206,0.12)]", border: "border-gray-400/30", accent: "#C0C5CE" },
+  Oil:    { glow: "shadow-[0_0_60px_-6px_rgba(20,20,24,0.6),0_0_20px_-4px_rgba(60,60,70,0.2)]",        border: "border-zinc-600/40", accent: "#3A3A42" },
+};
+
 const BIAS_STYLE: Record<string, { label: string; bg: string; text: string }> = {
   bullish: { label: "BULLISH", bg: "bg-tv-bull/10", text: "text-tv-bull" },
   bearish: { label: "BEARISH", bg: "bg-tv-bear/10", text: "text-tv-bear" },
@@ -31,10 +38,9 @@ export function PriceCard({ quote, pair, sentiment, variant = "default" }: Price
   const isUp = quote.change >= 0;
   const color = changeColor(quote.change);
   const arrow = isUp ? "▲" : "▼";
-  const borderColor = isUp ? "border-tv-bull/30" : "border-tv-bear/30";
-  const glowColor = isUp
-    ? "shadow-[0_0_40px_-8px_rgba(38,166,154,0.25)]"
-    : "shadow-[0_0_40px_-8px_rgba(239,83,80,0.25)]";
+  const assetStyle = ASSET_GLOW[quote.asset];
+  const borderColor = assetStyle?.border ?? (isUp ? "border-tv-bull/30" : "border-tv-bear/30");
+  const glowColor = assetStyle?.glow ?? "";
 
   const markers = useTradeMarkers(quote.asset);
 
@@ -51,9 +57,13 @@ export function PriceCard({ quote, pair, sentiment, variant = "default" }: Price
         />
       )}
       <div
-        className={`animate-fade-in cursor-pointer rounded-lg border ${borderColor} bg-tv-surface font-mono transition-all duration-200 hover:border-tv-border-hover hover:bg-tv-elevated ${isHero ? glowColor : ""}`}
+        className={`animate-fade-in cursor-pointer overflow-hidden rounded-lg border ${borderColor} bg-tv-surface font-mono transition-all duration-200 hover:border-tv-border-hover hover:bg-tv-elevated ${isHero ? `${glowColor} hover:scale-[1.005]` : ""}`}
         onClick={() => setExpanded(true)}
       >
+        {/* Asset accent bar on top */}
+        {isHero && assetStyle && (
+          <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, transparent, ${assetStyle.accent}, transparent)` }} />
+        )}
         {/* Header row */}
         <div className={`flex items-baseline justify-between ${isHero ? "px-5 pt-4" : "px-4 pt-3"}`}>
           <div className="flex items-center gap-3">
