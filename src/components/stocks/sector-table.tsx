@@ -7,7 +7,7 @@ import type { StockQuote } from "@/lib/data-ceo-stocks";
 export type SortKey = "symbol" | "price" | "changePercent" | "volume" | "vwap" | "shortVolume" | "marketCap";
 
 const SECTOR_LABELS: Record<string, string> = { gold: "Gold Miners", silver: "Silver", oil: "Oil & Gas" };
-const SECTOR_COLORS: Record<string, string> = { gold: "text-yellow-400", silver: "text-gray-300", oil: "text-orange-400" };
+const SECTOR_COLORS: Record<string, string> = { gold: "text-tv-yellow", silver: "text-tv-text", oil: "text-tv-orange" };
 
 const COLUMNS: { key: SortKey; label: string; align: string }[] = [
   { key: "symbol", label: "Symbol", align: "text-left" },
@@ -44,26 +44,26 @@ export function SectorTable({
   if (quotes.length === 0) return null;
 
   return (
-    <div className="rounded-lg border border-terminal-border bg-terminal-surface">
-      <div className="border-b border-terminal-border px-4 py-2">
-        <h2 className={`text-xs font-bold uppercase tracking-wider ${SECTOR_COLORS[sector] ?? "text-terminal-text"}`}>
+    <div className="animate-fade-in rounded-[6px] border border-tv-border bg-tv-surface">
+      <div className="border-b border-tv-border px-4 py-2">
+        <h2 className={`font-sans text-xs font-bold uppercase tracking-wider ${SECTOR_COLORS[sector] ?? "text-tv-text"}`}>
           {SECTOR_LABELS[sector] ?? sector}
         </h2>
       </div>
-      <table className="w-full font-mono text-xs">
+      <table className="w-full font-mono text-[13px]">
         <thead>
-          <tr className="border-b border-terminal-border text-terminal-muted">
+          <tr className="border-b border-tv-divider text-tv-text-secondary">
             {COLUMNS.map((col) => (
               <th key={col.key}
-                className={`cursor-pointer select-none px-4 py-2 font-medium transition-colors hover:text-terminal-text ${col.align}`}
+                className={`cursor-pointer select-none px-4 py-2 text-[11px] font-medium uppercase tracking-wider transition-colors hover:text-tv-text ${col.align}`}
                 onClick={() => onSort(col.key)}>
                 {col.label}
                 {sortKey === col.key && (
-                  <span className="ml-1 text-terminal-green">{sortAsc ? "▲" : "▼"}</span>
+                  <span className="ml-1 text-tv-blue">{sortAsc ? "▲" : "▼"}</span>
                 )}
               </th>
             ))}
-            <th className="w-[110px] px-2 py-2 text-left font-medium">Intraday</th>
+            <th className="w-[110px] px-2 py-2 text-left text-[11px] font-medium uppercase tracking-wider">Intraday</th>
             <th className="w-6 px-2 py-2" />
           </tr>
         </thead>

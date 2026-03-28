@@ -36,11 +36,12 @@ interface ScoringData {
   scoreboard: TraderScore[];
   openPositions: OpenPosition[];
   recentTrades: RecentTrade[];
+  traderTrades: Record<string, RecentTrade[]>;
 }
 
 export function useScoringData() {
   const [data, setData] = useState<ScoringData>({
-    scoreboard: [], openPositions: [], recentTrades: [],
+    scoreboard: [], openPositions: [], recentTrades: [], traderTrades: {},
   });
   const [loading, setLoading] = useState(true);
 

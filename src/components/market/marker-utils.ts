@@ -31,7 +31,7 @@ export const MARKER_LEGEND = [
   { color: "#f97316", label: "Exit Short" },
 ];
 
-/** Position trade markers on a price chart, returns only entries/exits within time range */
+/** Position trade markers on a price chart — clamps markers outside time range to edges */
 export function positionMarkers(
   markers: TradeMarker[],
   timestamps: number[],
@@ -47,11 +47,12 @@ export function positionMarkers(
 
   return markers
     .filter((m) => m.signal_type === "entry" || m.signal_type === "exited")
-    .map((m): PositionedMarker | null => {
+    .map((m): PositionedMarker => {
       const mTs = new Date(m.msg_timestamp).getTime() / 1000;
-      if (mTs < tStart || mTs > tEnd) return null;
 
-      const frac = (mTs - tStart) / tRange;
+      // Clamp to chart range instead of filtering out
+      const clampedTs = Math.max(tStart, Math.min(tEnd, mTs));
+      const frac = (clampedTs - tStart) / tRange;
       const exactIdx = frac * (data.length - 1);
       const lo = Math.floor(exactIdx);
       const hi = Math.min(lo + 1, data.length - 1);
@@ -61,6 +62,5 @@ export function positionMarkers(
       const px = toX(exactIdx);
       const py = toY(interpolatedPrice);
       return { ...m, px, py, pctX: (px / chartWidth) * 100, style: getMarkerStyle(m) };
-    })
-    .filter(Boolean) as PositionedMarker[];
+    });
 }

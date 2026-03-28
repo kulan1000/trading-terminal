@@ -27,11 +27,11 @@ export function MessageSearch() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search messages... (e.g. gold, short, 2400)"
-        className="flex-1 rounded-lg border border-terminal-border bg-terminal-surface px-3 py-2 font-mono text-sm text-terminal-text placeholder:text-terminal-muted focus:border-terminal-accent focus:outline-none"
+        className="flex-1 rounded-[6px] border border-tv-border bg-tv-input px-3 py-2 font-mono text-sm text-tv-text placeholder:text-tv-text-subtle focus:border-tv-blue focus:outline-none"
       />
       <button
         type="submit"
-        className="rounded-lg border border-terminal-accent bg-terminal-accent/10 px-4 py-2 font-mono text-sm text-terminal-accent hover:bg-terminal-accent/20"
+        className="rounded-[6px] bg-tv-blue px-4 py-2 font-sans text-sm font-medium text-white transition-colors hover:bg-tv-blue/80"
       >
         Search
       </button>

@@ -20,30 +20,30 @@ export function ChannelFilter() {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
-      <span className="text-terminal-muted">Channel:</span>
+    <div className="flex flex-wrap items-center gap-3 font-sans text-xs">
+      <span className="text-tv-text-secondary">Channel:</span>
       {CHANNELS.map((ch) => (
         <button
           key={ch}
           onClick={() => navigate(ch, activeAsset)}
-          className={`rounded px-2 py-1 transition ${
+          className={`rounded-[4px] px-2 py-1 transition-all duration-150 ${
             activeChannel === ch
-              ? "bg-terminal-accent/20 text-terminal-accent"
-              : "text-terminal-muted hover:text-terminal-text"
+              ? "bg-tv-blue/20 text-tv-blue"
+              : "text-tv-text-secondary hover:bg-tv-hover hover:text-tv-text"
           }`}
         >
           {ch === "all" ? "All" : `#${ch}`}
         </button>
       ))}
-      <span className="ml-4 text-terminal-muted">Asset:</span>
+      <span className="ml-4 text-tv-text-secondary">Asset:</span>
       {ASSETS.map((a) => (
         <button
           key={a}
           onClick={() => navigate(activeChannel, a)}
-          className={`rounded px-2 py-1 transition ${
+          className={`rounded-[4px] px-2 py-1 transition-all duration-150 ${
             activeAsset === a
-              ? "bg-terminal-accent/20 text-terminal-accent"
-              : "text-terminal-muted hover:text-terminal-text"
+              ? "bg-tv-blue/20 text-tv-blue"
+              : "text-tv-text-secondary hover:bg-tv-hover hover:text-tv-text"
           }`}
         >
           {a}

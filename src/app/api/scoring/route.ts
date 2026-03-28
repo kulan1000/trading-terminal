@@ -101,5 +101,23 @@ export async function GET() {
     exitTime: t.exit_signal?.created_at ?? t.created_at,
   }));
 
-  return NextResponse.json({ scoreboard, openPositions, recentTrades });
+  // 5) Per-trader trade lists (for drilldown)
+  const traderTrades: Record<string, typeof recentTrades> = {};
+  for (const t of trades) {
+    const key = t.author;
+    if (!traderTrades[key]) traderTrades[key] = [];
+    traderTrades[key].push({
+      author: t.author,
+      asset: t.asset,
+      position: t.position,
+      entryPrice: t.entry_price,
+      exitPrice: t.exit_price,
+      pnl: t.pnl,
+      pnlPercent: t.entry_price > 0 ? (t.pnl / t.entry_price) * 100 : 0,
+      entryTime: t.entry_signal?.created_at ?? t.created_at,
+      exitTime: t.exit_signal?.created_at ?? t.created_at,
+    });
+  }
+
+  return NextResponse.json({ scoreboard, openPositions, recentTrades, traderTrades });
 }
