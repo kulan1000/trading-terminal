@@ -1,10 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import type { MarketQuote } from "@/lib/market-data";
 import { changeColor } from "@/lib/utils";
 import { AnimatedPrice } from "@/components/ui/animated-price";
 import { Sparkline } from "./sparkline";
 import { useTradeMarkers } from "@/hooks/use-trade-markers";
+import { ChartModal } from "./chart-modal";
+
+const PAIRS: Record<string, string> = {
+  Gold: "XAUUSD", Silver: "XAGUSD", Oil: "WTI",
+};
 
 interface PriceCardProps {
   quote: MarketQuote;
@@ -12,6 +18,7 @@ interface PriceCardProps {
 }
 
 export function PriceCard({ quote, pair }: PriceCardProps) {
+  const [expanded, setExpanded] = useState(false);
   const isUp = quote.change >= 0;
   const color = changeColor(quote.change);
   const arrow = isUp ? "▲" : "▼";
@@ -22,8 +29,18 @@ export function PriceCard({ quote, pair }: PriceCardProps) {
   const markers = useTradeMarkers(quote.asset);
 
   return (
+    <>
+    {expanded && (
+      <ChartModal
+        quote={quote}
+        pair={PAIRS[quote.asset] ?? pair}
+        markers={markers}
+        onClose={() => setExpanded(false)}
+      />
+    )}
     <div
-      className={`rounded-lg border ${borderColor} bg-terminal-surface font-mono`}
+      className={`rounded-lg border ${borderColor} bg-terminal-surface font-mono cursor-pointer transition-colors hover:border-terminal-text/20`}
+      onClick={() => setExpanded(true)}
     >
       {/* Header: asset name + volume */}
       <div className="flex items-baseline justify-between px-4 pt-3">
@@ -92,5 +109,6 @@ export function PriceCard({ quote, pair }: PriceCardProps) {
         </div>
       )}
     </div>
+    </>
   );
 }

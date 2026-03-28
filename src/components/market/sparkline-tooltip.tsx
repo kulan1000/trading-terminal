@@ -28,7 +28,7 @@ export function SparklineTooltip({ price, change, changePct, time, x, width }: S
       <div className={change >= 0 ? "text-terminal-green" : "text-terminal-red"}>
         {change >= 0 ? "+" : ""}{change.toFixed(2)} ({changePct >= 0 ? "+" : ""}{changePct.toFixed(2)}%)
       </div>
-      {time && <div className="text-terminal-muted">{time} ET</div>}
+      {time && <div className="text-terminal-muted">{time}</div>}
     </div>
   );
 }
