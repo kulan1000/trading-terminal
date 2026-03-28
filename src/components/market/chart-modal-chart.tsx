@@ -21,6 +21,22 @@ interface Props {
   selectedMarker: number | null;
 }
 
+/** Generate ~5 evenly-spaced "nice" price ticks between min and max */
+function priceTicks(min: number, max: number, count = 5): number[] {
+  const range = max - min;
+  if (range === 0) return [min];
+  // Pick a nice step size (1, 2, 5, 10, 20, 50, …)
+  const rawStep = range / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const residual = rawStep / mag;
+  const nice = residual <= 1.5 ? 1 : residual <= 3 ? 2 : residual <= 7 ? 5 : 10;
+  const step = nice * mag;
+  const lo = Math.ceil(min / step) * step;
+  const ticks: number[] = [];
+  for (let v = lo; v <= max; v += step) ticks.push(v);
+  return ticks;
+}
+
 export function ChartModalChart({
   data, timestamps, width: W, height: H, toX, toY,
   color, openY, positionedMarkers,
@@ -95,6 +111,30 @@ export function ChartModalChart({
           );
         }
         return ticks;
+      })()}
+
+      {/* Price axis grid lines + labels */}
+      {(() => {
+        const dMin = Math.min(...data);
+        const dMax = Math.max(...data);
+        const ticks = priceTicks(dMin, dMax);
+        const decimals = dMax < 10 ? 2 : dMax < 100 ? 2 : dMax < 1000 ? 1 : 0;
+        return ticks.map((v) => {
+          const y = toY(v);
+          if (y < 4 || y > H - 4) return null;
+          return (
+            <g key={v}>
+              <line x1={0} y1={y} x2={W} y2={y}
+                stroke="#3f3f46" strokeWidth="0.4" strokeDasharray="4 6" opacity={0.5} />
+              <rect x={W - 62} y={y - 8} width={58} height={16} rx={3}
+                fill="rgba(10,10,14,0.75)" />
+              <text x={W - 6} y={y + 3.5} textAnchor="end"
+                fill="#a1a1aa" fontSize="9.5" fontFamily="ui-monospace, monospace">
+                {v.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}
+              </text>
+            </g>
+          );
+        });
       })()}
 
       {/* Open price line */}
