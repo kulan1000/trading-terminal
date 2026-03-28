@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ASSET_PAIRS } from "@/lib/constants";
-import { fmtPrice } from "@/lib/format-utils";
+import { fmtPrice, fmtAgoShort } from "@/lib/format-utils";
 import type { Asset } from "@/lib/types";
 import Link from "next/link";
 import { BiasDetailChart } from "./bias-detail-chart";
@@ -154,7 +154,7 @@ export function BiasDetailModal({ asset, direction, score, count, price, changeP
                   <p className="mt-2 font-sans text-[13px] leading-relaxed text-white/70">{data.summary}</p>
                 </div>
               </div>
-              <BiasDetailChart history={data.history} price={price} asset={asset} />
+              <BiasDetailChart history={data.history} signals={data.signals} price={price} asset={asset} />
               {data.traderConsensus?.length > 0 && <TraderConsensus traders={data.traderConsensus} />}
               <BiasDetailSignals signals={data.signals} />
             </>
@@ -209,11 +209,6 @@ function traderFreshness(latestAt: string): string {
   return "opacity-40";
 }
 
-function timeSinceShort(iso: string): string {
-  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-  if (mins < 60) return `${mins}m`;
-  return `${Math.round(mins / 60)}h`;
-}
 
 function TraderConsensus({ traders }: { traders: TraderEntry[] }) {
   const bulls = traders.filter((t) => t.direction === "bullish");
@@ -237,7 +232,7 @@ function TraderConsensus({ traders }: { traders: TraderEntry[] }) {
                   {ty}
                 </span>
               ))}
-              <span className="font-mono text-[9px] text-white/20">{timeSinceShort(t.latestAt)}</span>
+              <span className="font-mono text-[9px] text-white/20">{fmtAgoShort(t.latestAt)}</span>
               <span className="font-mono text-[10px] text-white/20">{t.count}x</span>
             </div>
           </div>

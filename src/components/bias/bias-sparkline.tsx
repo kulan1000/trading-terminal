@@ -1,4 +1,4 @@
-// Tiny sparkline showing bias score history over last 24h
+// Tiny sparkline showing bias score history over last 6h
 interface Point {
   score: number;
   direction: string;
@@ -46,7 +46,7 @@ export function BiasSparkline({ data }: { data: Point[] }) {
           fill={color}
         />
       </svg>
-      <span className="text-[10px] text-tv-muted">24h</span>
+      <span className="text-[10px] text-white/30">6h</span>
     </div>
   );
 }
