@@ -1,4 +1,4 @@
-import type { Asset, Direction } from "@/lib/types";
+import type { Asset } from "@/lib/types";
 
 export const ASSETS: readonly Asset[] = ["Gold", "Silver", "Oil"];
 
@@ -6,15 +6,6 @@ export const ASSET_PAIRS: Record<Asset, string> = {
   Gold: "XAUUSD",
   Silver: "XAGUSD",
   Oil: "WTI",
-};
-
-// Centralized direction → color mapping
-export const DIRECTION_COLOR: Record<Direction | "long" | "short", string> = {
-  bullish: "text-[#26A69A]",
-  bearish: "text-[#EF5350]",
-  neutral: "text-[#FF9800]",
-  long: "text-[#26A69A]",
-  short: "text-[#EF5350]",
 };
 
 // Yahoo Finance ticker symbols for price fetching

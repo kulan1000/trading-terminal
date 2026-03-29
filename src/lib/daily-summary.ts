@@ -1,8 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { STRENGTH } from "@/lib/decay-utils";
-import type { Asset } from "@/lib/types";
-
-const ASSETS: Asset[] = ["Gold", "Silver", "Oil"];
+import { ASSETS } from "@/lib/constants";
 
 interface TopTrader {
   author: string;

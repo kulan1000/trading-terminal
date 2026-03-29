@@ -2,9 +2,10 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { ASSETS as ASSET_LIST } from "@/lib/constants";
 
 const SIGNAL_TYPES = ["all", "entry", "exited", "position", "opinion", "target"];
-const ASSETS = ["all", "Gold", "Silver", "Oil"];
+const ASSETS = ["all", ...ASSET_LIST];
 const CHANNELS = ["all", "traders-lounge", "gold-commodities", "main-discussion"];
 
 const INPUT = "w-full rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 font-sans text-[12px] text-white placeholder:text-white/20 transition-colors focus:border-[#2962FF]/40 focus:outline-none";

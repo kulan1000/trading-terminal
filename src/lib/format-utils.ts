@@ -51,15 +51,6 @@ export function fmtAgo(iso: string | null): string {
   return `${Math.round(hours / 24)}d sedan`;
 }
 
-/** "5m ago" / "2h ago" / "1d ago" — relative time in English */
-export function fmtAgoEn(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const hours = Math.floor(diff / 3_600_000);
-  if (hours < 1) return `${Math.floor(diff / 60_000)}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
-
 /** "5m" / "2h" — compact relative time, no suffix */
 export function fmtAgoShort(iso: string): string {
   const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
