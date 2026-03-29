@@ -15,7 +15,7 @@ export function SparklineTooltip({ price, change, changePct, time, x, width }: S
 
   return (
     <div
-      className="pointer-events-none absolute top-0 rounded border border-terminal-border bg-terminal-surface/95 px-2 py-1 font-mono text-[10px] leading-tight shadow-lg backdrop-blur-sm"
+      className="pointer-events-none absolute top-0 rounded border border-white/[0.06] bg-[#111111]/95 px-2 py-1 font-sans tabular-nums text-[10px] leading-tight shadow-lg backdrop-blur-sm"
       style={{
         left: flip
           ? `calc(${pctX}% - ${TIP_WIDTH + 4}px)`

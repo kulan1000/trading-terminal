@@ -21,9 +21,9 @@ const ASSET_GLOW: Record<string, { glow: string; border: string; accent: string 
 };
 
 const BIAS_STYLE: Record<string, { label: string; bg: string; text: string }> = {
-  bullish: { label: "BULLISH", bg: "bg-tv-bull/10", text: "text-tv-bull" },
-  bearish: { label: "BEARISH", bg: "bg-tv-bear/10", text: "text-tv-bear" },
-  neutral: { label: "NEUTRAL", bg: "bg-tv-orange/10", text: "text-tv-orange" },
+  bullish: { label: "BULLISH", bg: "bg-[#26A69A]/10", text: "text-[#26A69A]" },
+  bearish: { label: "BEARISH", bg: "bg-[#EF5350]/10", text: "text-[#EF5350]" },
+  neutral: { label: "NEUTRAL", bg: "bg-[#FF9800]/10", text: "text-[#FF9800]" },
 };
 
 interface PriceCardProps {
@@ -39,7 +39,7 @@ export function PriceCard({ quote, pair, sentiment, variant = "default" }: Price
   const color = changeColor(quote.change);
   const arrow = isUp ? "▲" : "▼";
   const assetStyle = ASSET_GLOW[quote.asset];
-  const borderColor = assetStyle?.border ?? (isUp ? "border-tv-bull/30" : "border-tv-bear/30");
+  const borderColor = assetStyle?.border ?? (isUp ? "border-[#26A69A]/30" : "border-[#EF5350]/30");
   const glowColor = assetStyle?.glow ?? "";
 
   const markers = useTradeMarkers(quote.asset);
@@ -78,7 +78,7 @@ export function PriceCard({ quote, pair, sentiment, variant = "default" }: Price
               </span>
             )}
           </div>
-          <span className="font-mono text-[11px] text-white/30">
+          <span className="font-sans tabular-nums text-[11px] text-white/30">
             {quote.volume > 0 ? `Vol: ${(quote.volume / 1000).toFixed(0)}K` : ""}
           </span>
         </div>
@@ -87,9 +87,9 @@ export function PriceCard({ quote, pair, sentiment, variant = "default" }: Price
         <div className={`flex items-baseline gap-3 ${isHero ? "px-5 pt-2" : "px-4 pt-1"}`}>
           <AnimatedPrice
             value={quote.price}
-            className={`font-mono ${isHero ? "text-[36px]" : "text-[28px]"} font-bold tabular-nums text-white`}
+            className={`font-sans tabular-nums ${isHero ? "text-[36px]" : "text-[28px]"} font-bold text-white`}
           />
-          <span className={`font-mono ${isHero ? "text-[14px]" : "text-[12px]"} font-medium tabular-nums ${color}`}>
+          <span className={`font-sans tabular-nums ${isHero ? "text-[14px]" : "text-[12px]"} font-medium ${color}`}>
             {arrow}{" "}
             <AnimatedPrice value={Math.abs(quote.change)} className="" />
             {" ("}
@@ -99,7 +99,7 @@ export function PriceCard({ quote, pair, sentiment, variant = "default" }: Price
         </div>
 
         {/* High / Low */}
-        <div className={`flex gap-4 ${isHero ? "px-5 pt-1" : "px-4 pt-1"} font-mono text-[11px] text-white/30`}>
+        <div className={`flex gap-4 ${isHero ? "px-5 pt-1" : "px-4 pt-1"} font-sans tabular-nums text-[11px] text-white/30`}>
           <span>H: <AnimatedPrice value={quote.high} className="text-white/60" /></span>
           <span>L: <AnimatedPrice value={quote.low} className="text-white/60" /></span>
         </div>

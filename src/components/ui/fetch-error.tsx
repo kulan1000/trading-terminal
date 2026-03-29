@@ -36,7 +36,7 @@ export function FetchError({ message = "Kunde inte ladda data.", onRetry, autoRe
             Försök igen
           </button>
           {countdown > 0 && (
-            <span className="font-mono text-[11px] text-white/25">
+            <span className="font-sans tabular-nums text-[11px] text-white/25">
               auto-retry {countdown}s
             </span>
           )}

@@ -44,7 +44,7 @@ export function MarkerTooltip({ marker: p, size = "small", expanded = false }: P
         <span style={{
           fontSize, fontWeight: 700, color: p.style.color,
           letterSpacing: "0.5px",
-          fontFamily: "var(--font-mono, ui-monospace, monospace)",
+          fontFamily: "-apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif",
         }}>
           {p.style.label}
         </span>
@@ -52,7 +52,7 @@ export function MarkerTooltip({ marker: p, size = "small", expanded = false }: P
       {/* Details */}
       <div style={{
         fontSize: detailSize, color: "#d4d4d8", lineHeight: 1.7,
-        fontFamily: "var(--font-mono, ui-monospace, monospace)",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif",
       }}>
         {[
           { label: "Trader", value: p.author },
@@ -75,7 +75,7 @@ export function MarkerTooltip({ marker: p, size = "small", expanded = false }: P
         }}>
           <div style={{
             fontSize: 9, color: "#71717a", marginBottom: 3,
-            fontFamily: "var(--font-mono, ui-monospace, monospace)",
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif",
             letterSpacing: "0.5px",
           }}>
             ORIGINAL MESSAGE
@@ -84,7 +84,7 @@ export function MarkerTooltip({ marker: p, size = "small", expanded = false }: P
             fontSize: isLarge ? 11 : 10,
             color: "#a1a1aa",
             lineHeight: 1.5,
-            fontFamily: "var(--font-mono, ui-monospace, monospace)",
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif",
             whiteSpace: "pre-wrap",
             wordBreak: "break-word",
             maxHeight: 120,
@@ -101,7 +101,7 @@ export function MarkerTooltip({ marker: p, size = "small", expanded = false }: P
           marginTop: 4,
           fontSize: 8,
           color: "#52525b",
-          fontFamily: "var(--font-mono, ui-monospace, monospace)",
+          fontFamily: "-apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif",
           textAlign: "center",
         }}>
           click to see message

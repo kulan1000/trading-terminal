@@ -30,7 +30,7 @@ export function SystemHealth({ runs, latestSignal, latestMessage }: Props) {
   const checks = [
     check(recentRuns.length > 0, "Pipeline kör", recentRuns.length > 0 ? `${recentRuns.length} körningar senaste timmen` : "Inga körningar senaste timmen"),
     check(errorRuns.length === 0, "Inga fel", errorRuns.length === 0 ? "Alla senaste körningar lyckades" : `${errorRuns.length} fel senaste timmen`),
-    check(avgDuration < 8000, "Snabb pipeline", avgDuration > 0 ? `Snitt ${(avgDuration / 1000).toFixed(1)}s (max 10s på Vercel)` : "Ingen data"),
+    check(avgDuration < 8000, "Snabb pipeline", avgDuration > 0 ? `Snitt ${(avgDuration / 1000).toFixed(1)}s` : "Ingen data"),
     check(signalAge < 30 * 60_000, "Signaler flödar", signalAge < Infinity ? `Senaste: ${Math.round(signalAge / 60_000)}m sedan` : "Inga signaler"),
     check(messageAge < 60 * 60_000, "Discord-koppling", messageAge < Infinity ? `Senaste: ${Math.round(messageAge / 60_000)}m sedan` : "Inga meddelanden"),
   ];
@@ -38,25 +38,28 @@ export function SystemHealth({ runs, latestSignal, latestMessage }: Props) {
   const allGood = checks.every((c) => c.ok);
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-[#111111] p-5">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-sans text-[13px] font-medium text-white/70">Systemhälsa</h2>
-        <span className={`rounded px-2 py-0.5 font-mono text-[10px] font-bold ${allGood ? "bg-[#26A69A]/10 text-[#26A69A]" : "bg-[#EF5350]/10 text-[#EF5350]"}`}>
-          {allGood ? "ALLT OK" : "PROBLEM"}
-        </span>
-      </div>
-      <div className="space-y-2">
-        {checks.map((c, i) => (
-          <div key={i} className="flex items-center gap-3">
-            <span className={`h-2 w-2 shrink-0 rounded-full ${c.ok ? "bg-[#26A69A]" : "bg-[#EF5350] animate-pulse"}`} />
-            <div>
-              <span className={`font-sans text-[12px] ${c.ok ? "text-white/50" : "text-[#EF5350]/80"}`}>
-                {c.label}
-              </span>
-              <span className="ml-2 font-mono text-[10px] text-white/20">{c.detail}</span>
+    <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+      <div className="px-5 pt-4 pb-4">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Systemhälsa</h2>
+          <span className={`rounded-md px-2.5 py-0.5 font-sans text-[10px] font-bold ${allGood ? "bg-[#26A69A]/15 text-[#26A69A]" : "bg-[#EF5350]/15 text-[#EF5350]"}`}>
+            {allGood ? "ALL OK" : "ISSUES"}
+          </span>
+        </div>
+        <div className="space-y-3">
+          {checks.map((c, i) => (
+            <div key={i} className="flex items-start gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-white/[0.02]">
+              <span className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${c.ok ? "bg-[#26A69A]" : "bg-[#EF5350] animate-pulse"}`} />
+              <div>
+                <span className={`font-sans text-[12px] font-medium ${c.ok ? "text-white/60" : "text-[#EF5350]"}`}>
+                  {c.label}
+                </span>
+                <p className="mt-0.5 font-mono text-[10px] text-white/20">{c.detail}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

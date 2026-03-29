@@ -80,7 +80,7 @@ export function ChartModal({ quote, pair, markers, onClose }: Props) {
       <div className="absolute inset-0 bg-black/85 backdrop-blur-md"
         style={{ opacity: isVisible ? 1 : 0, transition: "opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }} />
 
-      <div className="relative z-10 w-[95vw] max-w-[960px] rounded-xl border border-tv-border bg-tv-surface font-mono shadow-2xl backdrop-blur-md"
+      <div className="relative z-10 w-[95vw] max-w-[960px] rounded-xl border border-white/[0.06] bg-[#111111] shadow-2xl backdrop-blur-md"
         style={{
           opacity: isVisible ? 1 : 0,
           transform: isVisible ? "scale(1) translateY(0)" : "scale(0.92) translateY(24px)",
@@ -111,7 +111,7 @@ export function ChartModal({ quote, pair, markers, onClose }: Props) {
           />
         </div>
 
-        <div className="border-t border-tv-border/30 px-6 py-2.5 text-[11px] text-tv-muted">
+        <div className="border-t border-white/[0.06] px-6 py-2.5 text-[11px] text-white/30">
           {positioned.length} trade signal{positioned.length !== 1 ? "s" : ""} (48h) · Click a dot to see original message · ESC to close
         </div>
       </div>

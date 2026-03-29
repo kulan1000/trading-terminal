@@ -72,7 +72,7 @@ function ToastItem({ toast: t }: { toast: Toast }) {
 
   return (
     <div
-      className={`rounded-lg border bg-[#111111]/95 px-4 py-2 font-mono text-[11px] shadow-lg backdrop-blur-sm transition-all duration-300 ${TYPE_STYLE[t.type]}`}
+      className={`rounded-lg border bg-[#111111]/95 px-4 py-2 font-sans text-[11px] shadow-lg backdrop-blur-sm transition-all duration-300 ${TYPE_STYLE[t.type]}`}
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? "translateX(0)" : "translateX(20px)",

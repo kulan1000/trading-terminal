@@ -64,33 +64,48 @@ export default function AdminPage() {
     : Infinity;
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">
-          Pipeline Admin
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">
+            Pipeline Admin
+          </h1>
+          {data && (
+            <div className="flex items-center gap-1.5">
+              <span className={`h-2 w-2 rounded-full ${signalAge < 30 * 60_000 ? "bg-[#26A69A] animate-pulse" : signalAge < 60 * 60_000 ? "bg-[#FF9800]" : "bg-[#EF5350] animate-pulse"}`} />
+              <span className="font-sans text-[11px] text-white/30">
+                {signalAge < 30 * 60_000 ? "Pipeline active" : signalAge < 60 * 60_000 ? "Slow" : "Down"}
+              </span>
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-3">
           {data && (
-            <span className="font-mono text-[10px] text-white/20">
-              {data.totalMessages.toLocaleString()} meddelanden · {data.totalSignals.toLocaleString()} signaler
+            <span className="font-mono text-[10px] tabular-nums text-white/20">
+              {data.totalMessages.toLocaleString()} msg · {data.totalSignals.toLocaleString()} signals
             </span>
           )}
-          <span className="font-mono text-[11px] text-white/25">Auto-refresh 15s</span>
+          <span className="rounded-md bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-white/25">
+            Auto 15s
+          </span>
         </div>
       </div>
 
       {/* Pipeline down warning */}
       {data && signalAge > 30 * 60_000 && (
-        <div className="flex items-center gap-3 rounded-xl border border-[#EF5350]/30 bg-[#EF5350]/5 px-5 py-3">
-          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#EF5350]" />
-          <div>
-            <p className="font-sans text-[13px] font-medium text-[#EF5350]">
-              Pipeline har inte producerat signaler på {fmtAgo(data.latestSignal)}
-            </p>
-            <p className="mt-0.5 font-sans text-[11px] text-[#EF5350]/60">
-              Kontrollera cron-jobb, OpenAI API-nyckel och Discord-token
-            </p>
+        <div className="animate-fade-in overflow-hidden rounded-xl border border-[#EF5350]/20 bg-[#EF5350]/[0.04]">
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-[#EF5350]/30 to-transparent" />
+          <div className="flex items-center gap-3 px-5 py-3.5">
+            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#EF5350]" />
+            <div>
+              <p className="font-sans text-[13px] font-medium text-[#EF5350]">
+                Pipeline har inte producerat signaler på {fmtAgo(data.latestSignal)}
+              </p>
+              <p className="mt-0.5 font-sans text-[11px] text-[#EF5350]/50">
+                Kontrollera cron-jobb, OpenAI API-nyckel och Discord-token
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -99,7 +114,7 @@ export default function AdminPage() {
       {!data ? (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-[110px] animate-pulse rounded-xl border border-white/[0.06] bg-[#111111]" />
+            <div key={i} className="h-[120px] animate-pulse rounded-xl border border-white/[0.06] bg-[#111111]" />
           ))}
         </div>
       ) : (

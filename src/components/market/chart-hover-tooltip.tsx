@@ -15,7 +15,7 @@ export function ChartHoverTooltip({ hoverIdx, data, hx, width, hTime }: Props) {
 
   return (
     <div
-      className="pointer-events-none absolute top-4 rounded-md border border-tv-border bg-tv-surface/95 px-3 py-1.5 font-mono text-xs shadow-lg backdrop-blur-sm"
+      className="pointer-events-none absolute top-4 rounded-md border border-white/[0.06] bg-[#111111]/95 px-3 py-1.5 font-sans tabular-nums text-xs shadow-lg backdrop-blur-sm"
       style={{
         left: hx > width * 0.75
           ? `calc(${(hx / width) * 100}% - 130px)`
