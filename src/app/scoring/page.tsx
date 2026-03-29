@@ -86,7 +86,7 @@ export default function ScoringPage() {
                 onClick={() => setAsset(a)}
                 className={`rounded-md px-3 py-1.5 font-sans text-[12px] font-medium uppercase tracking-wider transition-all ${
                   asset === a
-                    ? "bg-[#2962FF] text-white shadow-[0_0_12px_-3px_rgba(41,98,255,0.4)]"
+                    ? "bg-[#FF9800] text-white shadow-[0_0_12px_-3px_rgba(255,152,0,0.4)]"
                     : "bg-white/[0.04] text-white/40 hover:text-white/70"
                 }`}
               >

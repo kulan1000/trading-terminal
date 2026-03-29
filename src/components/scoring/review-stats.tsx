@@ -50,14 +50,14 @@ export function ReviewStats() {
           <StatCard label="Godkända" value={stats.approved} color="#26A69A" />
           <StatCard label="Korrigerade" value={stats.corrected} color="#FF9800" />
           <StatCard label="Avvisade" value={stats.rejected} color="#EF5350" />
-          <StatCard label="Aktiva regler" value={stats.activeRules} color="#2962FF" />
+          <StatCard label="Aktiva regler" value={stats.activeRules} color="#FF9800" />
         </div>
 
         {/* Accuracy bar */}
         <div className="mt-3">
           <div className="flex items-center justify-between font-sans text-[11px] text-white/40">
             <span>GPT-precision (godkänd utan korrigering)</span>
-            <span className="font-mono text-white/70">{accuracyRate}%</span>
+            <span className="font-sans text-white/70">{accuracyRate}%</span>
           </div>
           <div className="mt-1 h-2 overflow-hidden rounded-full bg-white/[0.06]">
             <div className="flex h-full">
@@ -84,7 +84,7 @@ export function ReviewStats() {
         {/* Recent learned rules */}
         {stats.recentCorrections.length > 0 && (
           <div className="mt-3 border-t border-white/[0.04] pt-3">
-            <p className="font-mono text-[10px] uppercase text-white/30">
+            <p className="font-sans text-[10px] uppercase text-white/30">
               Senaste inlärda regler ({stats.activeRules} totalt)
             </p>
             <div className="mt-2 space-y-1">
@@ -93,7 +93,7 @@ export function ReviewStats() {
                   key={i}
                   className="flex items-start gap-2 rounded bg-white/[0.02] px-2 py-1.5"
                 >
-                  <span className="mt-0.5 shrink-0 rounded bg-white/[0.06] px-1 py-0.5 font-mono text-[9px] uppercase text-white/40">
+                  <span className="mt-0.5 shrink-0 rounded bg-white/[0.06] px-1 py-0.5 font-sans text-[9px] uppercase text-white/40">
                     {rule.category.replace("_rule", "").replace("_", " ")}
                   </span>
                   <p className="font-sans text-[11px] leading-snug text-white/50">
@@ -112,7 +112,7 @@ export function ReviewStats() {
 function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div className="rounded-lg bg-white/[0.03] px-3 py-2 text-center">
-      <p className="font-mono text-[18px] font-bold" style={{ color }}>{value}</p>
+      <p className="font-sans text-[18px] font-bold" style={{ color }}>{value}</p>
       <p className="font-sans text-[10px] text-white/40">{label}</p>
     </div>
   );

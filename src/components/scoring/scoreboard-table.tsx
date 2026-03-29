@@ -22,20 +22,20 @@ function WinRatePill({ rate }: { rate: number }) {
   const pct = (rate * 100).toFixed(0);
   if (rate >= 0.6) {
     return (
-      <span className="inline-block rounded-md bg-[#26A69A]/20 px-2 py-0.5 font-mono text-[12px] tabular-nums text-[#26A69A]">
+      <span className="inline-block rounded-md bg-[#26A69A]/20 px-2 py-0.5 font-sans text-[12px] tabular-nums text-[#26A69A]">
         {pct}%
       </span>
     );
   }
   if (rate >= 0.4) {
     return (
-      <span className="inline-block rounded-md bg-[#FF9800]/15 px-2 py-0.5 font-mono text-[12px] tabular-nums text-[#FF9800]">
+      <span className="inline-block rounded-md bg-[#FF9800]/15 px-2 py-0.5 font-sans text-[12px] tabular-nums text-[#FF9800]">
         {pct}%
       </span>
     );
   }
   return (
-    <span className="inline-block rounded-md bg-[#EF5350]/20 px-2 py-0.5 font-mono text-[12px] tabular-nums text-[#EF5350]">
+    <span className="inline-block rounded-md bg-[#EF5350]/20 px-2 py-0.5 font-sans text-[12px] tabular-nums text-[#EF5350]">
       {pct}%
     </span>
   );
@@ -114,7 +114,7 @@ export function ScoreboardTable({ traders, traderSignals }: Props) {
                 className={`cursor-pointer px-5 py-2.5 font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40 transition-colors hover:text-white/70 ${c.align}`}
               >
                 {c.label}
-                {sortKey === c.key && <span className="ml-1 text-[#2962FF]">{sortAsc ? "▲" : "▼"}</span>}
+                {sortKey === c.key && <span className="ml-1 text-[#FF9800]">{sortAsc ? "▲" : "▼"}</span>}
               </th>
             ))}
           </tr>
@@ -134,13 +134,13 @@ export function ScoreboardTable({ traders, traderSignals }: Props) {
                   <td className="px-5 py-3">
                     <Link href={`/trader/${encodeURIComponent(t.author)}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="font-sans text-[14px] font-semibold text-white transition-colors hover:text-[#2962FF]">
+                      className="font-sans text-[14px] font-semibold text-white transition-colors hover:text-[#FF9800]">
                       {t.author}
                     </Link>
                     <span className="ml-1.5 text-[10px] text-white/20">{isExpanded ? "▾" : "▸"}</span>
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <span className="font-mono text-[13px] tabular-nums text-white/70">
+                    <span className="font-sans text-[13px] tabular-nums text-white/70">
                       {t.signals}
                     </span>
                     <span className="ml-1 font-sans text-[10px] text-white/30">
@@ -150,11 +150,11 @@ export function ScoreboardTable({ traders, traderSignals }: Props) {
                   <td className="px-5 py-3 text-right">
                     <WinRatePill rate={t.winRate} />
                   </td>
-                  <td className={`px-5 py-3 text-right font-mono text-[13px] tabular-nums ${scoreColor}`}>
+                  <td className={`px-5 py-3 text-right font-sans text-[13px] tabular-nums ${scoreColor}`}>
                     {t.avgScore > 0 ? "+" : ""}{t.avgScore.toFixed(2)}%
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <span className="font-mono text-[13px] tabular-nums text-white/70">
+                    <span className="font-sans text-[13px] tabular-nums text-white/70">
                       {t.consistency}/{t.signals}
                     </span>
                     <span className="ml-1 text-[9px] text-[#26A69A]">✦</span>

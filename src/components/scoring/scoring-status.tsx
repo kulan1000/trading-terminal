@@ -16,7 +16,7 @@ export function ScoringStatus({ totalScored, totalTraders, totalPairs, openPosit
       <div className="px-5 py-4">
         <div className="grid grid-cols-4 gap-4">
           <div>
-            <div className="font-mono text-[22px] tabular-nums text-white">
+            <div className="font-sans text-[22px] tabular-nums text-white">
               {totalTraders}
             </div>
             <div className="font-sans text-[11px] uppercase tracking-wider text-white/40">
@@ -24,7 +24,7 @@ export function ScoringStatus({ totalScored, totalTraders, totalPairs, openPosit
             </div>
           </div>
           <div>
-            <div className={`font-mono text-[22px] tabular-nums ${hasScores ? "text-[#26A69A]" : "text-white/30"}`}>
+            <div className={`font-sans text-[22px] tabular-nums ${hasScores ? "text-[#26A69A]" : "text-white/30"}`}>
               {totalScored}
             </div>
             <div className="font-sans text-[11px] uppercase tracking-wider text-white/40">
@@ -32,7 +32,7 @@ export function ScoringStatus({ totalScored, totalTraders, totalPairs, openPosit
             </div>
           </div>
           <div>
-            <div className={`font-mono text-[22px] tabular-nums ${openPositions > 0 ? "text-[#FF9800]" : "text-white/30"}`}>
+            <div className={`font-sans text-[22px] tabular-nums ${openPositions > 0 ? "text-[#FF9800]" : "text-white/30"}`}>
               {openPositions}
             </div>
             <div className="font-sans text-[11px] uppercase tracking-wider text-white/40">
@@ -40,7 +40,7 @@ export function ScoringStatus({ totalScored, totalTraders, totalPairs, openPosit
             </div>
           </div>
           <div>
-            <div className={`font-mono text-[22px] tabular-nums ${totalPairs > 0 ? "text-[#2962FF]" : "text-white/30"}`}>
+            <div className={`font-sans text-[22px] tabular-nums ${totalPairs > 0 ? "text-[#FF9800]" : "text-white/30"}`}>
               {totalPairs}
             </div>
             <div className="font-sans text-[11px] uppercase tracking-wider text-white/40">

@@ -101,7 +101,7 @@ export function ScoreTimeline({ history }: Props) {
           <h3 className="font-sans text-[13px] font-semibold text-white">
             Scoring Accuracy Timeline
           </h3>
-          <div className="flex items-center gap-4 font-mono text-[11px] tabular-nums">
+          <div className="flex items-center gap-4 font-sans text-[11px] tabular-nums">
             <span className="text-white/40">
               {totalSignals} scored
             </span>

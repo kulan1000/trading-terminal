@@ -108,7 +108,7 @@ export function ReviewQueue({ reviews, onAction }: Props) {
         <div className="flex items-center justify-between">
           <h3 className="font-sans text-[13px] font-semibold text-white">
             GPT Review Queue
-            <span className="ml-2 rounded-full bg-[#FF9800]/20 px-2 py-0.5 font-mono text-[11px] text-[#FF9800]">
+            <span className="ml-2 rounded-full bg-[#FF9800]/20 px-2 py-0.5 font-sans text-[11px] text-[#FF9800]">
               {reviews.length} att granska
             </span>
           </h3>
@@ -132,7 +132,7 @@ export function ReviewQueue({ reviews, onAction }: Props) {
                 >
                   <div className="flex items-center gap-3">
                     <span
-                      className="rounded px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase"
+                      className="rounded px-1.5 py-0.5 font-sans text-[10px] font-bold uppercase"
                       style={{
                         color: ASSET_COLORS[r.gpt_asset] ?? "#fff",
                         backgroundColor: `${ASSET_COLORS[r.gpt_asset] ?? "#fff"}15`,
@@ -140,11 +140,11 @@ export function ReviewQueue({ reviews, onAction }: Props) {
                     >
                       {r.gpt_asset}
                     </span>
-                    <span className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px] uppercase text-white/60">
+                    <span className="rounded bg-white/[0.06] px-1.5 py-0.5 font-sans text-[10px] uppercase text-white/60">
                       {r.gpt_signal_type} {r.gpt_direction}
                     </span>
                     <span
-                      className="rounded px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase"
+                      className="rounded px-1.5 py-0.5 font-sans text-[10px] font-bold uppercase"
                       style={{ color: source.color, backgroundColor: `${source.color}15` }}
                     >
                       {source.label}
@@ -176,7 +176,7 @@ export function ReviewQueue({ reviews, onAction }: Props) {
                     {/* Context messages */}
                     {r.context_messages?.length > 0 && (
                       <div className="rounded bg-white/[0.02] p-2">
-                        <p className="mb-1 font-mono text-[10px] uppercase text-white/30">
+                        <p className="mb-1 font-sans text-[10px] uppercase text-white/30">
                           Context GPT såg:
                         </p>
                         {r.context_messages.slice(0, 5).map((m, i) => (
@@ -217,7 +217,7 @@ export function ReviewQueue({ reviews, onAction }: Props) {
                           <button
                             onClick={() => handleTraderPattern(r.id, r.author, r.gpt_asset)}
                             disabled={submitting === r.id}
-                            className="rounded-md bg-[#2962FF]/20 px-3 py-1.5 font-sans text-[11px] font-medium text-[#2962FF] transition hover:bg-[#2962FF]/30 disabled:opacity-50"
+                            className="rounded-md bg-[#FF9800]/20 px-3 py-1.5 font-sans text-[11px] font-medium text-[#FF9800] transition hover:bg-[#FF9800]/30 disabled:opacity-50"
                             title={`Spara: ${r.author} pratar alltid om ${r.gpt_asset}`}
                           >
                             ⚡ {r.author} = {r.gpt_asset}

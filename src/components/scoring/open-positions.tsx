@@ -50,7 +50,7 @@ export function OpenPositions({ positions }: { positions: OpenPosition[] }) {
           {positions.map((p) => (
             <tr key={p.id} className="border-b border-white/[0.03] transition-colors hover:bg-white/[0.025]">
               <td className="px-5 py-3 font-sans text-[14px] font-semibold text-white">{p.author}</td>
-              <td className="px-5 py-3 font-sans text-[13px] font-medium uppercase text-[#2962FF]">{p.asset}</td>
+              <td className="px-5 py-3 font-sans text-[13px] font-medium uppercase text-white/60">{p.asset}</td>
               <td className="px-5 py-3">
                 <span className={
                   p.position === "long"
@@ -60,10 +60,10 @@ export function OpenPositions({ positions }: { positions: OpenPosition[] }) {
                   {p.position ?? <span className="text-white/20">—</span>}
                 </span>
               </td>
-              <td className="px-5 py-3 text-right font-mono text-[13px] tabular-nums text-white">
+              <td className="px-5 py-3 text-right font-sans text-[13px] tabular-nums text-white">
                 {p.price_at_signal != null ? `$${p.price_at_signal.toFixed(2)}` : <span className="text-white/20">—</span>}
               </td>
-              <td className="px-5 py-3 text-right font-mono text-[11px] text-white/20">{fmtAgoEn(p.created_at)}</td>
+              <td className="px-5 py-3 text-right font-sans text-[11px] text-white/20">{fmtAgoEn(p.created_at)}</td>
             </tr>
           ))}
         </tbody>

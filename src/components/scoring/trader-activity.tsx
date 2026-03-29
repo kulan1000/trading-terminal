@@ -98,7 +98,7 @@ export function TraderActivity({ traders }: { traders: TraderActivityRow[] }) {
                   className={`cursor-pointer px-4 py-2.5 font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40 hover:text-white/70 ${c.align}`}
                 >
                   {c.label}
-                  {sortKey === c.key && <span className="ml-1 text-[#2962FF]">{sortAsc ? "▲" : "▼"}</span>}
+                  {sortKey === c.key && <span className="ml-1 text-[#FF9800]">{sortAsc ? "▲" : "▼"}</span>}
                 </th>
               ))}
               <th className="px-4 py-2.5 text-right font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">
@@ -127,32 +127,32 @@ export function TraderActivity({ traders }: { traders: TraderActivityRow[] }) {
                   <td className="px-4 py-2.5">
                     <Link
                       href={`/trader/${encodeURIComponent(t.author)}`}
-                      className="font-sans text-[13px] font-semibold text-white hover:text-[#2962FF] transition-colors"
+                      className="font-sans text-[13px] font-semibold text-white hover:text-[#FF9800] transition-colors"
                     >
                       {t.author}
                     </Link>
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <span className="font-mono text-[13px] tabular-nums text-white/70">{t.total}</span>
+                    <span className="font-sans text-[13px] tabular-nums text-white/70">{t.total}</span>
                     <span className="ml-1 text-[10px] text-white/25">
                       {t.opinions}O {t.positions}P {t.entries}E {t.exits}X
                     </span>
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <span className={`font-mono text-[13px] tabular-nums ${t.scoreable > 0 ? "text-[#2962FF]" : "text-white/25"}`}>
+                    <span className={`font-sans text-[13px] tabular-nums ${t.scoreable > 0 ? "text-[#FF9800]" : "text-white/25"}`}>
                       {t.scoreable}
                     </span>
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <span className="font-mono text-[12px] tabular-nums text-white/50">{t.avgConf}%</span>
+                    <span className="font-sans text-[12px] tabular-nums text-white/50">{t.avgConf}%</span>
                   </td>
-                  <td className={`px-4 py-2.5 text-right font-mono text-[12px] tabular-nums ${biasColor}`}>
+                  <td className={`px-4 py-2.5 text-right font-sans text-[12px] tabular-nums ${biasColor}`}>
                     {bullPct}% bull
                   </td>
                   <td className="px-4 py-2.5 text-right">
                     <AssetDots assets={t.assets} />
                   </td>
-                  <td className="px-4 py-2.5 text-right font-mono text-[11px] tabular-nums text-white/30">
+                  <td className="px-4 py-2.5 text-right font-sans text-[11px] tabular-nums text-white/30">
                     {timeAgo(t.lastActive)}
                   </td>
                 </tr>

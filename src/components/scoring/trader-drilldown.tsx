@@ -5,7 +5,7 @@ import type { ScoredSignal } from "@/hooks/use-scoring-data";
 function ScoreCell({ value }: { value: number | null }) {
   if (value == null) return <span className="text-white/20">—</span>;
   const color = value > 0 ? "text-[#26A69A]" : value < 0 ? "text-[#EF5350]" : "text-white/50";
-  return <span className={`font-mono tabular-nums ${color}`}>{value > 0 ? "+" : ""}{value.toFixed(2)}%</span>;
+  return <span className={`font-sans tabular-nums ${color}`}>{value > 0 ? "+" : ""}{value.toFixed(2)}%</span>;
 }
 
 export function TraderDrilldown({ signals }: { signals: ScoredSignal[] }) {
@@ -31,13 +31,13 @@ export function TraderDrilldown({ signals }: { signals: ScoredSignal[] }) {
                 <td className="py-2">
                   <span className={
                     s.signalType === "entry"
-                      ? "rounded-md bg-[#2962FF]/15 px-2 py-0.5 font-sans text-[10px] font-bold text-[#2962FF]"
+                      ? "rounded-md bg-[#26A69A]/15 px-2 py-0.5 font-sans text-[10px] font-bold text-[#26A69A]"
                       : "rounded-md bg-[#FF9800]/15 px-2 py-0.5 font-sans text-[10px] font-bold text-[#FF9800]"
                   }>
                     {s.signalType === "entry" ? "ENTRY" : "EXIT"}
                   </span>
                 </td>
-                <td className="py-2 font-sans text-[12px] font-medium uppercase text-[#2962FF]">{s.asset}</td>
+                <td className="py-2 font-sans text-[12px] font-medium uppercase text-white/60">{s.asset}</td>
                 <td className="py-2">
                   <span className={`font-sans text-[12px] font-medium ${s.position === "long" ? "text-[#26A69A]" : "text-[#EF5350]"}`}>
                     {s.position ?? <span className="text-white/20">—</span>}

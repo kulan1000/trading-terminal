@@ -6,7 +6,7 @@ import { fmtAgoEn } from "@/lib/format-utils";
 function ScoreCell({ value }: { value: number | null }) {
   if (value == null) return <span className="text-white/20">—</span>;
   const color = value > 0 ? "text-[#26A69A]" : value < 0 ? "text-[#EF5350]" : "text-white/50";
-  return <span className={`font-mono tabular-nums ${color}`}>{value > 0 ? "+" : ""}{value.toFixed(2)}%</span>;
+  return <span className={`font-sans tabular-nums ${color}`}>{value > 0 ? "+" : ""}{value.toFixed(2)}%</span>;
 }
 
 export function RecentScored({ signals }: { signals: ScoredSignal[] }) {
@@ -59,14 +59,14 @@ export function RecentScored({ signals }: { signals: ScoredSignal[] }) {
               <td className="px-5 py-3">
                 <span className={
                   s.signalType === "entry"
-                    ? "rounded-md bg-[#2962FF]/15 px-2.5 py-0.5 font-sans text-[10px] font-bold text-[#2962FF]"
+                    ? "rounded-md bg-[#26A69A]/15 px-2.5 py-0.5 font-sans text-[10px] font-bold text-[#26A69A]"
                     : "rounded-md bg-[#FF9800]/15 px-2.5 py-0.5 font-sans text-[10px] font-bold text-[#FF9800]"
                 }>
                   {s.signalType === "entry" ? "ENTRY" : "EXIT"}
                   {s.position ? ` ${s.position.toUpperCase()}` : ""}
                 </span>
               </td>
-              <td className="px-5 py-3 font-sans text-[13px] font-medium uppercase text-[#2962FF]">{s.asset}</td>
+              <td className="px-5 py-3 font-sans text-[13px] font-medium uppercase text-white/60">{s.asset}</td>
               <td className="px-4 py-3 text-right text-[13px]"><ScoreCell value={s.score30m} /></td>
               <td className="px-4 py-3 text-right text-[13px]"><ScoreCell value={s.score1h} /></td>
               <td className="px-4 py-3 text-right text-[13px]"><ScoreCell value={s.score2h} /></td>
@@ -74,7 +74,7 @@ export function RecentScored({ signals }: { signals: ScoredSignal[] }) {
               <td className="px-5 py-3 text-right text-[13px]">
                 <ScoreCell value={s.weightedScore} />
                 {s.consistent && <span className="ml-1 text-[9px] text-[#26A69A]">✦</span>}
-                <span className="ml-1.5 font-mono text-[10px] text-white/20">{fmtAgoEn(s.scoredAt)}</span>
+                <span className="ml-1.5 font-sans text-[10px] text-white/20">{fmtAgoEn(s.scoredAt)}</span>
               </td>
             </tr>
           ))}

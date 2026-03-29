@@ -32,7 +32,7 @@ export function BackfillButton() {
       <button
         onClick={runBackfill}
         disabled={loading}
-        className="bg-[#2962FF] text-white rounded-md px-3 py-1 font-sans text-[12px] font-medium shadow-[0_0_12px_-3px_rgba(41,98,255,0.4)] hover:shadow-[0_0_16px_-3px_rgba(41,98,255,0.5)] transition-all disabled:opacity-50"
+        className="bg-[#FF9800] text-white rounded-md px-3 py-1 font-sans text-[12px] font-medium shadow-[0_0_12px_-3px_rgba(255,152,0,0.4)] hover:shadow-[0_0_16px_-3px_rgba(255,152,0,0.5)] transition-all disabled:opacity-50"
       >
         {loading ? "Scorar..." : "⟳ Backfill Scoring"}
       </button>

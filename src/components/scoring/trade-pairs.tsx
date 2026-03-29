@@ -52,10 +52,10 @@ export function TradePairs({ pairs }: { pairs: TradePairRow[] }) {
           </span>
         </h3>
         <div className="flex items-center gap-3">
-          <span className={`font-mono text-[13px] tabular-nums ${totalPnl >= 0 ? "text-[#26A69A]" : "text-[#EF5350]"}`}>
+          <span className={`font-sans text-[13px] tabular-nums ${totalPnl >= 0 ? "text-[#26A69A]" : "text-[#EF5350]"}`}>
             {totalPnl >= 0 ? "+" : ""}{totalPnl.toFixed(2)} PnL
           </span>
-          <span className="font-mono text-[11px] tabular-nums text-white/30">
+          <span className="font-sans text-[11px] tabular-nums text-white/30">
             {wins}W / {pairs.length - wins}L
           </span>
         </div>
@@ -83,16 +83,16 @@ export function TradePairs({ pairs }: { pairs: TradePairRow[] }) {
                   </span>
                   <span className="ml-1.5 text-[10px] text-white/25">{p.position}</span>
                 </td>
-                <td className="px-4 py-2.5 text-right font-mono text-[12px] tabular-nums text-white/50">
+                <td className="px-4 py-2.5 text-right font-sans text-[12px] tabular-nums text-white/50">
                   ${p.entry_price.toFixed(2)}
                 </td>
-                <td className="px-4 py-2.5 text-right font-mono text-[12px] tabular-nums text-white/50">
+                <td className="px-4 py-2.5 text-right font-sans text-[12px] tabular-nums text-white/50">
                   ${p.exit_price.toFixed(2)}
                 </td>
-                <td className={`px-4 py-2.5 text-right font-mono text-[13px] tabular-nums ${p.pnl > 0 ? "text-[#26A69A]" : p.pnl < 0 ? "text-[#EF5350]" : "text-white/50"}`}>
+                <td className={`px-4 py-2.5 text-right font-sans text-[13px] tabular-nums ${p.pnl > 0 ? "text-[#26A69A]" : p.pnl < 0 ? "text-[#EF5350]" : "text-white/50"}`}>
                   {p.pnl > 0 ? "+" : ""}{p.pnl.toFixed(2)}
                 </td>
-                <td className="px-4 py-2.5 text-right font-mono text-[11px] tabular-nums text-white/30">
+                <td className="px-4 py-2.5 text-right font-sans text-[11px] tabular-nums text-white/30">
                   {timeAgo(p.created_at)}
                 </td>
               </tr>
