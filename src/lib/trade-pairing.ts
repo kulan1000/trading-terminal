@@ -107,7 +107,9 @@ async function refreshCredibility(supabase: any, author: string) {
   const { data } = await supabase
     .from("trade_pairs")
     .select("pnl")
-    .eq("author", author);
+    .eq("author", author)
+    .order("created_at", { ascending: false })
+    .limit(200);
 
   const trades = (data ?? []) as Array<{ pnl: number }>;
   if (!trades.length) return;

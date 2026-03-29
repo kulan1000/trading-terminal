@@ -1,6 +1,6 @@
 import type { Asset } from "@/lib/types";
 
-export interface YahooResult {
+interface YahooResult {
   price: number;
   prevClose: number;
   volume: number;

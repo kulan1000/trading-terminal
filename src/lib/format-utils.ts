@@ -19,6 +19,13 @@ export function fmtTime(iso: string): string {
   });
 }
 
+/** "14:35:22" — time with seconds, for pipeline logs */
+export function fmtTimeFull(iso: string): string {
+  return new Date(iso).toLocaleTimeString("sv-SE", {
+    hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Europe/Stockholm",
+  });
+}
+
 /** "14:35" — from epoch seconds (for chart timestamps) */
 export function fmtTimeEpoch(epoch: number): string {
   return new Date(epoch * 1000).toLocaleTimeString("sv-SE", {
@@ -34,11 +41,13 @@ export function fmtPrice(asset: string, price: number): string {
 }
 
 /** "5m sedan" / "2h sedan" / "1d sedan" — relative time in Swedish */
-export function fmtAgo(iso: string): string {
+export function fmtAgo(iso: string | null): string {
+  if (!iso) return "—";
   const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return "Just nu";
   if (mins < 60) return `${mins}m sedan`;
-  const hours = Math.round(mins / 60);
-  if (hours < 24) return `${hours}h sedan`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ${mins % 60}m sedan`;
   return `${Math.round(hours / 24)}d sedan`;
 }
 

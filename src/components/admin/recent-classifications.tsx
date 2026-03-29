@@ -1,5 +1,7 @@
 "use client";
 
+import { fmtAgoShort } from "@/lib/format-utils";
+
 interface Classification {
   asset: string;
   direction: string;
@@ -29,14 +31,6 @@ const TYPE_STYLE: Record<string, { label: string; cls: string }> = {
   opinion: { label: "OPINION", cls: "bg-[#FF9800]/10 text-[#FF9800]" },
   target: { label: "TARGET", cls: "bg-[#2962FF]/10 text-[#2962FF]" },
 };
-
-function fmtAgo(iso: string): string {
-  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
-  if (mins < 1) return "nu";
-  if (mins < 60) return `${mins}m`;
-  const hrs = Math.floor(mins / 60);
-  return `${hrs}h`;
-}
 
 export function RecentClassifications({ data }: { data: Classification[] }) {
   return (
@@ -85,7 +79,7 @@ export function RecentClassifications({ data }: { data: Classification[] }) {
                     @{c.author}
                   </span>
                   <span className="w-8 text-right font-mono text-[10px] text-white/20">
-                    {fmtAgo(c.created_at)}
+                    {fmtAgoShort(c.created_at)}
                   </span>
                 </div>
               );

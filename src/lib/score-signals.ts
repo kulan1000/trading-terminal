@@ -152,7 +152,9 @@ async function refreshTimeScoring(supabase: any, author: string) {
   const { data } = await supabase
     .from("signal_scores")
     .select("weighted_score, signal_type")
-    .eq("author", author);
+    .eq("author", author)
+    .order("created_at", { ascending: false })
+    .limit(200);
 
   const rows = (data ?? []) as Array<{ weighted_score: number; signal_type: string }>;
   if (!rows.length) return;

@@ -14,7 +14,8 @@ export async function saveSentimentSnapshots() {
     .from("signals")
     .select("id, asset, direction, signal_type, position, strength, confidence, author, created_at")
     .gte("created_at", cutoff)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(500);
 
   const signals = (data ?? []) as RawSignal[];
   const sentiments = calcSentiment(signals, ASSETS, WINDOWS.primary);

@@ -12,7 +12,7 @@ export interface AssetBreakdown {
   bearCount: number;
 }
 
-export interface TraderMover {
+interface TraderMover {
   author: string;
   signalCount: number;
   dominantAsset: Asset;

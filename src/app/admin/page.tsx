@@ -11,6 +11,7 @@ import { PipelineLog } from "@/components/admin/pipeline-log";
 import { PipelineTrigger } from "@/components/admin/pipeline-trigger";
 import { SystemHealth } from "@/components/admin/system-health";
 import { DatabaseInfo } from "@/components/admin/database-info";
+import { fmtAgo } from "@/lib/format-utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface PipelineData {
@@ -29,15 +30,6 @@ interface PipelineData {
   todayCostUsd: number;
   tableCounts: Record<string, number>;
   checkedAt: string;
-}
-
-function fmtAgo(iso: string | null): string {
-  if (!iso) return "—";
-  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
-  if (mins < 1) return "Just nu";
-  if (mins < 60) return `${mins}m sedan`;
-  const hrs = Math.floor(mins / 60);
-  return `${hrs}h ${mins % 60}m sedan`;
 }
 
 export default function AdminPage() {

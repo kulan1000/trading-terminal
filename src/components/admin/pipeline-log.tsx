@@ -1,5 +1,7 @@
 "use client";
 
+import { fmtTimeFull } from "@/lib/format-utils";
+
 interface PipelineRun {
   id: number;
   started_at: string;
@@ -21,10 +23,6 @@ const STATUS_STYLE: Record<string, { dot: string; text: string }> = {
   error: { dot: "bg-[#EF5350]", text: "text-[#EF5350]" },
   running: { dot: "bg-[#2962FF] animate-pulse", text: "text-[#2962FF]" },
 };
-
-function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-}
 
 export function PipelineLog({ runs }: { runs: PipelineRun[] }) {
   if (!runs.length) {
@@ -56,7 +54,7 @@ export function PipelineLog({ runs }: { runs: PipelineRun[] }) {
                 <div
                   key={i}
                   className={`h-1.5 w-1.5 rounded-full ${r.status === "success" ? "bg-[#26A69A]/60" : r.status === "error" ? "bg-[#EF5350]/60" : "bg-[#2962FF]/40"}`}
-                  title={`${fmtTime(r.started_at)} — ${r.status}`}
+                  title={`${fmtTimeFull(r.started_at)} — ${r.status}`}
                 />
               ))}
             </div>
@@ -83,7 +81,7 @@ export function PipelineLog({ runs }: { runs: PipelineRun[] }) {
             <div key={run.id} className="flex items-center border-b border-white/[0.03] px-5 py-2.5 transition-colors hover:bg-white/[0.02]">
               <span className={`mr-3 h-2 w-2 shrink-0 rounded-full ${s.dot}`} />
               <span className="w-16 shrink-0 font-mono text-[10px] text-white/40">
-                {fmtTime(run.started_at)}
+                {fmtTimeFull(run.started_at)}
               </span>
               <span className={`w-16 shrink-0 font-sans text-[10px] font-bold ${s.text}`}>
                 {run.status.toUpperCase()}
