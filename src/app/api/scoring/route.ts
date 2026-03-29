@@ -204,7 +204,35 @@ export async function GET() {
     }))
     .sort((a, b) => b.total - a.total);
 
-  // 7) Trade pairs
+  // 7) Score history: aggregate by hour for timeline chart
+  const scoreHistory: Array<{
+    hour: string; avgScore: number; count: number; wins: number; winRate: number;
+  }> = [];
+
+  if (allScores.length > 0) {
+    const hourMap = new Map<string, { sum: number; count: number; wins: number }>();
+    for (const s of allScores) {
+      const d = new Date(s.scored_at);
+      d.setMinutes(0, 0, 0);
+      const key = d.toISOString();
+      const h = hourMap.get(key) ?? { sum: 0, count: 0, wins: 0 };
+      h.sum += s.weighted_score;
+      h.count++;
+      if (s.weighted_score > 0) h.wins++;
+      hourMap.set(key, h);
+    }
+    for (const [hour, h] of Array.from(hourMap.entries()).sort()) {
+      scoreHistory.push({
+        hour,
+        avgScore: h.count > 0 ? h.sum / h.count : 0,
+        count: h.count,
+        wins: h.wins,
+        winRate: h.count > 0 ? h.wins / h.count : 0,
+      });
+    }
+  }
+
+  // 8) Trade pairs
   const { data: tradePairRows } = await supabase
     .from("trade_pairs")
     .select("author, asset, position, entry_price, exit_price, pnl, created_at")
@@ -218,6 +246,6 @@ export async function GET() {
 
   return NextResponse.json({
     scoreboard, openPositions, recentScored, traderSignals,
-    traderActivity, tradePairs,
+    traderActivity, tradePairs, scoreHistory,
   });
 }

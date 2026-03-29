@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { TraderActivityRow } from "@/components/scoring/trader-activity";
 import type { TradePairRow } from "@/components/scoring/trade-pairs";
+import type { ScoreHistoryPoint } from "@/components/scoring/score-timeline";
 
 export interface TraderScore {
   author: string;
@@ -47,12 +48,13 @@ interface ScoringData {
   traderSignals: Record<string, ScoredSignal[]>;
   traderActivity: TraderActivityRow[];
   tradePairs: TradePairRow[];
+  scoreHistory: ScoreHistoryPoint[];
 }
 
 export function useScoringData() {
   const [data, setData] = useState<ScoringData>({
     scoreboard: [], openPositions: [], recentScored: [],
-    traderSignals: {}, traderActivity: [], tradePairs: [],
+    traderSignals: {}, traderActivity: [], tradePairs: [], scoreHistory: [],
   });
   const [loading, setLoading] = useState(true);
 

@@ -8,6 +8,7 @@ import { RecentScored } from "@/components/scoring/recent-trades";
 import { TraderActivity } from "@/components/scoring/trader-activity";
 import { TradePairs } from "@/components/scoring/trade-pairs";
 import { ScoringStatus } from "@/components/scoring/scoring-status";
+import { ScoreTimeline } from "@/components/scoring/score-timeline";
 import { BackfillButton } from "@/components/scoring/backfill-button";
 
 const ASSETS = ["all", "gold", "silver", "oil"] as const;
@@ -16,7 +17,7 @@ type AssetFilter = (typeof ASSETS)[number];
 export default function ScoringPage() {
   const {
     scoreboard, openPositions, recentScored, traderSignals,
-    traderActivity, tradePairs, loading,
+    traderActivity, tradePairs, scoreHistory, loading,
   } = useScoringData();
   const [asset, setAsset] = useState<AssetFilter>("all");
 
@@ -106,6 +107,9 @@ export default function ScoringPage() {
             totalPairs={tradePairs.length}
             openPositions={openPositions.length}
           />
+
+          {/* Accuracy timeline */}
+          <ScoreTimeline history={scoreHistory} />
 
           {/* Scoreboard (only shows with 3+ scored signals per trader) */}
           <ScoreboardTable traders={filteredScoreboard} traderSignals={filteredSignals} />
