@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { fmtTime } from "@/lib/format-utils";
 
 export interface ScoreHistoryPoint {
@@ -14,26 +15,9 @@ interface Props {
   history: ScoreHistoryPoint[];
 }
 
-const W = 820;
-const H = 200;
-const PAD = { top: 16, right: 55, bottom: 30, left: 45 };
-const CW = W - PAD.left - PAD.right;
-const CH = H - PAD.top - PAD.bottom;
-
-function pointsToPath(pts: { x: number; y: number }[]): string {
-  if (pts.length < 2) return "";
-  if (pts.length === 2)
-    return `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)} L${pts[1].x.toFixed(1)},${pts[1].y.toFixed(1)}`;
-  let d = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
-  for (let i = 1; i < pts.length; i++) {
-    const prev = pts[i - 1], curr = pts[i];
-    const dx = (curr.x - prev.x) * 0.3;
-    d += ` C${(prev.x + dx).toFixed(1)},${prev.y.toFixed(1)} ${(curr.x - dx).toFixed(1)},${curr.y.toFixed(1)} ${curr.x.toFixed(1)},${curr.y.toFixed(1)}`;
-  }
-  return d;
-}
-
 export function ScoreTimeline({ history }: Props) {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+
   if (history.length === 0) {
     return (
       <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
@@ -50,157 +34,168 @@ export function ScoreTimeline({ history }: Props) {
     );
   }
 
-  // Data range
-  const times = history.map((h) => new Date(h.hour).getTime());
-  const xStart = Math.min(...times);
-  const xEnd = Math.max(...times);
-  const xSpan = Math.max(xEnd - xStart, 3_600_000); // at least 1h
-
-  const maxCount = Math.max(...history.map((h) => h.count), 1);
-  const barH = CH * 0.25; // bottom 25% for volume bars
-
-  // Map to screen coords
-  const toX = (t: number) => PAD.left + ((t - xStart) / xSpan) * CW;
-  const toY = (rate: number) => PAD.top + (1 - rate) * (CH - barH);
-
-  // Win rate line points
-  const linePoints = history.map((h) => ({
-    x: toX(new Date(h.hour).getTime()),
-    y: toY(h.winRate),
-  }));
-
-  // Volume bars
-  const barWidth = Math.max(6, CW / Math.max(history.length, 1) * 0.6);
-
-  // Y axis labels for win rate (0%–100%)
-  const yLabels = [0, 25, 50, 75, 100].map((pct) => ({
-    val: pct,
-    y: toY(pct / 100),
-  }));
-
-  // X axis labels (show ~6 labels)
-  const step = Math.max(1, Math.floor(history.length / 6));
-  const xLabels = history.filter((_, i) => i % step === 0).map((h) => ({
-    label: fmtTime(h.hour),
-    x: toX(new Date(h.hour).getTime()),
-  }));
-
   // Summary stats
   const totalSignals = history.reduce((s, h) => s + h.count, 0);
   const totalWins = history.reduce((s, h) => s + h.wins, 0);
   const overallRate = totalSignals > 0 ? Math.round((totalWins / totalSignals) * 100) : 0;
+  const avgScore = history.reduce((s, h) => s + h.avgScore * h.count, 0) / Math.max(totalSignals, 1);
+  const maxCount = Math.max(...history.map((h) => h.count), 1);
 
-  const linePath = pointsToPath(linePoints);
-  const gradientId = "score-timeline-grad";
+  // Hovered point
+  const hp = hoverIdx !== null ? history[hoverIdx] : null;
 
   return (
     <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
       <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
       <div className="px-5 py-4">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <h3 className="font-sans text-[13px] font-semibold text-white">
-            Scoring Accuracy Timeline
+            Scoring Timeline
           </h3>
           <div className="flex items-center gap-4 font-sans text-[11px] tabular-nums">
-            <span className="text-white/40">
-              {totalSignals} scored
-            </span>
+            <span className="text-white/40">{totalSignals} scored</span>
             <span className={overallRate >= 50 ? "text-[#26A69A]" : "text-[#EF5350]"}>
               {overallRate}% win rate
+            </span>
+            <span className={avgScore >= 0 ? "text-[#26A69A]" : "text-[#EF5350]"}>
+              {avgScore >= 0 ? "+" : ""}{avgScore.toFixed(2)}% avg
             </span>
           </div>
         </div>
 
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          className="mt-3 w-full"
-          preserveAspectRatio="xMidYMid meet"
+        {/* Bar chart — each hour bucket is a column */}
+        <div
+          className="relative mt-4"
+          onMouseLeave={() => setHoverIdx(null)}
         >
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#26A69A" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="#26A69A" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-
-          {/* Grid lines */}
-          {yLabels.map((l) => (
-            <g key={l.val}>
-              <line
-                x1={PAD.left} y1={l.y} x2={W - PAD.right} y2={l.y}
-                stroke="white" strokeOpacity={l.val === 50 ? 0.12 : 0.04}
-                strokeDasharray={l.val === 50 ? "4,4" : "none"}
-              />
-              <text
-                x={PAD.left - 8} y={l.y + 3}
-                textAnchor="end"
-                className="fill-white/30 font-sans text-[10px]"
-              >
-                {l.val}%
-              </text>
-            </g>
-          ))}
-
-          {/* X axis labels */}
-          {xLabels.map((l, i) => (
-            <text
-              key={i}
-              x={l.x} y={H - 4}
-              textAnchor="middle"
-              className="fill-white/30 font-sans text-[10px]"
+          {/* Hover tooltip */}
+          {hp && hoverIdx !== null && (
+            <div
+              className="pointer-events-none absolute -top-2 z-20 -translate-x-1/2 -translate-y-full"
+              style={{ left: `${((hoverIdx + 0.5) / history.length) * 100}%` }}
             >
-              {l.label}
-            </text>
-          ))}
-
-          {/* Volume bars */}
-          {history.map((h, i) => {
-            const x = toX(new Date(h.hour).getTime());
-            const bh = (h.count / maxCount) * barH;
-            return (
-              <rect
-                key={i}
-                x={x - barWidth / 2}
-                y={H - PAD.bottom - bh}
-                width={barWidth}
-                height={bh}
-                rx={2}
-                fill={h.winRate >= 0.5 ? "#26A69A" : "#EF5350"}
-                fillOpacity={0.15}
-              />
-            );
-          })}
-
-          {/* Area fill under line */}
-          {linePoints.length >= 2 && (
-            <path
-              d={`${linePath} L${linePoints[linePoints.length - 1].x},${H - PAD.bottom - barH} L${linePoints[0].x},${H - PAD.bottom - barH} Z`}
-              fill={`url(#${gradientId})`}
-            />
+              <div className="rounded-lg border border-white/[0.08] bg-[#1a1a1a] px-3 py-2 shadow-xl">
+                <p className="font-sans text-[11px] font-medium text-white">
+                  {fmtTime(hp.hour)}
+                </p>
+                <div className="mt-1.5 space-y-1">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="font-sans text-[10px] text-white/40">Signals</span>
+                    <span className="font-sans text-[11px] tabular-nums text-white">{hp.count}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="font-sans text-[10px] text-white/40">Wins</span>
+                    <span className="font-sans text-[11px] tabular-nums text-[#26A69A]">{hp.wins}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="font-sans text-[10px] text-white/40">Losses</span>
+                    <span className="font-sans text-[11px] tabular-nums text-[#EF5350]">{hp.count - hp.wins}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4 border-t border-white/[0.06] pt-1">
+                    <span className="font-sans text-[10px] text-white/40">Win Rate</span>
+                    <span className={`font-sans text-[11px] tabular-nums font-medium ${hp.winRate >= 0.5 ? "text-[#26A69A]" : "text-[#EF5350]"}`}>
+                      {Math.round(hp.winRate * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="font-sans text-[10px] text-white/40">Avg Score</span>
+                    <span className={`font-sans text-[11px] tabular-nums font-medium ${hp.avgScore >= 0 ? "text-[#26A69A]" : "text-[#EF5350]"}`}>
+                      {hp.avgScore >= 0 ? "+" : ""}{hp.avgScore.toFixed(2)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
-          {/* Win rate line */}
-          {linePoints.length >= 2 && (
-            <path
-              d={linePath}
-              fill="none"
-              stroke="#26A69A"
-              strokeWidth={2}
-              strokeLinejoin="round"
-            />
-          )}
+          {/* Bars */}
+          <div className="flex items-end gap-[2px]" style={{ height: 120 }}>
+            {history.map((h, i) => {
+              const barPct = Math.max((h.count / maxCount) * 100, 4); // min 4% so it's visible
+              const isHover = hoverIdx === i;
+              const color = h.winRate >= 0.5 ? "#26A69A" : h.winRate > 0 ? "#FF9800" : "#EF5350";
 
-          {/* Data points */}
-          {linePoints.map((p, i) => (
-            <circle
-              key={i}
-              cx={p.x} cy={p.y} r={3}
-              fill="#111111"
-              stroke={history[i].winRate >= 0.5 ? "#26A69A" : "#EF5350"}
-              strokeWidth={1.5}
-            />
-          ))}
-        </svg>
+              return (
+                <div
+                  key={i}
+                  className="group relative flex flex-1 cursor-pointer flex-col items-center justify-end"
+                  style={{ height: "100%" }}
+                  onMouseEnter={() => setHoverIdx(i)}
+                >
+                  {/* Win rate label on hover */}
+                  {isHover && (
+                    <span
+                      className="mb-1 font-sans text-[9px] tabular-nums font-medium"
+                      style={{ color }}
+                    >
+                      {Math.round(h.winRate * 100)}%
+                    </span>
+                  )}
+
+                  {/* Stacked bar: wins (green) + losses (red) */}
+                  <div
+                    className="relative w-full overflow-hidden rounded-t-sm transition-all duration-150"
+                    style={{
+                      height: `${barPct}%`,
+                      opacity: isHover ? 1 : 0.7,
+                    }}
+                  >
+                    {/* Win portion */}
+                    <div
+                      className="absolute bottom-0 w-full transition-all"
+                      style={{
+                        height: `${h.count > 0 ? (h.wins / h.count) * 100 : 0}%`,
+                        backgroundColor: "#26A69A",
+                        opacity: isHover ? 0.6 : 0.35,
+                      }}
+                    />
+                    {/* Loss portion */}
+                    <div
+                      className="absolute top-0 w-full transition-all"
+                      style={{
+                        height: `${h.count > 0 ? ((h.count - h.wins) / h.count) * 100 : 100}%`,
+                        backgroundColor: "#EF5350",
+                        opacity: isHover ? 0.5 : 0.2,
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* X-axis time labels */}
+          <div className="mt-2 flex">
+            {history.map((h, i) => {
+              // Show label for first, last, and roughly evenly spaced
+              const step = Math.max(1, Math.floor(history.length / 6));
+              const show = i === 0 || i === history.length - 1 || i % step === 0;
+              return (
+                <div key={i} className="flex-1 text-center">
+                  {show && (
+                    <span className="font-sans text-[9px] tabular-nums text-white/25">
+                      {fmtTime(h.hour)}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="mt-3 flex items-center gap-4 border-t border-white/[0.04] pt-3">
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block h-2 w-3 rounded-sm bg-[#26A69A]/40" />
+            <span className="font-sans text-[10px] text-white/30">Wins</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block h-2 w-3 rounded-sm bg-[#EF5350]/30" />
+            <span className="font-sans text-[10px] text-white/30">Losses</span>
+          </div>
+          <span className="font-sans text-[10px] text-white/20">Hover för detaljer per timme</span>
+        </div>
       </div>
     </div>
   );

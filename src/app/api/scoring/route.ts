@@ -36,13 +36,21 @@ interface OpenEntry {
 export async function GET() {
   const supabase = getSupabaseAdmin();
 
-  // 1) All scored signals
+  // 1) All scored signals + join to get original message content and signal created_at
   const { data: scores } = await supabase
     .from("signal_scores")
-    .select("*")
+    .select("*, signals!inner(created_at, direction, message_id, discord_messages(content))")
     .order("scored_at", { ascending: false });
 
-  const allScores = (scores ?? []) as ScoreRow[];
+  const allScores = (scores ?? []).map((s: Record<string, unknown>) => {
+    const sig = s.signals as { created_at?: string; direction?: string; message_id?: number; discord_messages?: { content?: string } | null } | null;
+    return {
+      ...s,
+      signal_created_at: sig?.created_at ?? s.scored_at,
+      direction: sig?.direction ?? null,
+      message_content: sig?.discord_messages?.content ?? null,
+    };
+  }) as (ScoreRow & { signal_created_at: string; direction: string | null; message_content: string | null })[];
 
   // 2) Build per-trader scoreboard from time-horizon scores
   const traderMap = new Map<string, {
@@ -81,10 +89,11 @@ export async function GET() {
     .sort((a, b) => b.winRate - a.winRate);
 
   // 3) Per-trader signal details (for drilldown)
-  const traderSignals: Record<string, Array<{
+  type SignalDetail = {
     signalType: string;
     position: string | null;
     asset: string;
+    direction: string | null;
     priceAtSignal: number;
     score30m: number | null;
     score1h: number | null;
@@ -93,7 +102,10 @@ export async function GET() {
     weightedScore: number;
     consistent: boolean;
     scoredAt: string;
-  }>> = {};
+    signalCreatedAt: string;
+    messageContent: string | null;
+  };
+  const traderSignals: Record<string, SignalDetail[]> = {};
 
   for (const s of allScores) {
     if (!traderSignals[s.author]) traderSignals[s.author] = [];
@@ -101,6 +113,7 @@ export async function GET() {
       signalType: s.signal_type,
       position: s.position,
       asset: s.asset,
+      direction: s.direction,
       priceAtSignal: s.price_at_signal,
       score30m: s.score_30m,
       score1h: s.score_1h,
@@ -109,6 +122,8 @@ export async function GET() {
       weightedScore: s.weighted_score,
       consistent: s.consistency_bonus,
       scoredAt: s.scored_at,
+      signalCreatedAt: s.signal_created_at,
+      messageContent: s.message_content,
     });
   }
 
@@ -138,6 +153,7 @@ export async function GET() {
     asset: s.asset,
     signalType: s.signal_type,
     position: s.position,
+    direction: s.direction,
     priceAtSignal: s.price_at_signal,
     score30m: s.score_30m,
     score1h: s.score_1h,
@@ -146,6 +162,8 @@ export async function GET() {
     weightedScore: s.weighted_score,
     consistent: s.consistency_bonus,
     scoredAt: s.scored_at,
+    signalCreatedAt: s.signal_created_at,
+    messageContent: s.message_content,
   }));
 
   // 6) Trader activity: all traders ranked by signal count + types

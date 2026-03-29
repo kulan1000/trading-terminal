@@ -31,6 +31,7 @@ export interface ScoredSignal {
   asset: string;
   signalType: string;
   position: string | null;
+  direction: string | null;
   priceAtSignal: number;
   score30m: number | null;
   score1h: number | null;
@@ -39,6 +40,8 @@ export interface ScoredSignal {
   weightedScore: number;
   consistent: boolean;
   scoredAt: string;
+  signalCreatedAt: string;
+  messageContent: string | null;
 }
 
 interface ScoringData {
