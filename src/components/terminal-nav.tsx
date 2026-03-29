@@ -18,8 +18,8 @@ export function TerminalNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex items-center gap-1 border-b border-terminal-border bg-terminal-surface px-4">
-      <span className="mr-4 text-sm font-bold tracking-wider text-terminal-accent">
+    <nav className="flex items-center gap-1 border-b border-white/[0.06] bg-[#111111] px-4">
+      <span className="mr-4 text-sm font-bold tracking-wider text-[#2962FF]">
         TT
       </span>
       {tabs.map((tab) => {
@@ -30,16 +30,16 @@ export function TerminalNav() {
             href={tab.href}
             className={`px-3 py-2.5 text-xs font-medium tracking-wide transition-colors ${
               isActive
-                ? "border-b-2 border-terminal-accent text-terminal-accent"
-                : "text-terminal-muted hover:text-terminal-text"
+                ? "border-b-2 border-[#2962FF] text-[#2962FF]"
+                : "text-white/40 hover:text-white/70"
             }`}
           >
             {tab.name.toUpperCase()}
           </Link>
         );
       })}
-      <div className="ml-auto flex items-center gap-3 text-xs text-terminal-muted">
-        <span className="h-2 w-2 rounded-full bg-terminal-green" />
+      <div className="ml-auto flex items-center gap-3 text-xs text-white/40">
+        <span className="h-2 w-2 rounded-full bg-[#26A69A]" />
         <span>LIVE</span>
       </div>
     </nav>
