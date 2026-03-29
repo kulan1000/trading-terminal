@@ -102,6 +102,11 @@ export async function processUnclassified(limit = 50) {
       .from("discord_messages")
       .update({ processed: true })
       .eq("id", msg.id);
+
+    // Small delay between OpenAI calls to stay well under rate limits
+    if (signalCount > 0) {
+      await new Promise((r) => setTimeout(r, 200));
+    }
   }
 
   return { processed: messages.length, signals: signalCount, skipped };

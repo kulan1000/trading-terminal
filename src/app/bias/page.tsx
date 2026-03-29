@@ -9,6 +9,7 @@ import { SignalFeed } from "@/components/bias/signal-feed";
 import { TargetsPanel } from "@/components/bias/targets-panel";
 import { BiasSummary } from "@/components/bias/bias-summary";
 import { TraderLeaderboard } from "@/components/bias/trader-leaderboard";
+import { FetchError } from "@/components/ui/fetch-error";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface BiasData {
@@ -40,8 +41,8 @@ export default function BiasPage() {
 
   if (error) {
     return (
-      <div className="animate-fade-in flex items-center justify-center py-20">
-        <p className="font-sans text-[13px] text-white/40">Kunde inte ladda data. Försöker igen...</p>
+      <div className="py-10">
+        <FetchError onRetry={fetchData} />
       </div>
     );
   }

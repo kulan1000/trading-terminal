@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { MarketBiasSection } from "@/components/bias/market-bias-section";
+import { FetchError } from "@/components/ui/fetch-error";
 
 export default function SentimentPage() {
   const [biases, setBiases] = useState<unknown[] | null>(null);
@@ -36,9 +37,7 @@ export default function SentimentPage() {
           /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
           <MarketBiasSection biases={biases as any} />
         ) : error ? (
-          <div className="rounded-xl border border-white/[0.06] bg-[#111111] p-10 text-center">
-            <p className="font-sans text-[13px] text-white/40">Kunde inte ladda data. Försöker igen...</p>
-          </div>
+          <FetchError onRetry={fetchData} />
         ) : (
           <div className="grid grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (

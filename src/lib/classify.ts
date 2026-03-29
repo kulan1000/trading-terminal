@@ -9,6 +9,24 @@ function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
+/** Retry wrapper with exponential backoff for OpenAI rate limits (429) */
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: unknown) {
+      const isRateLimit =
+        err instanceof Error &&
+        (err.message.includes("429") || err.message.includes("Rate limit"));
+      if (!isRateLimit || attempt === maxRetries) throw err;
+      const delay = Math.min(1000 * Math.pow(2, attempt), 8000);
+      console.warn(`[classify] 429 rate limit — retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw new Error("Unreachable");
+}
+
 export async function classifyMessage(
   content: string,
   channel?: string,
@@ -33,13 +51,15 @@ export async function classifyMessage(
     { role: "user", content: userContent },
   ];
 
-  const response = await getOpenAI().chat.completions.create({
-    model: "gpt-4o-mini",
-    messages,
-    temperature: 0.1,
-    max_tokens: 900,
-    response_format: { type: "json_object" },
-  });
+  const response = await withRetry(() =>
+    getOpenAI().chat.completions.create({
+      model: "gpt-4o-mini",
+      messages,
+      temperature: 0.1,
+      max_tokens: 900,
+      response_format: { type: "json_object" },
+    })
+  );
 
   const choice = response.choices[0];
   if (choice?.finish_reason === "length") {

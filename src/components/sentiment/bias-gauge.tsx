@@ -5,63 +5,7 @@ import type { SentimentHistoryPoint } from "@/hooks/use-sentiment";
 import { SentimentSparkline } from "./sentiment-sparkline";
 import { ASSET_PAIRS, DIRECTION_COLOR } from "@/lib/constants";
 import type { Asset } from "@/lib/types";
-
-function PressureBar({ bull, bear }: { bull: number; bear: number }) {
-  const total = bull + bear;
-  if (total === 0) return <div className="h-2.5 w-full rounded-full bg-tv-input" />;
-  const bullPct = (bull / total) * 100;
-  return (
-    <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-tv-input">
-      <div className="bg-tv-bull transition-all duration-500" style={{ width: `${bullPct}%` }} />
-      <div className="bg-tv-bear flex-1" />
-    </div>
-  );
-}
-
-function ConfidenceBar({ value }: { value: number }) {
-  // Color: green at 7+, orange 4-7, red below 4
-  const color = value >= 7 ? "bg-tv-bull" : value >= 4 ? "bg-tv-orange" : "bg-tv-bear";
-  const pct = (value / 10) * 100;
-  return (
-    <div className="flex items-center gap-2">
-      <div className="h-2 w-24 overflow-hidden rounded-full bg-tv-input">
-        <div className={`h-full rounded-full transition-all duration-500 ${color}`} style={{ width: `${pct}%` }} />
-      </div>
-      <span className={`font-mono text-xs font-bold ${value >= 7 ? "text-tv-bull" : value >= 4 ? "text-tv-orange" : "text-tv-bear"}`}>
-        {value.toFixed(1)}
-      </span>
-    </div>
-  );
-}
-
-function LastSignalBadge({ lastSignalAt }: { lastSignalAt: string | null }) {
-  if (!lastSignalAt) return <span className="text-[10px] text-tv-muted">Inga signaler</span>;
-
-  const minsAgo = Math.floor((Date.now() - new Date(lastSignalAt).getTime()) / 60_000);
-
-  let label: string;
-  let cls: string;
-  if (minsAgo < 5) {
-    label = "Just nu";
-    cls = "text-tv-bull bg-tv-bull/10";
-  } else if (minsAgo < 15) {
-    label = `${minsAgo}m sedan`;
-    cls = "text-tv-blue bg-tv-blue/10";
-  } else if (minsAgo < 30) {
-    label = `${minsAgo}m sedan`;
-    cls = "text-tv-orange bg-tv-orange/10";
-  } else {
-    label = `${minsAgo}m sedan`;
-    cls = "text-tv-muted bg-tv-input";
-  }
-
-  return (
-    <span className={`rounded px-1.5 py-0.5 font-mono text-[9px] font-medium ${cls}`}>
-      {minsAgo < 5 && <span className="mr-1 inline-block h-1 w-1 animate-pulse rounded-full bg-tv-bull" />}
-      {label}
-    </span>
-  );
-}
+import { PressureBar, ConfidenceBar, LastSignalBadge, MicroStat } from "./gauge-helpers";
 
 interface Props {
   sentiment: AssetSentiment;
@@ -97,13 +41,13 @@ export function BiasGauge({ sentiment: s, extended: ext, history }: Props) {
         </div>
       </div>
 
-      {/* Confidence bar (bigger, color-coded) */}
+      {/* Confidence */}
       <div className="mb-3 flex items-center justify-between">
         <span className="text-[11px] text-tv-secondary">Confidence</span>
         <ConfidenceBar value={s.confidence} />
       </div>
 
-      {/* Sparkline: sentiment history */}
+      {/* Sparkline */}
       {history && (
         <div className="mb-3 flex items-center justify-between">
           <span className="text-[10px] text-tv-muted">2h trend</span>
@@ -111,7 +55,7 @@ export function BiasGauge({ sentiment: s, extended: ext, history }: Props) {
         </div>
       )}
 
-      {/* Pressure bar with percentages */}
+      {/* Pressure bar */}
       <div className="mb-1">
         <PressureBar bull={s.bullPressure} bear={s.bearPressure} />
       </div>
@@ -123,7 +67,7 @@ export function BiasGauge({ sentiment: s, extended: ext, history }: Props) {
         <span className="text-tv-bear">BEAR {bearPct}%</span>
       </div>
 
-      {/* Microstructure grid */}
+      {/* Microstructure */}
       <div className="mb-3 grid grid-cols-4 gap-2 rounded bg-tv-bg/50 p-2">
         <MicroStat label="Entries" value={s.entries} accent />
         <MicroStat label="Exits" value={s.exits} accent />
@@ -131,7 +75,7 @@ export function BiasGauge({ sentiment: s, extended: ext, history }: Props) {
         <MicroStat label="Opinions" value={s.opinions} />
       </div>
 
-      {/* Bottom row: acceleration + long/short ratio + traders */}
+      {/* Bottom row */}
       <div className="flex items-center justify-between text-[11px]">
         <div>
           <span className="text-tv-secondary">L/S: </span>
@@ -149,7 +93,7 @@ export function BiasGauge({ sentiment: s, extended: ext, history }: Props) {
         </div>
       </div>
 
-      {/* Hot window indicator */}
+      {/* Hot window */}
       {s.hotSignals > 0 && (
         <div className="mt-2 flex items-center gap-2 rounded bg-tv-blue/5 px-2 py-1 text-[10px]">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-tv-blue" />
@@ -164,17 +108,6 @@ export function BiasGauge({ sentiment: s, extended: ext, history }: Props) {
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-function MicroStat({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
-  return (
-    <div className="text-center">
-      <div className={`font-mono text-sm font-bold ${accent && value > 0 ? "text-tv-blue" : "text-tv-text"}`}>
-        {value}
-      </div>
-      <div className="text-[9px] uppercase text-tv-secondary">{label}</div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { TerminalCard } from "@/components/ui/terminal-card";
 import { MessageList } from "@/components/discord/message-list";
 import { AdvancedSearch } from "@/components/discord/advanced-search";
 import { DailyBriefingPanel } from "@/components/discord/daily-briefing";
+import { FetchError } from "@/components/ui/fetch-error";
 import { Suspense } from "react";
 
 export default function DiscordIntelPage() {
@@ -81,9 +82,7 @@ function DiscordIntelContent() {
           <MessageList messages={messages} highlight={q} />
         </TerminalCard>
       ) : error ? (
-        <div className="rounded-xl border border-white/[0.06] bg-[#111111] p-10 text-center">
-          <p className="font-sans text-[13px] text-white/40">Kunde inte ladda data. Försöker igen...</p>
-        </div>
+        <FetchError onRetry={fetchData} />
       ) : (
         <div className="h-[300px] animate-pulse rounded-xl border border-white/[0.06] bg-[#111111]" />
       )}
