@@ -10,6 +10,8 @@ import { TradePairs } from "@/components/scoring/trade-pairs";
 import { ScoringStatus } from "@/components/scoring/scoring-status";
 import { ScoreTimeline } from "@/components/scoring/score-timeline";
 import { BackfillButton } from "@/components/scoring/backfill-button";
+import { ReviewQueue } from "@/components/scoring/review-queue";
+import { useReviews } from "@/hooks/use-reviews";
 
 const ASSETS = ["all", "gold", "silver", "oil"] as const;
 type AssetFilter = (typeof ASSETS)[number];
@@ -19,6 +21,7 @@ export default function ScoringPage() {
     scoreboard, openPositions, recentScored, traderSignals,
     traderActivity, tradePairs, scoreHistory, loading,
   } = useScoringData();
+  const { reviews, handleAction: handleReviewAction } = useReviews();
   const [asset, setAsset] = useState<AssetFilter>("all");
 
   // Filter by asset
@@ -110,6 +113,9 @@ export default function ScoringPage() {
 
           {/* Accuracy timeline */}
           <ScoreTimeline history={scoreHistory} />
+
+          {/* GPT Review Queue — human feedback loop */}
+          <ReviewQueue reviews={reviews} onAction={handleReviewAction} />
 
           {/* Scoreboard (only shows with 3+ scored signals per trader) */}
           <ScoreboardTable traders={filteredScoreboard} traderSignals={filteredSignals} />
