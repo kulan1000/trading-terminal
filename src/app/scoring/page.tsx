@@ -11,6 +11,7 @@ import { ScoringStatus } from "@/components/scoring/scoring-status";
 import { ScoreTimeline } from "@/components/scoring/score-timeline";
 import { BackfillButton } from "@/components/scoring/backfill-button";
 import { ReviewQueue } from "@/components/scoring/review-queue";
+import { ReviewStats } from "@/components/scoring/review-stats";
 import { useReviews } from "@/hooks/use-reviews";
 
 const ASSETS = ["all", "gold", "silver", "oil"] as const;
@@ -116,6 +117,9 @@ export default function ScoringPage() {
 
           {/* GPT Review Queue — human feedback loop */}
           <ReviewQueue reviews={reviews} onAction={handleReviewAction} />
+
+          {/* GPT improvement stats */}
+          <ReviewStats />
 
           {/* Scoreboard (only shows with 3+ scored signals per trader) */}
           <ScoreboardTable traders={filteredScoreboard} traderSignals={filteredSignals} />

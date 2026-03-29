@@ -49,7 +49,7 @@ const SOURCE_LABELS: Record<string, { label: string; color: string }> = {
 export function ReviewQueue({ reviews, onAction }: Props) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [correcting, setCorrecting] = useState<number | null>(null);
-  const [correction, setCorrection] = useState({ asset: "", direction: "", note: "" });
+  const [correction, setCorrection] = useState({ asset: "", direction: "", signalType: "", note: "" });
   const [submitting, setSubmitting] = useState<number | null>(null);
 
   if (reviews.length === 0) {
@@ -85,10 +85,11 @@ export function ReviewQueue({ reviews, onAction }: Props) {
     await onAction(id, "corrected", {
       asset: correction.asset || undefined,
       direction: correction.direction || undefined,
+      signalType: correction.signalType || undefined,
       note: correction.note || undefined,
     });
     setCorrecting(null);
-    setCorrection({ asset: "", direction: "", note: "" });
+    setCorrection({ asset: "", direction: "", signalType: "", note: "" });
     setSubmitting(null);
   }
 
@@ -191,7 +192,7 @@ export function ReviewQueue({ reviews, onAction }: Props) {
                         <button
                           onClick={() => {
                             setCorrecting(r.id);
-                            setCorrection({ asset: r.gpt_asset, direction: r.gpt_direction, note: "" });
+                            setCorrection({ asset: r.gpt_asset, direction: r.gpt_direction, signalType: r.gpt_signal_type, note: "" });
                           }}
                           className="rounded-md bg-[#FF9800]/20 px-3 py-1.5 font-sans text-[11px] font-medium text-[#FF9800] transition hover:bg-[#FF9800]/30"
                         >
@@ -225,6 +226,16 @@ export function ReviewQueue({ reviews, onAction }: Props) {
                             <option value="bullish">Bullish</option>
                             <option value="bearish">Bearish</option>
                             <option value="neutral">Neutral</option>
+                          </select>
+                          <select
+                            value={correction.signalType}
+                            onChange={(e) => setCorrection({ ...correction, signalType: e.target.value })}
+                            className="rounded bg-white/[0.06] px-2 py-1 font-sans text-[11px] text-white"
+                          >
+                            <option value="opinion">Opinion</option>
+                            <option value="position">Position</option>
+                            <option value="entry">Entry</option>
+                            <option value="exited">Exited</option>
                           </select>
                         </div>
                         <input

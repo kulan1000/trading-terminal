@@ -71,22 +71,51 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Auto-generate a feedback rule from the correction
-    if (correctAsset && correctAsset !== "skip") {
-      const { data: rev } = await supabase
-        .from("classification_reviews")
-        .select("gpt_asset, original_message, author, channel")
-        .eq("id", reviewId)
-        .single();
+    // Auto-generate feedback rules from the correction
+    const { data: rev } = await supabase
+      .from("classification_reviews")
+      .select("gpt_asset, gpt_direction, gpt_signal_type, original_message, author, channel")
+      .eq("id", reviewId)
+      .single();
 
-      if (rev) {
-        const ruleText = feedbackNote
-          ? feedbackNote
-          : `In #${rev.channel}, "${rev.original_message.slice(0, 60)}..." by ${rev.author} should be ${correctAsset} (not ${rev.gpt_asset}). ${correctDirection ? `Direction: ${correctDirection}.` : ""}`;
+    if (rev) {
+      const msgSnippet = `"${rev.original_message.slice(0, 60)}..."`;
+      const rules: Array<{ category: string; rule_text: string }> = [];
 
-        await supabase.from("classification_feedback").insert({
+      // Asset correction rule
+      if (correctAsset && correctAsset !== rev.gpt_asset) {
+        rules.push({
           category: "asset_rule",
-          rule_text: ruleText,
+          rule_text: feedbackNote
+            ? feedbackNote
+            : `In #${rev.channel}, ${msgSnippet} by ${rev.author} should be ${correctAsset} (not ${rev.gpt_asset}).`,
+        });
+      }
+
+      // Direction correction rule
+      if (correctDirection && correctDirection !== rev.gpt_direction) {
+        rules.push({
+          category: "direction_rule",
+          rule_text: `${msgSnippet} by ${rev.author} is ${correctDirection} (not ${rev.gpt_direction}). Context: #${rev.channel}.`,
+        });
+      }
+
+      // Signal type correction rule
+      if (correctSignalType && correctSignalType !== rev.gpt_signal_type) {
+        rules.push({
+          category: "signal_type_rule",
+          rule_text: `${msgSnippet} by ${rev.author} is a ${correctSignalType} (not ${rev.gpt_signal_type}). Messages like this should be classified as ${correctSignalType}.`,
+        });
+      }
+
+      // General feedback note (if provided and no specific corrections matched)
+      if (feedbackNote && rules.length === 0) {
+        rules.push({ category: "asset_rule", rule_text: feedbackNote });
+      }
+
+      for (const rule of rules) {
+        await supabase.from("classification_feedback").insert({
+          ...rule,
           source_review_id: reviewId,
         });
       }
