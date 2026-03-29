@@ -38,34 +38,44 @@ export function PipelineTrigger({ onComplete }: Props) {
     }
   }, [secret, onComplete]);
 
+  const isOk = result?.startsWith("OK");
+
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-[#111111] p-5">
-      <h2 className="font-sans text-[13px] font-medium text-white/70">Manuell pipeline-trigger</h2>
-      <p className="mt-1 font-sans text-[11px] text-white/25">
-        Ingest → Classify → Prices → Score → Sentiment → Bias
-      </p>
-      <div className="mt-3 flex items-center gap-2">
-        <input
-          type="password"
-          placeholder="CLASSIFY_SECRET"
-          value={secret}
-          onChange={(e) => setSecret(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && trigger()}
-          className="h-9 flex-1 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 font-mono text-[12px] text-white/70 placeholder:text-white/20 focus:border-[#2962FF]/40 focus:outline-none"
-        />
-        <button
-          onClick={trigger}
-          disabled={running || !secret.trim()}
-          className="h-9 shrink-0 rounded-lg border border-[#2962FF]/30 bg-[#2962FF]/10 px-5 font-sans text-[12px] font-medium text-[#2962FF] transition-colors hover:bg-[#2962FF]/20 disabled:opacity-30"
-        >
-          {running ? "Kör..." : "Kör pipeline"}
-        </button>
-      </div>
-      {result && (
-        <div className={`mt-3 rounded-md px-3 py-2 font-mono text-[11px] ${result.startsWith("OK") ? "bg-[#26A69A]/10 text-[#26A69A]" : "bg-[#EF5350]/10 text-[#EF5350]"}`}>
-          {result}
+    <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+      <div className="px-5 pt-4 pb-5">
+        <div className="mb-1">
+          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Manuell pipeline-trigger</h2>
+          <p className="mt-1 font-sans text-[11px] text-white/25">
+            Ingest → Classify → Prices → Score → Sentiment → Bias
+          </p>
         </div>
-      )}
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            type="password"
+            placeholder="CLASSIFY_SECRET"
+            value={secret}
+            onChange={(e) => setSecret(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && trigger()}
+            className="h-9 flex-1 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 font-mono text-[12px] text-white/70 placeholder:text-white/20 focus:border-[#2962FF]/40 focus:outline-none transition-colors"
+          />
+          <button
+            onClick={trigger}
+            disabled={running || !secret.trim()}
+            className="h-9 shrink-0 rounded-lg bg-[#2962FF] px-5 font-sans text-[12px] font-medium text-white shadow-[0_0_12px_-3px_rgba(41,98,255,0.4)] transition-all hover:shadow-[0_0_16px_-3px_rgba(41,98,255,0.5)] disabled:opacity-30 disabled:shadow-none"
+          >
+            {running ? "Kör..." : "Kör pipeline"}
+          </button>
+        </div>
+        {result && (
+          <div className={`mt-3 overflow-hidden rounded-lg border ${isOk ? "border-[#26A69A]/20 bg-[#26A69A]/[0.04]" : "border-[#EF5350]/20 bg-[#EF5350]/[0.04]"}`}>
+            <div className={`h-px w-full bg-gradient-to-r from-transparent ${isOk ? "via-[#26A69A]/30" : "via-[#EF5350]/30"} to-transparent`} />
+            <p className={`px-3 py-2 font-mono text-[11px] ${isOk ? "text-[#26A69A]" : "text-[#EF5350]"}`}>
+              {result}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
