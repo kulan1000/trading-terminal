@@ -4,6 +4,7 @@
 
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { ASSETS } from "@/lib/constants";
+import { isWeekendDeadZone } from "@/lib/market-hours";
 import type { Direction, Strength } from "@/lib/types";
 
 const STR: Record<string, number> = { strong: 3, medium: 2, weak: 1 };
@@ -30,13 +31,14 @@ export async function saveBiasSnapshots() {
         .order("created_at", { ascending: false })
         .limit(50);
 
-      const signals = (data ?? []) as Array<{
+      // Filter out weekend dead zone signals (Fri 17:00 ET → Sun 12:00 ET)
+      const signals = ((data ?? []) as Array<{
         direction: Direction;
         confidence: number;
         strength: Strength;
         signal_type: string | null;
         created_at: string;
-      }>;
+      }>).filter((s) => !isWeekendDeadZone(new Date(s.created_at)));
 
       let bullW = 0, bearW = 0;
       for (const s of signals) {

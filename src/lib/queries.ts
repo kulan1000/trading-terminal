@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { STRENGTH, timeDecay } from "@/lib/decay-utils";
+import { isWeekendDeadZone } from "@/lib/market-hours";
 import type { Asset, Direction, Strength, DiscordMessage, FeedMessage } from "@/lib/types";
 
 interface SignalRow {
@@ -65,8 +66,10 @@ export async function getAssetBias(asset: Asset) {
     getCredibilityMap(),
   ]);
 
-  const signals = (signalRes.data ?? []) as (SignalRow & { author: string | null; created_at: string })[];
-  if (!signals.length) return { direction: "neutral" as const, score: 0, count: 0 };
+  // Filter out weekend dead zone signals (Fri 17:00 ET → Sun 12:00 ET)
+  const signals = ((signalRes.data ?? []) as (SignalRow & { author: string | null; created_at: string })[])
+    .filter((s) => !isWeekendDeadZone(new Date(s.created_at)));
+  if (!signals.length) return { direction: "neutral" as const, score: 0, count: 0, activeCount: 0 };
 
   const now = Date.now();
 

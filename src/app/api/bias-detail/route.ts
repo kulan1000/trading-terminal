@@ -5,6 +5,7 @@ import { ASSETS } from "@/lib/constants";
 import { getAssetPrice } from "@/lib/price-snapshot";
 import { fetchYahoo } from "@/lib/data-yahoo";
 import { STRENGTH, timeDecay } from "@/lib/decay-utils";
+import { isWeekendDeadZone } from "@/lib/market-hours";
 import type { Asset } from "@/lib/types";
 
 const YAHOO_SYMBOLS: Record<Asset, string> = { Gold: "GC=F", Silver: "SI=F", Oil: "CL=F" };
@@ -65,7 +66,9 @@ export async function GET(req: NextRequest) {
     discord_messages: { content: string } | null;
   };
 
-  const signals = (signalsRes.data ?? []) as RawSignal[];
+  // Filter out weekend dead zone signals (Fri 17:00 ET → Sun 12:00 ET)
+  const signals = ((signalsRes.data ?? []) as RawSignal[])
+    .filter((s) => !isWeekendDeadZone(new Date(s.created_at)));
   const history = (historyRes.data ?? []) as Array<{ score: number; direction: string; created_at: string }>;
 
   // AI summary — uses all 6h signals
