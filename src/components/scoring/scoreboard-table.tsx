@@ -52,9 +52,10 @@ const COLS: { key: SortKey; label: string; align: string }[] = [
 interface Props {
   traders: TraderScore[];
   traderSignals: Record<string, ScoredSignal[]>;
+  watchlist?: Set<string>;
 }
 
-export function ScoreboardTable({ traders, traderSignals }: Props) {
+export function ScoreboardTable({ traders, traderSignals, watchlist }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("winRate");
   const [sortAsc, setSortAsc] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -132,6 +133,9 @@ export function ScoreboardTable({ traders, traderSignals }: Props) {
                 >
                   <td className="px-3 py-3 text-center font-sans text-[13px]">{medal}</td>
                   <td className="px-5 py-3">
+                    {watchlist?.has(t.author) && (
+                      <span className="mr-1.5 text-[12px] text-[#FFD700]" title="Watched trader">★</span>
+                    )}
                     <Link href={`/trader/${encodeURIComponent(t.author)}`}
                       onClick={(e) => e.stopPropagation()}
                       className="font-sans text-[14px] font-semibold text-white transition-colors hover:text-[#FF9800]">

@@ -9,6 +9,8 @@ import { ScoringStatus } from "@/components/scoring/scoring-status";
 import { BackfillButton } from "@/components/scoring/backfill-button";
 import { ReviewQueue } from "@/components/scoring/review-queue";
 import { ReviewStats } from "@/components/scoring/review-stats";
+import { AssetAccuracy } from "@/components/scoring/asset-accuracy";
+import { BiasAccuracy } from "@/components/scoring/bias-accuracy";
 import { useReviews } from "@/hooks/use-reviews";
 
 const ASSETS = ["all", "gold", "silver", "oil"] as const;
@@ -17,7 +19,7 @@ type AssetFilter = (typeof ASSETS)[number];
 export default function ScoringPage() {
   const {
     scoreboard, recentScored, traderSignals,
-    tradePairs, loading,
+    tradePairs, loading, watchlist,
   } = useScoringData();
   const { reviews, handleAction: handleReviewAction } = useReviews();
   const [asset, setAsset] = useState<AssetFilter>("all");
@@ -107,13 +109,19 @@ export default function ScoringPage() {
           <ReviewStats />
 
           {/* Scoreboard — main ranking, click trader for drilldown */}
-          <ScoreboardTable traders={filteredScoreboard} traderSignals={filteredSignals} />
+          <ScoreboardTable traders={filteredScoreboard} traderSignals={filteredSignals} watchlist={watchlist} />
 
           {/* Recent scored entries/exits with 30m/1h/2h/4h scores */}
           <RecentScored signals={filteredRecent} />
 
           {/* Trade pairs: entry → exit matching */}
           <TradePairs pairs={filteredPairs} />
+
+          {/* Accuracy insights */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <AssetAccuracy traderSignals={filteredSignals} />
+            <BiasAccuracy />
+          </div>
         </>
       )}
     </div>

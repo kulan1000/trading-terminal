@@ -2,6 +2,7 @@
 
 import { MarketBiasSection } from "@/components/bias/market-bias-section";
 import { DailyRecap } from "@/components/bias/daily-recap";
+import { SignalStreaks } from "@/components/sentiment/signal-streaks";
 import { FetchError } from "@/components/ui/fetch-error";
 import { usePollingFetch } from "@/hooks/use-polling-fetch";
 
@@ -34,6 +35,7 @@ export default function SentimentPage() {
         )}
       </section>
 
+      <SignalStreaks />
       <DailyRecap />
     </div>
   );
