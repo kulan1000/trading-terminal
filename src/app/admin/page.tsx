@@ -65,9 +65,9 @@ export default function AdminPage() {
           </h1>
           {data && (
             <div className="flex items-center gap-1.5">
-              <span className={`h-2 w-2 rounded-full ${signalAge < 30 * 60_000 ? "bg-[#26A69A] animate-pulse" : signalAge < 60 * 60_000 ? "bg-[#FF9800]" : "bg-[#EF5350] animate-pulse"}`} />
+              <span className={`h-2 w-2 rounded-full ${signalAge < 2 * 60 * 60_000 ? "bg-[#26A69A] animate-pulse" : signalAge < 6 * 60 * 60_000 ? "bg-[#FF9800]" : "bg-[#EF5350] animate-pulse"}`} />
               <span className="font-sans text-[11px] text-white/30">
-                {signalAge < 30 * 60_000 ? "Pipeline active" : signalAge < 60 * 60_000 ? "Slow" : "Down"}
+                {signalAge < 2 * 60 * 60_000 ? "Pipeline active" : signalAge < 6 * 60 * 60_000 ? "Slow" : "Down"}
               </span>
             </div>
           )}
@@ -89,8 +89,8 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Pipeline down warning */}
-      {data && signalAge > 30 * 60_000 && (
+      {/* Pipeline down warning — only show if no signals for 6h+ (people sleep/weekends) */}
+      {data && signalAge > 6 * 60 * 60_000 && (
         <div className="animate-fade-in overflow-hidden rounded-xl border border-[#EF5350]/20 bg-[#EF5350]/[0.04]">
           <div className="h-px w-full bg-gradient-to-r from-transparent via-[#EF5350]/30 to-transparent" />
           <div className="flex items-center gap-3 px-5 py-3.5">

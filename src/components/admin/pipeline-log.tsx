@@ -92,10 +92,10 @@ export function PipelineLog({ runs }: { runs: PipelineRun[] }) {
                   : "—"}
               </span>
               <span className="ml-3 flex flex-1 gap-2 font-mono text-[9px] text-white/20">
-                {run.ingested > 0 && <span>+{run.ingested} msg</span>}
-                {run.processed > 0 && <span>{run.processed} proc</span>}
+                {run.processed > 0 && <span>{run.processed} classified</span>}
                 {run.signals > 0 && <span className="text-[#26A69A]/60">{run.signals} sig</span>}
                 {run.scored > 0 && <span>{run.scored} scored</span>}
+                {run.skipped > 0 && <span>{run.skipped} skip</span>}
                 {run.market_open === false && <span className="text-[#FF9800]/50">CLOSED</span>}
               </span>
               {run.error_message && (
