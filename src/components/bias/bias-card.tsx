@@ -63,8 +63,9 @@ interface Props {
 
 export function BiasCard({ bias: b, onClick }: Props) {
   const changePos = b.change >= 0;
-  const bullPct = b.score;
-  const bearPct = 100 - b.score;
+  // score = dominant side's %. Flip when bearish so bull/bear labels are correct.
+  const bullPct = b.direction === "bearish" ? 100 - b.score : b.score;
+  const bearPct = b.direction === "bearish" ? b.score : 100 - b.score;
   const accent = DIR_ACCENT[b.direction] ?? "#FF9800";
 
   return (

@@ -112,9 +112,10 @@ Write a brief, factual summary. No fluff.`;
     if (s.direction === "bullish") wBull += w;
     else if (s.direction === "bearish") wBear += w;
   }
-  const wTotal = wBull + wBear || 1;
-  const weightedBullPct = Math.round((wBull / wTotal) * 100);
-  const weightedBearPct = 100 - weightedBullPct;
+  const wTotal = wBull + wBear;
+  // When no directional signals exist, show 50/50 instead of misleading 0/100
+  const weightedBullPct = wTotal > 0 ? Math.round((wBull / wTotal) * 100) : 50;
+  const weightedBearPct = wTotal > 0 ? 100 - weightedBullPct : 50;
 
   // Latest signal
   const latestSignal = signals[0]
