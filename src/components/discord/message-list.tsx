@@ -1,84 +1,117 @@
 import Link from "next/link";
 import type { FeedMessage } from "@/lib/types";
 import { ASSET_TAG_COLORS } from "@/lib/constants";
-import { fmtDateTime } from "@/lib/format-utils";
+import { fmtTime } from "@/lib/format-utils";
 
-const SIGNAL_TYPE_LABELS: Record<string, { label: string; cls: string }> = {
-  entry: { label: "ENTRY", cls: "bg-[#26A69A]/15 text-[#26A69A]" },
-  exited: { label: "EXIT", cls: "bg-[#EF5350]/15 text-[#EF5350]" },
-  position: { label: "HOLD", cls: "bg-[#2962FF]/15 text-[#2962FF]" },
-  opinion: { label: "OPINION", cls: "bg-white/[0.06] text-white/40" },
-  target: { label: "TARGET", cls: "bg-[#FF9800]/15 text-[#FF9800]" },
+const SIGNAL_BADGES: Record<string, { label: string; cls: string }> = {
+  entry: { label: "ENTRY", cls: "bg-[#26A69A]/20 text-[#26A69A] ring-1 ring-[#26A69A]/30" },
+  exited: { label: "EXIT", cls: "bg-white/[0.04] text-white/50 ring-1 ring-white/[0.06]" },
+  position: { label: "HOLD", cls: "bg-[#2962FF]/15 text-[#2962FF] ring-1 ring-[#2962FF]/30" },
+  opinion: { label: "OPINION", cls: "bg-[#FF9800]/10 text-[#FF9800]" },
+  target: { label: "TARGET", cls: "bg-[#2962FF]/20 text-[#2962FF] ring-1 ring-[#2962FF]/30" },
 };
 
-function HighlightText({ text, highlight }: { text: string; highlight?: string }) {
-  if (!highlight) return <>{text}</>;
-  const parts = text.split(new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"));
-  return (
-    <>
-      {parts.map((part, i) =>
-        part.toLowerCase() === highlight.toLowerCase()
-          ? <mark key={i} className="rounded bg-[#FFEB3B]/20 px-0.5 text-white">{part}</mark>
-          : part
-      )}
-    </>
-  );
+const STRENGTH_BORDER: Record<string, string> = {
+  strong: "border-l-2 border-l-[#2962FF]",
+  medium: "border-l-2 border-l-white/15",
+  weak: "border-l border-l-white/[0.06] opacity-70",
+};
+
+function Highlight({ text, q }: { text: string; q?: string }) {
+  if (!q) return <>{text}</>;
+  const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+  return <>{text.split(re).map((p, i) =>
+    p.toLowerCase() === q.toLowerCase()
+      ? <mark key={i} className="rounded bg-[#FFEB3B]/20 px-0.5 text-white">{p}</mark>
+      : p
+  )}</>;
 }
 
-interface Props { messages: FeedMessage[]; highlight?: string }
+interface FeedProps {
+  messages: FeedMessage[];
+  highlight?: string;
+  title: string;
+  count: number;
+}
 
-export function MessageList({ messages, highlight }: Props) {
-  if (!messages.length) {
-    return <p className="py-8 text-center font-sans text-[13px] text-white/30">Inga meddelanden hittades.</p>;
-  }
-
+export function MessageFeed({ messages, highlight, title, count }: FeedProps) {
   return (
-    <div className="max-h-[600px] space-y-0 overflow-y-auto pr-1">
-      {messages.map((msg) => (
-        <MessageRow key={msg.id} msg={msg} highlight={highlight} />
-      ))}
+    <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+
+      <div className="px-5 pt-4 pb-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">
+            {title}
+          </h3>
+          <span className="font-mono text-[11px] tabular-nums text-white/20">
+            {count} meddelanden
+          </span>
+        </div>
+      </div>
+
+      <div className="max-h-[700px] space-y-2 overflow-y-auto px-5 pb-5">
+        {messages.length === 0 ? (
+          <p className="py-6 text-center font-sans text-[12px] italic text-white/30">
+            Inga meddelanden hittades.
+          </p>
+        ) : messages.map((msg) => (
+          <MessageCard key={msg.id} msg={msg} highlight={highlight} />
+        ))}
+      </div>
     </div>
   );
 }
 
-function MessageRow({ msg, highlight }: { msg: FeedMessage; highlight?: string }) {
-  const time = fmtDateTime(msg.timestamp);
+function MessageCard({ msg, highlight }: { msg: FeedMessage; highlight?: string }) {
+  const topStrength = msg.assets[0]?.strength ?? "medium";
+  const hasSignals = msg.assets.length > 0;
+
   return (
-    <div className="group flex items-start gap-3 border-b border-white/[0.03] px-1 py-2.5 transition-colors hover:bg-white/[0.02]">
-      <span className="shrink-0 pt-0.5 font-mono text-[10px] tabular-nums text-white/20">{time}</span>
-      <span className="shrink-0 pt-0.5 font-sans text-[10px] text-[#FF9800]/50">#{msg.channel}</span>
-      <Link href={`/trader/${encodeURIComponent(msg.author)}`}
-        className="shrink-0 pt-0.5 font-sans text-[11px] font-semibold text-[#2962FF] transition-colors hover:text-[#1E53E5]">
-        {msg.author}
-      </Link>
-      <span className="min-w-0 flex-1 font-sans text-[12px] leading-relaxed text-white/60">
-        <HighlightText text={msg.content} highlight={highlight} />
-      </span>
-      <span className="flex shrink-0 items-center gap-1 pt-0.5">
-        {msg.assets.map((a, i) => {
-          const typeInfo = a.signal_type ? SIGNAL_TYPE_LABELS[a.signal_type] : null;
-          return (
-            <span key={`${a.asset}-${i}`} className="flex items-center gap-0.5">
-              {typeInfo && (
-                <span className={`rounded-md px-1.5 py-0.5 font-sans text-[8px] font-bold ${typeInfo.cls}`}>
-                  {typeInfo.label}
-                </span>
-              )}
-              <span
-                className={`rounded-md px-1.5 py-0.5 font-sans text-[8px] font-bold uppercase ${ASSET_TAG_COLORS[a.asset] ?? "bg-white/[0.04] text-white/40"} ${a.strength === "weak" ? "opacity-50" : ""}`}
-                title={a.interpretation ?? undefined}
-              >
-                {a.asset}
-              </span>
-            </span>
-          );
-        })}
-        {msg.processed ? (
-          <span className="ml-1 h-1.5 w-1.5 rounded-full bg-[#26A69A]" title="Processed" />
-        ) : (
-          <span className="ml-1 h-1.5 w-1.5 rounded-full bg-white/10" title="Unprocessed" />
+    <div className={`rounded-lg border border-white/[0.04] bg-white/[0.02] p-4 transition-all hover:border-white/[0.08] hover:bg-white/[0.035] ${STRENGTH_BORDER[topStrength] ?? ""}`}>
+      {/* Header row */}
+      <div className="flex items-center gap-1.5">
+        <Link href={`/trader/${encodeURIComponent(msg.author)}`}
+          className="font-sans text-[13px] font-semibold text-white transition-colors hover:text-[#2962FF]">
+          {msg.author}
+        </Link>
+        <span className="font-sans text-[11px] text-white/20">#{msg.channel}</span>
+        {msg.processed && (
+          <span className="h-1.5 w-1.5 rounded-full bg-[#26A69A]" title="Processed" />
         )}
-      </span>
+        <span className="ml-auto font-mono text-[11px] tabular-nums text-white/20">
+          {fmtTime(msg.timestamp)}
+        </span>
+      </div>
+
+      {/* Content */}
+      <p className="mt-1.5 font-sans text-[12px] leading-relaxed text-white/60">
+        <Highlight text={msg.content} q={highlight} />
+      </p>
+
+      {/* Signal tags */}
+      {hasSignals && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {msg.assets.map((a, i) => {
+            const badge = a.signal_type ? SIGNAL_BADGES[a.signal_type] : null;
+            return (
+              <span key={`${a.asset}-${i}`} className="flex items-center gap-1">
+                <span className={`rounded-md px-2 py-0.5 font-sans text-[10px] font-bold uppercase ${ASSET_TAG_COLORS[a.asset] ?? "bg-white/[0.04] text-white/50"}`}>
+                  {a.asset}
+                </span>
+                {badge && (
+                  <span className={`rounded-md px-2 py-0.5 font-sans text-[10px] font-bold ${badge.cls}`}>
+                    {badge.label}
+                  </span>
+                )}
+              </span>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
+
+// Keep backward compat export
+export { MessageFeed as MessageList };
