@@ -68,8 +68,8 @@ export async function getPriceAtTime(
   const diffB = Math.abs(targetTime.getTime() - new Date(b.created_at).getTime());
   const diffA = Math.abs(new Date(a.created_at).getTime() - targetTime.getTime());
 
-  // Only use if within 10 min of target (snapshots are every 5 min)
+  // Only use if within 20 min of target (snapshots are every 15 min via cron)
   const closest = diffB <= diffA ? b : a;
   const closestDiff = Math.min(diffB, diffA);
-  return closestDiff <= 600_000 ? closest.price : null;
+  return closestDiff <= 1_200_000 ? closest.price : null;
 }

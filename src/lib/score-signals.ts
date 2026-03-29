@@ -31,8 +31,8 @@ function checkpointScore(
 ): number {
   const pctChange = ((checkpointPrice - entryPrice) / entryPrice) * 100;
 
-  if (signalType === "entry") {
-    // Long entry: price up = good. Short entry: price down = good.
+  if (signalType === "entry" || signalType === "position") {
+    // Long entry/position: price up = good. Short: price down = good.
     return position === "short" ? -pctChange : pctChange;
   } else {
     // Exit scoring: did the trader exit at the right time?
@@ -52,7 +52,7 @@ export async function scoreSignals() {
   const { data: signals } = await supabase
     .from("signals")
     .select("id, author, asset, signal_type, position, price_at_signal, created_at")
-    .in("signal_type", ["entry", "exited"])
+    .in("signal_type", ["entry", "exited", "position"])
     .not("price_at_signal", "is", null)
     .not("author", "is", null)
     .lt("created_at", cutoff)
