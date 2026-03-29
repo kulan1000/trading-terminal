@@ -57,7 +57,7 @@ export function ReviewQueue({ reviews, onAction }: Props) {
       <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
         <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
         <div className="px-5 py-4">
-          <h3 className="font-sans text-[13px] font-semibold text-white">
+          <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">
             GPT Review Queue
           </h3>
           <p className="mt-2 font-sans text-[12px] text-white/40">
@@ -106,9 +106,9 @@ export function ReviewQueue({ reviews, onAction }: Props) {
       <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
       <div className="px-5 py-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-sans text-[13px] font-semibold text-white">
+          <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">
             GPT Review Queue
-            <span className="ml-2 rounded-full bg-[#FF9800]/20 px-2 py-0.5 font-sans text-[11px] text-[#FF9800]">
+            <span className="ml-2 rounded-md bg-[#FF9800]/15 px-2 py-0.5 font-sans text-[10px] font-bold text-[#FF9800]">
               {reviews.length} att granska
             </span>
           </h3>
@@ -230,7 +230,7 @@ export function ReviewQueue({ reviews, onAction }: Props) {
                           <select
                             value={correction.asset}
                             onChange={(e) => setCorrection({ ...correction, asset: e.target.value })}
-                            className="rounded bg-white/[0.06] px-2 py-1 font-sans text-[11px] text-white"
+                            className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 font-sans text-[11px] text-white transition-colors focus:border-[#2962FF]/40 focus:outline-none"
                           >
                             <option value="Gold">Gold</option>
                             <option value="Silver">Silver</option>
@@ -239,7 +239,7 @@ export function ReviewQueue({ reviews, onAction }: Props) {
                           <select
                             value={correction.direction}
                             onChange={(e) => setCorrection({ ...correction, direction: e.target.value })}
-                            className="rounded bg-white/[0.06] px-2 py-1 font-sans text-[11px] text-white"
+                            className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 font-sans text-[11px] text-white transition-colors focus:border-[#2962FF]/40 focus:outline-none"
                           >
                             <option value="bullish">Bullish</option>
                             <option value="bearish">Bearish</option>
@@ -248,7 +248,7 @@ export function ReviewQueue({ reviews, onAction }: Props) {
                           <select
                             value={correction.signalType}
                             onChange={(e) => setCorrection({ ...correction, signalType: e.target.value })}
-                            className="rounded bg-white/[0.06] px-2 py-1 font-sans text-[11px] text-white"
+                            className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 font-sans text-[11px] text-white transition-colors focus:border-[#2962FF]/40 focus:outline-none"
                           >
                             <option value="opinion">Opinion</option>
                             <option value="position">Position</option>
@@ -261,7 +261,7 @@ export function ReviewQueue({ reviews, onAction }: Props) {
                           placeholder="Feedback till GPT (valfritt)..."
                           value={correction.note}
                           onChange={(e) => setCorrection({ ...correction, note: e.target.value })}
-                          className="w-full rounded bg-white/[0.06] px-2 py-1.5 font-sans text-[11px] text-white placeholder:text-white/30"
+                          className="w-full rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 font-sans text-[11px] text-white placeholder:text-white/20 transition-colors focus:border-[#2962FF]/40 focus:outline-none"
                         />
                         <div className="flex gap-2">
                           <button

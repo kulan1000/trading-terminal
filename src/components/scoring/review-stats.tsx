@@ -2,22 +2,18 @@
 
 import { useEffect, useState } from "react";
 
-interface ReviewStats {
+interface ReviewStatsData {
   total: number;
   approved: number;
   corrected: number;
   rejected: number;
   pending: number;
   activeRules: number;
-  recentCorrections: Array<{
-    category: string;
-    rule_text: string;
-    created_at: string;
-  }>;
+  recentCorrections: Array<{ category: string; rule_text: string; created_at: string }>;
 }
 
 export function ReviewStats() {
-  const [stats, setStats] = useState<ReviewStats | null>(null);
+  const [stats, setStats] = useState<ReviewStatsData | null>(null);
 
   useEffect(() => {
     fetch("/api/review-stats")
@@ -28,50 +24,39 @@ export function ReviewStats() {
 
   if (!stats || stats.total === 0) return null;
 
-  const correctionRate = stats.total > 0
-    ? Math.round(((stats.corrected + stats.rejected) / (stats.total - stats.pending)) * 100) || 0
-    : 0;
-
-  const accuracyRate = stats.total > 0
-    ? Math.round((stats.approved / (stats.total - stats.pending)) * 100) || 0
-    : 0;
+  const reviewed = stats.total - stats.pending;
+  const correctionRate = reviewed > 0 ? Math.round(((stats.corrected + stats.rejected) / reviewed) * 100) : 0;
+  const accuracyRate = reviewed > 0 ? Math.round((stats.approved / reviewed) * 100) : 0;
 
   return (
     <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
       <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-      <div className="px-5 py-4">
-        <h3 className="font-sans text-[13px] font-semibold text-white">
+      <div className="px-5 pt-4 pb-5">
+        <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">
           GPT Förbättringsöversikt
         </h3>
 
-        {/* Stat cards */}
-        <div className="mt-3 grid grid-cols-5 gap-3">
-          <StatCard label="Granskade" value={stats.total - stats.pending} color="#fff" />
-          <StatCard label="Godkända" value={stats.approved} color="#26A69A" />
-          <StatCard label="Korrigerade" value={stats.corrected} color="#FF9800" />
-          <StatCard label="Avvisade" value={stats.rejected} color="#EF5350" />
-          <StatCard label="Aktiva regler" value={stats.activeRules} color="#FF9800" />
+        <div className="mt-3 grid grid-cols-5 gap-2.5">
+          <StatCard label="Granskade" value={reviewed} color="text-white" />
+          <StatCard label="Godkända" value={stats.approved} color="text-[#26A69A]" />
+          <StatCard label="Korrigerade" value={stats.corrected} color="text-[#FF9800]" />
+          <StatCard label="Avvisade" value={stats.rejected} color="text-[#EF5350]" />
+          <StatCard label="Aktiva regler" value={stats.activeRules} color="text-[#FF9800]" />
         </div>
 
         {/* Accuracy bar */}
         <div className="mt-3">
           <div className="flex items-center justify-between font-sans text-[11px] text-white/40">
-            <span>GPT-precision (godkänd utan korrigering)</span>
-            <span className="font-sans text-white/70">{accuracyRate}%</span>
+            <span>GPT-precision</span>
+            <span className="font-mono tabular-nums text-white/70">{accuracyRate}%</span>
           </div>
-          <div className="mt-1 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
             <div className="flex h-full">
-              <div
-                className="h-full bg-[#26A69A] transition-all"
-                style={{ width: `${accuracyRate}%` }}
-              />
-              <div
-                className="h-full bg-[#FF9800] transition-all"
-                style={{ width: `${correctionRate}%` }}
-              />
+              <div className="h-full bg-[#26A69A] transition-all" style={{ width: `${accuracyRate}%` }} />
+              <div className="h-full bg-[#FF9800] transition-all" style={{ width: `${correctionRate}%` }} />
             </div>
           </div>
-          <div className="mt-1 flex gap-3 font-sans text-[10px] text-white/30">
+          <div className="mt-1.5 flex gap-3 font-sans text-[10px] text-white/30">
             <span className="flex items-center gap-1">
               <span className="inline-block h-2 w-2 rounded-full bg-[#26A69A]" /> Korrekt
             </span>
@@ -84,16 +69,13 @@ export function ReviewStats() {
         {/* Recent learned rules */}
         {stats.recentCorrections.length > 0 && (
           <div className="mt-3 border-t border-white/[0.04] pt-3">
-            <p className="font-sans text-[10px] uppercase text-white/30">
+            <span className="font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-white/25">
               Senaste inlärda regler ({stats.activeRules} totalt)
-            </p>
+            </span>
             <div className="mt-2 space-y-1">
               {stats.recentCorrections.slice(0, 5).map((rule, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-2 rounded bg-white/[0.02] px-2 py-1.5"
-                >
-                  <span className="mt-0.5 shrink-0 rounded bg-white/[0.06] px-1 py-0.5 font-sans text-[9px] uppercase text-white/40">
+                <div key={i} className="flex items-start gap-2 rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-2">
+                  <span className="mt-0.5 shrink-0 rounded-md bg-white/[0.06] px-1.5 py-0.5 font-sans text-[9px] font-bold uppercase text-white/40">
                     {rule.category.replace("_rule", "").replace("_", " ")}
                   </span>
                   <p className="font-sans text-[11px] leading-snug text-white/50">
@@ -111,9 +93,9 @@ export function ReviewStats() {
 
 function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="rounded-lg bg-white/[0.03] px-3 py-2 text-center">
-      <p className="font-sans text-[18px] font-bold" style={{ color }}>{value}</p>
-      <p className="font-sans text-[10px] text-white/40">{label}</p>
+    <div className="rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-2.5 text-center">
+      <p className={`font-mono text-[16px] font-bold tabular-nums ${color}`}>{value}</p>
+      <p className="mt-0.5 font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-white/25">{label}</p>
     </div>
   );
 }

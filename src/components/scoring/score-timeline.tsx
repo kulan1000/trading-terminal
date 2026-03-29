@@ -23,7 +23,7 @@ export function ScoreTimeline({ history }: Props) {
       <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
         <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
         <div className="px-5 py-4">
-          <h3 className="font-sans text-[13px] font-semibold text-white">
+          <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">
             Scoring Accuracy Timeline
           </h3>
           <p className="mt-2 font-sans text-[12px] text-white/40">
@@ -50,7 +50,7 @@ export function ScoreTimeline({ history }: Props) {
       <div className="px-5 py-4">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h3 className="font-sans text-[13px] font-semibold text-white">
+          <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">
             Scoring Timeline
           </h3>
           <div className="flex items-center gap-4 font-sans text-[11px] tabular-nums">

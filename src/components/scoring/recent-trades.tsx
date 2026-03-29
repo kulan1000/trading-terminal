@@ -29,7 +29,7 @@ export function RecentScored({ signals }: { signals: ScoredSignal[] }) {
     return (
       <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
         <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-        <div className="px-4 pt-4 pb-4">
+        <div className="px-5 pt-4 pb-4">
           <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">Recent Scored Signals</h3>
           <p className="mt-2 font-sans text-[13px] text-white/40">Inga scorade signaler ännu.</p>
         </div>
@@ -40,13 +40,13 @@ export function RecentScored({ signals }: { signals: ScoredSignal[] }) {
   return (
     <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
       <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-      <div className="px-4 pt-4 pb-2">
+      <div className="px-5 pt-4 pb-3">
         <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">Recent Scored Signals</h3>
       </div>
 
       <div className="max-h-[420px] space-y-px overflow-y-auto">
         {signals.map((s, i) => (
-          <div key={i} className="group border-b border-white/[0.03] px-4 py-3 transition-colors hover:bg-white/[0.025]">
+          <div key={i} className="group border-b border-white/[0.03] px-5 py-3 transition-colors hover:bg-white/[0.025]">
             {/* Row 1: trader, badge, asset, score */}
             <div className="flex items-center gap-2">
               <span className="font-sans text-[13px] font-semibold text-white">{s.author}</span>
