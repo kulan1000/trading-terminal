@@ -80,7 +80,7 @@ export async function GET() {
   }
 
   const scoreboard = Array.from(traderMap.values())
-    .filter((t) => t.signals >= 3)
+    .filter((t) => t.signals >= 1)
     .map((t) => ({
       ...t,
       avgScore: t.totalScore / t.signals,
@@ -166,63 +166,7 @@ export async function GET() {
     messageContent: s.message_content,
   }));
 
-  // 6) Trader activity: all traders ranked by signal count + types
-  const { data: activityRows } = await supabase
-    .from("signals")
-    .select("author, asset, signal_type, direction, confidence, created_at")
-    .not("author", "is", null)
-    .not("author", "eq", "unknown")
-    .order("created_at", { ascending: false })
-    .limit(500);
-
-  const activityMap = new Map<string, {
-    author: string; total: number; opinions: number; positions: number;
-    entries: number; exits: number; bullish: number; bearish: number;
-    avgConf: number; confSum: number; lastActive: string;
-    assets: Set<string>;
-  }>();
-
-  for (const r of (activityRows ?? []) as Array<{
-    author: string; asset: string; signal_type: string;
-    direction: string; confidence: number; created_at: string;
-  }>) {
-    const t = activityMap.get(r.author) ?? {
-      author: r.author, total: 0, opinions: 0, positions: 0,
-      entries: 0, exits: 0, bullish: 0, bearish: 0,
-      avgConf: 0, confSum: 0, lastActive: r.created_at,
-      assets: new Set<string>(),
-    };
-    t.total++;
-    t.assets.add(r.asset);
-    if (r.signal_type === "opinion") t.opinions++;
-    else if (r.signal_type === "position") t.positions++;
-    else if (r.signal_type === "entry") t.entries++;
-    else if (r.signal_type === "exited") t.exits++;
-    if (r.direction === "bullish") t.bullish++;
-    else if (r.direction === "bearish") t.bearish++;
-    t.confSum += r.confidence ?? 0;
-    if (r.created_at > t.lastActive) t.lastActive = r.created_at;
-    activityMap.set(r.author, t);
-  }
-
-  const traderActivity = Array.from(activityMap.values())
-    .map((t) => ({
-      author: t.author,
-      total: t.total,
-      opinions: t.opinions,
-      positions: t.positions,
-      entries: t.entries,
-      exits: t.exits,
-      bullish: t.bullish,
-      bearish: t.bearish,
-      avgConf: t.total > 0 ? Math.round((t.confSum / t.total) * 100) : 0,
-      lastActive: t.lastActive,
-      assets: Array.from(t.assets),
-      scoreable: t.entries + t.exits + t.positions,
-    }))
-    .sort((a, b) => b.total - a.total);
-
-  // 7) Score history: aggregate by hour for timeline chart
+  // 6) Score history: aggregate by hour for timeline chart
   const scoreHistory: Array<{
     hour: string; avgScore: number; count: number; wins: number; winRate: number;
   }> = [];
@@ -264,6 +208,6 @@ export async function GET() {
 
   return NextResponse.json({
     scoreboard, openPositions, recentScored, traderSignals,
-    traderActivity, tradePairs, scoreHistory,
+    tradePairs, scoreHistory,
   });
 }

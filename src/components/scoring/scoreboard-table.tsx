@@ -77,8 +77,8 @@ export function ScoreboardTable({ traders, traderSignals }: Props) {
         </div>
         <div className="px-5 pb-4">
           <p className="font-sans text-[13px] text-white/40">
-            Inga traders med minst 3 scorade signaler annu. Scoring borjar automatiskt
-            efter att prisdata samlats in (30m/1h/2h/4h efter signal).
+            Inga scorade signaler ännu. Scoring börjar automatiskt efter att prisdata
+            samlats in (30m/1h/2h/4h efter signal). Klicka på en trader för att se detaljer.
           </p>
         </div>
       </div>
