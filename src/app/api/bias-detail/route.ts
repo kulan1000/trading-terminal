@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { ASSETS } from "@/lib/constants";
 import { getAssetPrice } from "@/lib/price-snapshot";
 import { fetchYahoo } from "@/lib/data-yahoo";
+import { STRENGTH, timeDecay } from "@/lib/decay-utils";
 import type { Asset } from "@/lib/types";
 
 const YAHOO_SYMBOLS: Record<Asset, string> = { Gold: "GC=F", Silver: "SI=F", Oil: "CL=F" };
@@ -14,14 +15,7 @@ function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
-// Same decay logic as getAssetBias — single source of truth
-const STR: Record<string, number> = { strong: 3, medium: 2, weak: 1 };
-function timeDecay(iso: string, now: number): number {
-  const ageH = (now - new Date(iso).getTime()) / 3600000;
-  if (ageH <= 1) return 1.0;
-  if (ageH <= 3) return 0.7;
-  return 0.4;
-}
+// Decay logic imported from lib/decay-utils
 
 export async function GET(req: NextRequest) {
   const asset = req.nextUrl.searchParams.get("asset") as Asset | null;
@@ -108,7 +102,7 @@ Write a brief, factual summary. No fluff.`;
   // Decay-weighted bull/bear for accurate representation
   let wBull = 0, wBear = 0;
   for (const s of signals) {
-    const w = timeDecay(s.created_at, now) * (STR[s.strength] ?? 2) * s.confidence * (s.signal_type === "position" ? 1.5 : 1);
+    const w = timeDecay(s.created_at, now) * (STRENGTH[s.strength] ?? 2) * s.confidence * (s.signal_type === "position" ? 1.5 : 1);
     if (s.direction === "bullish") wBull += w;
     else if (s.direction === "bearish") wBear += w;
   }
@@ -130,7 +124,7 @@ Write a brief, factual summary. No fluff.`;
   // Direction = majority weighted direction (not first signal)
   const traderMap = new Map<string, { bullW: number; bearW: number; totalW: number; count: number; types: string[]; latestAt: string }>();
   for (const s of signals) {
-    const w = timeDecay(s.created_at, now) * (STR[s.strength] ?? 2) * s.confidence;
+    const w = timeDecay(s.created_at, now) * (STRENGTH[s.strength] ?? 2) * s.confidence;
     const ex = traderMap.get(s.author);
     if (ex) {
       if (s.direction === "bullish") ex.bullW += w;

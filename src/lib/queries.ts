@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { STRENGTH, timeDecay } from "@/lib/decay-utils";
 import type { Asset, Direction, Strength, DiscordMessage, FeedMessage } from "@/lib/types";
 
 interface SignalRow {
@@ -67,23 +68,12 @@ export async function getAssetBias(asset: Asset) {
   const signals = (signalRes.data ?? []) as (SignalRow & { author: string | null; created_at: string })[];
   if (!signals.length) return { direction: "neutral" as const, score: 0, count: 0 };
 
-  // Strength multiplier: strong=3, medium=2, weak=1
-  const STR: Record<string, number> = { strong: 3, medium: 2, weak: 1 };
-
-  // Time decay based on signal age
-  // 0-1h → 1.0, 1-3h → 0.7, 3-6h → 0.4
   const now = Date.now();
-  function timeDecay(iso: string): number {
-    const ageH = (now - new Date(iso).getTime()) / 3600000;
-    if (ageH <= 1) return 1.0;
-    if (ageH <= 3) return 0.7;
-    return 0.4;
-  }
 
   let bullW = 0, bearW = 0;
   for (const s of signals) {
-    const strength = STR[s.strength] ?? 2;
-    const decay = timeDecay(s.created_at);
+    const strength = STRENGTH[s.strength] ?? 2;
+    const decay = timeDecay(s.created_at, now);
     const convictionBoost = s.signal_type === "position" ? 1.5 : 1;
     // Credibility: 0→0.5x, 50→1.0x, 100→1.5x. Unknown traders → 1.0x
     const cred = s.author ? credMap.get(s.author) : undefined;

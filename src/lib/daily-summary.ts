@@ -17,7 +17,7 @@ interface TopTrader {
   winRate: number | null;
 }
 
-export interface DailySummaryRow {
+interface DailySummaryRow {
   id: number;
   summary_date: string;
   asset: string;
@@ -138,16 +138,3 @@ export async function getDailySummaries(dateStr?: string): Promise<DailySummaryR
   return (data ?? []) as DailySummaryRow[];
 }
 
-/** Fetch last N days of summaries */
-export async function getRecentSummaries(days = 7): Promise<DailySummaryRow[]> {
-  const supabase = getSupabase();
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-
-  const { data } = await supabase
-    .from("daily_summaries")
-    .select("*")
-    .gte("summary_date", since)
-    .order("summary_date", { ascending: false });
-
-  return (data ?? []) as DailySummaryRow[];
-}
