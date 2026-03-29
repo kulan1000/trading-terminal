@@ -20,6 +20,14 @@ function traderFreshness(latestAt: string): string {
   return "opacity-40";
 }
 
+function credBadge(cred: TraderEntry["credibility"]): { label: string; color: string } | null {
+  if (!cred || cred.totalScored < 3) return null;
+  const wr = cred.winRate;
+  if (wr >= 0.7) return { label: `${Math.round(wr * 100)}%`, color: "bg-[#26A69A]/20 text-[#26A69A]" };
+  if (wr >= 0.5) return { label: `${Math.round(wr * 100)}%`, color: "bg-[#FF9800]/15 text-[#FF9800]" };
+  return { label: `${Math.round(wr * 100)}%`, color: "bg-[#EF5350]/15 text-[#EF5350]" };
+}
+
 export function BiasTraderConsensus({ traders }: { traders: TraderEntry[] }) {
   const bulls = traders.filter((t) => t.direction === "bullish");
   const bears = traders.filter((t) => t.direction === "bearish");
@@ -37,6 +45,14 @@ export function BiasTraderConsensus({ traders }: { traders: TraderEntry[] }) {
               {t.author}
             </Link>
             <div className="ml-auto flex items-center gap-1">
+              {(() => {
+                const badge = credBadge(t.credibility);
+                return badge ? (
+                  <span className={`rounded px-1.5 py-0.5 font-mono text-[9px] font-bold ${badge.color}`} title={`Win rate: ${badge.label} (${t.credibility?.totalScored} scored)`}>
+                    {badge.label}
+                  </span>
+                ) : null;
+              })()}
               {t.types.slice(0, 2).map((ty) => (
                 <span key={ty} className={`rounded px-1.5 py-0.5 font-sans text-[9px] font-bold uppercase ${TYPE_TAG[ty] ?? TYPE_TAG.opinion}`}>
                   {ty}

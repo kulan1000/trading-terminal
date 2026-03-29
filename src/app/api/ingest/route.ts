@@ -122,17 +122,17 @@ export async function POST(request: Request) {
     // 2) Always classify (opinions are valid anytime)
     const classify = await processUnclassified();
 
-    // 3-4) Price snapshots + scoring only when market is open
+    // 3) Price snapshots only when market is open
     /* eslint-disable @typescript-eslint/no-explicit-any */
     let prices: any = { saved: 0, skipped: "market closed" };
-    let scoring: any = { scored: 0, skipped: "market closed" };
-    let pairing: any = { paired: 0, skipped: "market closed" };
 
     if (marketOpen) {
       prices = await savePriceSnapshots();
-      scoring = await scoreSignals();
-      pairing = await pairTrades();
     }
+
+    // 4) Scoring + pairing always run (catch up on signals from market hours)
+    const scoring = await scoreSignals();
+    const pairing = await pairTrades();
 
     // 5-6) Sentiment + bias snapshots run ALWAYS (opinions valid 24/7)
     const sentiment = await saveSentimentSnapshots();

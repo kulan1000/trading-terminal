@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
   const since6h = new Date(now - 6 * 60 * 60 * 1000).toISOString();
   const around7hAgo = new Date(now - 7 * 60 * 60 * 1000).toISOString();
 
-  const [signalsRes, historyRes, price, oldBiasRes, yahooData] = await Promise.all([
+  const [signalsRes, historyRes, price, oldBiasRes, yahooData, credibilityRes] = await Promise.all([
     // Only 6h signals — matches getAssetBias window
     supabase
       .from("signals")
@@ -58,6 +58,9 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: true })
       .limit(1),
     fetchYahoo(asset, YAHOO_SYMBOLS[asset]),
+    supabase
+      .from("user_credibility")
+      .select("discord_user, score, win_rate, total_signals, correct_signals"),
   ]);
 
   type RawSignal = {
@@ -149,12 +152,23 @@ Write a brief, factual summary. No fluff.`;
       });
     }
   }
+  // Build credibility lookup map
+  type CredRow = { discord_user: string; score: number; win_rate: number; total_signals: number; correct_signals: number };
+  const credMap = new Map<string, CredRow>();
+  for (const row of (credibilityRes.data ?? []) as CredRow[]) {
+    credMap.set(row.discord_user, row);
+  }
+
   const traderConsensus = [...traderMap.entries()]
-    .map(([author, d]) => ({
-      author,
-      direction: d.bullW > d.bearW ? "bullish" : d.bearW > d.bullW ? "bearish" : "neutral",
-      count: d.count, types: d.types, latestAt: d.latestAt,
-    }))
+    .map(([author, d]) => {
+      const cred = credMap.get(author);
+      return {
+        author,
+        direction: d.bullW > d.bearW ? "bullish" : d.bearW > d.bullW ? "bearish" : "neutral",
+        count: d.count, types: d.types, latestAt: d.latestAt,
+        credibility: cred ? { score: cred.score, winRate: cred.win_rate, totalScored: cred.total_signals } : null,
+      };
+    })
     .sort((a, b) => (traderMap.get(b.author)?.totalW ?? 0) - (traderMap.get(a.author)?.totalW ?? 0));
 
   // Build intraday price series — show last 6h of available data

@@ -40,10 +40,17 @@ export interface BiasAgo {
   direction: string;
 }
 
+export interface TraderCredibility {
+  score: number;
+  winRate: number;
+  totalScored: number;
+}
+
 export interface TraderEntry {
   author: string;
   direction: string;
   count: number;
   types: string[];
   latestAt: string;
+  credibility: TraderCredibility | null;
 }
