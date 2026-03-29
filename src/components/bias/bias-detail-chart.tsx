@@ -32,14 +32,24 @@ export function BiasDetailChart({ history, signals, intradayPrices, asset }: Pro
   const chartH = H - PAD.top - PAD.bottom;
 
   // --- Bias line (left Y-axis: %) ---
+  // Use all history points (already filtered to 6h by API)
+  // Only apply client filter as safety, but fall back to all history if empty
   const filtered = history.filter((h) => new Date(h.created_at).getTime() >= start);
-  const scores = filtered.map((h) => h.score);
+  const biasData = filtered.length >= 2 ? filtered : history;
+  const scores = biasData.map((h) => h.score);
   const bMin = Math.min(...scores, 30) - 5;
   const bMax = Math.max(...scores, 70) + 5;
   const bRange = bMax - bMin || 1;
 
-  const biasPoints = filtered.map((h) => ({
-    x: isoToX(h.created_at, start, sixH, chartW, PAD.left),
+  // Determine x-axis window: use now-6h if data fits, otherwise span the data
+  const dataStart = Math.min(...biasData.map((h) => new Date(h.created_at).getTime()));
+  const dataEnd = Math.max(...biasData.map((h) => new Date(h.created_at).getTime()), now);
+  const useNowWindow = filtered.length >= 2;
+  const xStart = useNowWindow ? start : dataStart - 10 * 60_000;
+  const xSpan = useNowWindow ? sixH : Math.max(dataEnd - xStart, sixH);
+
+  const biasPoints = biasData.map((h) => ({
+    x: timeToX(new Date(h.created_at).getTime(), xStart, xSpan, chartW, PAD.left),
     y: PAD.top + chartH - ((h.score - bMin) / bRange) * chartH,
     ...h,
   }));
@@ -70,8 +80,9 @@ export function BiasDetailChart({ history, signals, intradayPrices, asset }: Pro
     const pMaxP = pMax + pPad;
     const pRange = pMaxP - pMinP || 1;
 
+    // Map price timestamps to same x-axis as bias data
     const pricePoints = pd.map((p) => ({
-      x: timeToX(p.ts * 1000, start, sixH, chartW, PAD.left),
+      x: timeToX(p.ts * 1000, xStart, xSpan, chartW, PAD.left),
       y: PAD.top + chartH - ((p.price - pMinP) / pRange) * chartH,
     }));
 
@@ -83,15 +94,17 @@ export function BiasDetailChart({ history, signals, intradayPrices, asset }: Pro
   const fiftyY = PAD.top + chartH - ((50 - bMin) / bRange) * chartH;
 
   // --- X-axis: hourly marks ---
-  const xLabels = Array.from({ length: 7 }, (_, i) => ({
-    x: PAD.left + (i / 6) * chartW,
-    time: fmtTime(new Date(start + i * 60 * 60 * 1000).toISOString()),
+  const xHours = Math.round(xSpan / 3600000);
+  const xSteps = Math.min(xHours, 7);
+  const xLabels = Array.from({ length: xSteps + 1 }, (_, i) => ({
+    x: PAD.left + (i / xSteps) * chartW,
+    time: fmtTime(new Date(xStart + (i / xSteps) * xSpan).toISOString()),
   }));
 
   // --- Signal markers ---
   const markers = (signals ?? []).filter((s) => {
     const t = new Date(s.created_at).getTime();
-    return t >= start && t <= now;
+    return t >= xStart && t <= xStart + xSpan;
   });
 
   const showClosedNote = hasPriceData && intradayPrices!.length > 0 &&
@@ -134,7 +147,7 @@ export function BiasDetailChart({ history, signals, intradayPrices, asset }: Pro
             <path d={priceLine} fill="none" stroke="#2962FF" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" opacity="0.5" />
           )}
           {markers.map((s, i) => {
-            const mx = isoToX(s.created_at, start, sixH, chartW, PAD.left);
+            const mx = isoToX(s.created_at, xStart, xSpan, chartW, PAD.left);
             const isBull = s.direction === "bullish";
             const color = isBull ? "#26A69A" : "#EF5350";
             const my = isBull ? PAD.top + 8 : PAD.top + chartH - 8;
