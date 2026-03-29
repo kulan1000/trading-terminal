@@ -5,13 +5,19 @@ import { useScoringData } from "@/hooks/use-scoring-data";
 import { ScoreboardTable } from "@/components/scoring/scoreboard-table";
 import { OpenPositions } from "@/components/scoring/open-positions";
 import { RecentScored } from "@/components/scoring/recent-trades";
+import { TraderActivity } from "@/components/scoring/trader-activity";
+import { TradePairs } from "@/components/scoring/trade-pairs";
+import { ScoringStatus } from "@/components/scoring/scoring-status";
 import { BackfillButton } from "@/components/scoring/backfill-button";
 
 const ASSETS = ["all", "gold", "silver", "oil"] as const;
 type AssetFilter = (typeof ASSETS)[number];
 
 export default function ScoringPage() {
-  const { scoreboard, openPositions, recentScored, traderSignals, loading } = useScoringData();
+  const {
+    scoreboard, openPositions, recentScored, traderSignals,
+    traderActivity, tradePairs, loading,
+  } = useScoringData();
   const [asset, setAsset] = useState<AssetFilter>("all");
 
   // Filter by asset
@@ -51,11 +57,21 @@ export default function ScoringPage() {
     ? openPositions
     : openPositions.filter((p) => p.asset.toLowerCase() === asset);
 
+  const filteredPairs = asset === "all"
+    ? tradePairs
+    : tradePairs.filter((p) => p.asset.toLowerCase() === asset);
+
+  const filteredActivity = asset === "all"
+    ? traderActivity
+    : traderActivity
+        .map((t) => ({ ...t, total: t.assets.includes(asset.charAt(0).toUpperCase() + asset.slice(1)) ? t.total : 0 }))
+        .filter((t) => t.total > 0);
+
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">
-          Trader Scoring
+          TRADER SCORING
         </h1>
         <div className="flex items-center gap-3">
           <div className="flex gap-1">
@@ -74,9 +90,6 @@ export default function ScoringPage() {
             ))}
           </div>
           <BackfillButton />
-          <span className="font-sans text-[11px] text-white/30">
-            30m · 1h · 2h · 4h efter signal
-          </span>
         </div>
       </div>
 
@@ -86,11 +99,28 @@ export default function ScoringPage() {
         </div>
       ) : (
         <>
+          {/* Status overview */}
+          <ScoringStatus
+            totalScored={recentScored.length}
+            totalTraders={traderActivity.length}
+            totalPairs={tradePairs.length}
+            openPositions={openPositions.length}
+          />
+
+          {/* Scoreboard (only shows with 3+ scored signals per trader) */}
           <ScoreboardTable traders={filteredScoreboard} traderSignals={filteredSignals} />
+
+          {/* Middle row: open positions + recent scored */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <OpenPositions positions={filteredOpen} />
             <RecentScored signals={filteredRecent} />
           </div>
+
+          {/* Trade pairs */}
+          <TradePairs pairs={filteredPairs} />
+
+          {/* All trader activity (always has data) */}
+          <TraderActivity traders={filteredActivity} />
         </>
       )}
     </div>

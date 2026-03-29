@@ -148,7 +148,76 @@ export async function GET() {
     scoredAt: s.scored_at,
   }));
 
+  // 6) Trader activity: all traders ranked by signal count + types
+  const { data: activityRows } = await supabase
+    .from("signals")
+    .select("author, asset, signal_type, direction, confidence, created_at")
+    .not("author", "is", null)
+    .not("author", "eq", "unknown")
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  const activityMap = new Map<string, {
+    author: string; total: number; opinions: number; positions: number;
+    entries: number; exits: number; bullish: number; bearish: number;
+    avgConf: number; confSum: number; lastActive: string;
+    assets: Set<string>;
+  }>();
+
+  for (const r of (activityRows ?? []) as Array<{
+    author: string; asset: string; signal_type: string;
+    direction: string; confidence: number; created_at: string;
+  }>) {
+    const t = activityMap.get(r.author) ?? {
+      author: r.author, total: 0, opinions: 0, positions: 0,
+      entries: 0, exits: 0, bullish: 0, bearish: 0,
+      avgConf: 0, confSum: 0, lastActive: r.created_at,
+      assets: new Set<string>(),
+    };
+    t.total++;
+    t.assets.add(r.asset);
+    if (r.signal_type === "opinion") t.opinions++;
+    else if (r.signal_type === "position") t.positions++;
+    else if (r.signal_type === "entry") t.entries++;
+    else if (r.signal_type === "exited") t.exits++;
+    if (r.direction === "bullish") t.bullish++;
+    else if (r.direction === "bearish") t.bearish++;
+    t.confSum += r.confidence ?? 0;
+    if (r.created_at > t.lastActive) t.lastActive = r.created_at;
+    activityMap.set(r.author, t);
+  }
+
+  const traderActivity = Array.from(activityMap.values())
+    .map((t) => ({
+      author: t.author,
+      total: t.total,
+      opinions: t.opinions,
+      positions: t.positions,
+      entries: t.entries,
+      exits: t.exits,
+      bullish: t.bullish,
+      bearish: t.bearish,
+      avgConf: t.total > 0 ? Math.round((t.confSum / t.total) * 100) : 0,
+      lastActive: t.lastActive,
+      assets: Array.from(t.assets),
+      scoreable: t.entries + t.exits + t.positions,
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  // 7) Trade pairs
+  const { data: tradePairRows } = await supabase
+    .from("trade_pairs")
+    .select("author, asset, position, entry_price, exit_price, pnl, created_at")
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  const tradePairs = (tradePairRows ?? []) as Array<{
+    author: string; asset: string; position: string;
+    entry_price: number; exit_price: number; pnl: number; created_at: string;
+  }>;
+
   return NextResponse.json({
     scoreboard, openPositions, recentScored, traderSignals,
+    traderActivity, tradePairs,
   });
 }
