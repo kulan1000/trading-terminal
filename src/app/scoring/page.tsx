@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { useScoringData } from "@/hooks/use-scoring-data";
 import { ScoreboardTable } from "@/components/scoring/scoreboard-table";
-import { OpenPositions } from "@/components/scoring/open-positions";
 import { RecentScored } from "@/components/scoring/recent-trades";
-import { TraderActivity } from "@/components/scoring/trader-activity";
 import { TradePairs } from "@/components/scoring/trade-pairs";
 import { ScoringStatus } from "@/components/scoring/scoring-status";
 import { ScoreTimeline } from "@/components/scoring/score-timeline";
@@ -19,8 +17,9 @@ type AssetFilter = (typeof ASSETS)[number];
 
 export default function ScoringPage() {
   const {
-    scoreboard, openPositions, recentScored, traderSignals,
+    scoreboard, recentScored, traderSignals,
     traderActivity, tradePairs, scoreHistory, loading,
+    openPositions,
   } = useScoringData();
   const { reviews, handleAction: handleReviewAction } = useReviews();
   const [asset, setAsset] = useState<AssetFilter>("all");
@@ -58,19 +57,9 @@ export default function ScoringPage() {
     ? recentScored
     : recentScored.filter((s) => s.asset.toLowerCase() === asset);
 
-  const filteredOpen = asset === "all"
-    ? openPositions
-    : openPositions.filter((p) => p.asset.toLowerCase() === asset);
-
   const filteredPairs = asset === "all"
     ? tradePairs
     : tradePairs.filter((p) => p.asset.toLowerCase() === asset);
-
-  const filteredActivity = asset === "all"
-    ? traderActivity
-    : traderActivity
-        .map((t) => ({ ...t, total: t.assets.includes(asset.charAt(0).toUpperCase() + asset.slice(1)) ? t.total : 0 }))
-        .filter((t) => t.total > 0);
 
   return (
     <div className="animate-fade-in space-y-4">
@@ -124,17 +113,11 @@ export default function ScoringPage() {
           {/* Scoreboard (only shows with 3+ scored signals per trader) */}
           <ScoreboardTable traders={filteredScoreboard} traderSignals={filteredSignals} />
 
-          {/* Middle row: open positions + recent scored */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <OpenPositions positions={filteredOpen} />
-            <RecentScored signals={filteredRecent} />
-          </div>
+          {/* Recent scored signals — full width */}
+          <RecentScored signals={filteredRecent} />
 
           {/* Trade pairs */}
           <TradePairs pairs={filteredPairs} />
-
-          {/* All trader activity (always has data) */}
-          <TraderActivity traders={filteredActivity} />
         </>
       )}
     </div>

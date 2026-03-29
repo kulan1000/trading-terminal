@@ -6,7 +6,7 @@ import { fmtDateTime } from "@/lib/format-utils";
 const TYPE_LABEL: Record<string, { text: string; cls: string }> = {
   entry: { text: "ENTRY", cls: "bg-[#26A69A]/15 text-[#26A69A]" },
   exited: { text: "EXIT", cls: "bg-[#FF9800]/15 text-[#FF9800]" },
-  position: { text: "HOLD", cls: "bg-[#2962FF]/15 text-[#2962FF]" },
+  position: { text: "HOLD", cls: "bg-[#FF9800]/15 text-[#FF9800]" },
 };
 
 function SignalBadge({ type, position }: { type: string; position: string | null }) {
@@ -44,7 +44,7 @@ export function RecentScored({ signals }: { signals: ScoredSignal[] }) {
         <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">Recent Scored Signals</h3>
       </div>
 
-      <div className="space-y-px">
+      <div className="max-h-[420px] space-y-px overflow-y-auto">
         {signals.map((s, i) => (
           <div key={i} className="group border-b border-white/[0.03] px-4 py-3 transition-colors hover:bg-white/[0.025]">
             {/* Row 1: trader, badge, asset, score */}
@@ -52,11 +52,11 @@ export function RecentScored({ signals }: { signals: ScoredSignal[] }) {
               <span className="font-sans text-[13px] font-semibold text-white">{s.author}</span>
               <SignalBadge type={s.signalType} position={s.position} />
               <span className="font-sans text-[11px] font-medium uppercase text-white/40">{s.asset}</span>
-              <span className="ml-auto font-mono text-[12px]"><ScoreCell value={s.weightedScore} /></span>
+              <span className="ml-auto font-sans text-[12px]"><ScoreCell value={s.weightedScore} /></span>
               {s.consistent && <span className="text-[9px] text-[#26A69A]">✦</span>}
             </div>
             {/* Row 2: time + scores */}
-            <div className="mt-1 flex items-center gap-2 font-mono text-[11px]">
+            <div className="mt-1 flex items-center gap-2 font-sans text-[11px] tabular-nums">
               <span className="text-white/20">{fmtDateTime(s.signalCreatedAt)}</span>
               <span className="text-white/10">|</span>
               <span className="text-white/25">30m</span> <ScoreCell value={s.score30m} />
