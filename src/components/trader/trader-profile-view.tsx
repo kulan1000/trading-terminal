@@ -3,9 +3,22 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TraderStatsCards } from "./trader-stats-cards";
+import { TraderActivitySummary } from "./trader-activity-summary";
 import { TraderAssetBreakdown } from "./trader-asset-breakdown";
 import { TraderScoredSignals } from "./trader-scored-signals";
 import { TraderRecentSignals } from "./trader-recent-signals";
+import { TraderDiscordFeed } from "./trader-discord-feed";
+
+interface Activity {
+  lastSignal: string | null;
+  lastMessage: string | null;
+  totalSignals: number;
+  entryCount: number;
+  exitCount: number;
+  positionCount: number;
+  avgConfidence: number;
+  assetAccuracy: Record<string, { scored: number; positive: number; avgScore: number }>;
+}
 
 interface TraderData {
   author: string;
@@ -15,6 +28,7 @@ interface TraderData {
   scores: { signal_id: number; asset: string; signal_type: string; position: string | null; price_at_signal: number; score_30m: number | null; score_1h: number | null; score_2h: number | null; score_4h: number | null; weighted_score: number; consistency_bonus: boolean; scored_at: string }[];
   messages: { id: number; content: string; channel: string; timestamp: string }[];
   assetBreakdown: Record<string, { total: number; bullish: number; bearish: number; entries: number; exits: number }>;
+  activity: Activity;
 }
 
 export function TraderProfileView({ author }: { author: string }) {
@@ -65,6 +79,8 @@ export function TraderProfileView({ author }: { author: string }) {
 
       <TraderStatsCards cred={data.credibility} prof={data.profile} scores={data.scores} />
 
+      {data.activity && <TraderActivitySummary activity={data.activity} />}
+
       {Object.keys(data.assetBreakdown).length > 0 && (
         <TraderAssetBreakdown breakdown={data.assetBreakdown} />
       )}
@@ -72,6 +88,8 @@ export function TraderProfileView({ author }: { author: string }) {
       {data.scores.length > 0 && <TraderScoredSignals scores={data.scores} />}
 
       {data.signals.length > 0 && <TraderRecentSignals signals={data.signals} />}
+
+      {data.messages.length > 0 && <TraderDiscordFeed messages={data.messages} />}
     </div>
   );
 }

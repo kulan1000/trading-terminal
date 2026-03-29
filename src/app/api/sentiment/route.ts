@@ -36,11 +36,11 @@ export async function GET() {
     time: s.created_at,
   }));
 
-  // Sentiment history for sparklines (last 2 hours per asset)
+  // Sentiment history for sparklines (last 6 hours to match bias window)
   const historyResults = await Promise.all(
     ASSETS.map(async (asset) => ({
       asset,
-      points: await getSentimentHistory(asset, 2),
+      points: await getSentimentHistory(asset, 6),
     }))
   );
   const history: Record<string, Array<{ net_score: number; confidence: number; bias: string; created_at: string }>> = {};

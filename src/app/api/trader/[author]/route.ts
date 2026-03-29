@@ -42,13 +42,53 @@ export async function GET(_req: Request, { params }: Params) {
     assetBreakdown[s.asset] = ab;
   }
 
+  // Activity stats: last active, signal frequency, conviction level
+  const lastSignal = signals[0]?.created_at ?? null;
+  const lastMessage = (messagesRes.data ?? [])[0]?.timestamp ?? null;
+  const totalSignals = signals.length;
+  const entryCount = signals.filter(s => s.signal_type === "entry").length;
+  const exitCount = signals.filter(s => s.signal_type === "exited").length;
+  const positionCount = signals.filter(s => s.signal_type === "position").length;
+  const avgConfidence = totalSignals > 0
+    ? Math.round(signals.reduce((sum, s) => sum + (s.confidence ?? 0), 0) / totalSignals * 100)
+    : 0;
+
+  // Per-asset accuracy from scores
+  const scores = (scoresRes.data ?? []) as Array<{
+    signal_id: number; asset: string; signal_type: string; position: string | null;
+    price_at_signal: number; score_30m: number | null; score_1h: number | null;
+    score_2h: number | null; score_4h: number | null; weighted_score: number;
+    consistency_bonus: boolean; scored_at: string;
+  }>;
+  const assetAccuracy: Record<string, { scored: number; positive: number; avgScore: number }> = {};
+  for (const sc of scores) {
+    const aa = assetAccuracy[sc.asset] ?? { scored: 0, positive: 0, avgScore: 0 };
+    aa.scored++;
+    if (sc.weighted_score > 0) aa.positive++;
+    aa.avgScore += sc.weighted_score;
+    assetAccuracy[sc.asset] = aa;
+  }
+  for (const [asset, aa] of Object.entries(assetAccuracy)) {
+    assetAccuracy[asset] = { ...aa, avgScore: Math.round((aa.avgScore / aa.scored) * 100) / 100 };
+  }
+
   return NextResponse.json({
     author: decoded,
     credibility: credRes.data ?? null,
     profile: profileRes.data ?? null,
     signals,
-    scores: (scoresRes.data ?? []),
+    scores,
     messages: (messagesRes.data ?? []),
     assetBreakdown,
+    activity: {
+      lastSignal,
+      lastMessage,
+      totalSignals,
+      entryCount,
+      exitCount,
+      positionCount,
+      avgConfidence,
+      assetAccuracy,
+    },
   });
 }
