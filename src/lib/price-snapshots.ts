@@ -3,7 +3,7 @@
 
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { fetchYahoo } from "@/lib/data-yahoo";
-import { YAHOO_SYMBOLS } from "@/lib/constants";
+import { YAHOO_SYMBOLS, SNAPSHOT_MATCH_WINDOW_MS } from "@/lib/constants";
 import type { Asset } from "@/lib/types";
 
 /** Fetch current prices and insert into price_snapshots */
@@ -66,5 +66,5 @@ export async function getPriceAtTime(
   // Only use if within 20 min of target (snapshots are every 15 min via cron)
   const closest = diffB <= diffA ? b : a;
   const closestDiff = Math.min(diffB, diffA);
-  return closestDiff <= 1_200_000 ? closest.price : null;
+  return closestDiff <= SNAPSHOT_MATCH_WINDOW_MS ? closest.price : null;
 }

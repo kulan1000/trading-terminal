@@ -24,6 +24,10 @@ export const YAHOO_SYMBOLS: Record<Asset, string> = {
   Oil: "CL=F",
 };
 
+// Polling & cache intervals (ms)
+export const MARKET_POLL_MS = 15_000;
+export const SNAPSHOT_MATCH_WINDOW_MS = 1_200_000; // 20 min — max distance from target for price match
+
 // Asset tag colors for signal feed & message list
 export const ASSET_TAG_COLORS: Record<string, string> = {
   Gold: "bg-[#FFEB3B]/15 text-[#FFEB3B]",

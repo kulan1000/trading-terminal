@@ -34,6 +34,7 @@ interface OpenEntry {
 }
 
 export async function GET() {
+  try {
   const supabase = getSupabaseAdmin();
 
   // 1) All scored signals + join to get original message content and signal created_at
@@ -210,4 +211,11 @@ export async function GET() {
     scoreboard, openPositions, recentScored, traderSignals,
     tradePairs, scoreHistory,
   });
+  } catch (err) {
+    console.error("[SCORING] API error:", err);
+    return NextResponse.json({
+      scoreboard: [], openPositions: [], recentScored: [],
+      traderSignals: {}, tradePairs: [], scoreHistory: [],
+    });
+  }
 }

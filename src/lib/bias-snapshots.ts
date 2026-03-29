@@ -4,17 +4,9 @@
 
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { ASSETS } from "@/lib/constants";
+import { STRENGTH, timeDecay } from "@/lib/decay-utils";
 import { isWeekendDeadZone } from "@/lib/market-hours";
 import type { Direction, Strength } from "@/lib/types";
-
-const STR: Record<string, number> = { strong: 3, medium: 2, weak: 1 };
-
-function timeDecay(iso: string, now: number): number {
-  const ageH = (now - new Date(iso).getTime()) / 3600000;
-  if (ageH <= 1) return 1.0;
-  if (ageH <= 3) return 0.7;
-  return 0.4;
-}
 
 export async function saveBiasSnapshots() {
   const supabase = getSupabaseAdmin();
@@ -42,7 +34,7 @@ export async function saveBiasSnapshots() {
 
       let bullW = 0, bearW = 0;
       for (const s of signals) {
-        const strength = STR[s.strength] ?? 2;
+        const strength = STRENGTH[s.strength] ?? 2;
         const decay = timeDecay(s.created_at, now);
         const convictionBoost = s.signal_type === "position" ? 1.5 : 1;
         const weight = decay * strength * s.confidence * convictionBoost;

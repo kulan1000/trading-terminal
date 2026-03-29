@@ -6,16 +6,20 @@ import { getMarketQuotes } from "@/lib/market-data";
 
 export const revalidate = 30;
 
+function fallback<T>(label: string, val: T) {
+  return (err: unknown) => { console.error(`[BIAS-PAGE] ${label}:`, err); return val; };
+}
+
 export async function GET() {
   const fallbackBias = { direction: "neutral" as const, score: 0, count: 0, activeCount: 0 };
 
   const [biases, hotAsset, histories, quotes, latestSignals, biasAgos] = await Promise.all([
-    Promise.all(ASSETS.map(async (asset) => ({ asset, ...(await getAssetBias(asset).catch(() => fallbackBias)) }))),
-    getHotAsset().catch(() => null),
-    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasHistory(asset).catch(() => []) }))),
-    getMarketQuotes().catch(() => [] as Awaited<ReturnType<typeof getMarketQuotes>>),
-    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getLatestSignal(asset).catch(() => null) }))),
-    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasAgo(asset).catch(() => null) }))),
+    Promise.all(ASSETS.map(async (asset) => ({ asset, ...(await getAssetBias(asset).catch(fallback(`bias-${asset}`, fallbackBias))) }))),
+    getHotAsset().catch(fallback("hot", null)),
+    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasHistory(asset).catch(fallback(`history-${asset}`, [])) }))),
+    getMarketQuotes().catch(fallback("quotes", [] as Awaited<ReturnType<typeof getMarketQuotes>>)),
+    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getLatestSignal(asset).catch(fallback(`latest-${asset}`, null)) }))),
+    Promise.all(ASSETS.map(async (asset) => ({ asset, data: await getBiasAgo(asset).catch(fallback(`ago-${asset}`, null)) }))),
   ]);
 
   const historyMap = Object.fromEntries(histories.map((h) => [h.asset, h.data]));

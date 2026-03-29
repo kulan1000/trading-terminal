@@ -1,20 +1,20 @@
 import { NextResponse } from "next/server";
 import { getMarketQuotes } from "@/lib/market-data";
+import { MARKET_POLL_MS } from "@/lib/constants";
 
 // Cache quotes in memory to avoid hammering CEO.ca
 let cachedQuotes: Awaited<ReturnType<typeof getMarketQuotes>> | null = null;
 let lastFetch = 0;
-const CACHE_TTL = 15_000; // 15 seconds cache
 
 export async function GET() {
   const now = Date.now();
 
   // Return cached data if fresh enough
-  if (cachedQuotes && now - lastFetch < CACHE_TTL) {
+  if (cachedQuotes && now - lastFetch < MARKET_POLL_MS) {
     return NextResponse.json({
       quotes: cachedQuotes,
       cached: true,
-      nextUpdate: lastFetch + CACHE_TTL - now,
+      nextUpdate: lastFetch + MARKET_POLL_MS - now,
     });
   }
 
@@ -26,7 +26,7 @@ export async function GET() {
     return NextResponse.json({
       quotes,
       cached: false,
-      nextUpdate: CACHE_TTL,
+      nextUpdate: MARKET_POLL_MS,
     });
   } catch {
     // Return stale cache on error

@@ -17,10 +17,12 @@ export async function GET(req: NextRequest) {
 
   const hasFilters = !!(q || author || (channel && channel !== "all") || (asset && asset !== "all") || (signalType && signalType !== "all") || dateFrom || dateTo);
 
+  const fb = <T>(label: string, val: T) => (err: unknown) => { console.error(`[DISCORD-INTEL] ${label}:`, err); return val; };
+
   const [messages, stats, briefing] = await Promise.all([
-    getFilteredFeed({ channel, asset, query: q, author, signalType, dateFrom, dateTo, limit: hasFilters ? 100 : 50 }).catch(() => []),
-    getMessageStats().catch(() => ({ total: 0, processed: 0, signals: 0 })),
-    getDailyBriefing().catch(() => null),
+    getFilteredFeed({ channel, asset, query: q, author, signalType, dateFrom, dateTo, limit: hasFilters ? 100 : 50 }).catch(fb("feed", [])),
+    getMessageStats().catch(fb("stats", { total: 0, processed: 0, signals: 0 })),
+    getDailyBriefing().catch(fb("briefing", null)),
   ]);
 
   return NextResponse.json({ messages, stats, briefing });
