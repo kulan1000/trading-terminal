@@ -105,30 +105,69 @@ export async function POST(request: Request) {
   }
 
   const marketOpen = isMarketOpen();
+  const startedAt = new Date();
+  const supabase = getSupabase();
 
-  // 1) Always fetch new Discord messages (people chat anytime)
-  const ingest = await ingestDiscord();
-  // 2) Always classify (opinions are valid anytime)
-  const classify = await processUnclassified();
+  // Create pipeline run log entry
+  const { data: runRow } = await supabase
+    .from("pipeline_runs")
+    .insert({ started_at: startedAt.toISOString(), status: "running", market_open: marketOpen })
+    .select("id")
+    .single();
+  const runId = (runRow as { id: number } | null)?.id;
 
-  // 3-4) Price snapshots + scoring only when market is open
-  // Prices don't move when closed → duplicate snapshots, meaningless scores
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  let prices: any = { saved: 0, skipped: "market closed" };
-  let scoring: any = { scored: 0, skipped: "market closed" };
-  let pairing: any = { paired: 0, skipped: "market closed" };
+  try {
+    // 1) Always fetch new Discord messages (people chat anytime)
+    const ingest = await ingestDiscord();
+    // 2) Always classify (opinions are valid anytime)
+    const classify = await processUnclassified();
 
-  if (marketOpen) {
-    prices = await savePriceSnapshots();
-    scoring = await scoreSignals();
-    pairing = await pairTrades();
+    // 3-4) Price snapshots + scoring only when market is open
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    let prices: any = { saved: 0, skipped: "market closed" };
+    let scoring: any = { scored: 0, skipped: "market closed" };
+    let pairing: any = { paired: 0, skipped: "market closed" };
+
+    if (marketOpen) {
+      prices = await savePriceSnapshots();
+      scoring = await scoreSignals();
+      pairing = await pairTrades();
+    }
+
+    // 5-6) Sentiment + bias snapshots run ALWAYS (opinions valid 24/7)
+    const sentiment = await saveSentimentSnapshots();
+    const bias = await saveBiasSnapshots();
+
+    // Log successful run
+    const durationMs = Date.now() - startedAt.getTime();
+    if (runId) {
+      await supabase.from("pipeline_runs").update({
+        finished_at: new Date().toISOString(),
+        duration_ms: durationMs,
+        status: "success",
+        ingested: ingest.ingested,
+        processed: classify.processed ?? 0,
+        signals: classify.signals ?? 0,
+        skipped: classify.skipped ?? 0,
+        scored: typeof scoring === "object" ? scoring.scored ?? 0 : 0,
+        openai_calls: classify.processed ?? 0,
+      }).eq("id", runId);
+    }
+
+    return NextResponse.json({ marketOpen, ingest, ...classify, prices, scoring, pairing, sentiment, bias });
+  } catch (err) {
+    // Log failed run
+    if (runId) {
+      await supabase.from("pipeline_runs").update({
+        finished_at: new Date().toISOString(),
+        duration_ms: Date.now() - startedAt.getTime(),
+        status: "error",
+        error_message: err instanceof Error ? err.message : "Unknown error",
+      }).eq("id", runId);
+    }
+    console.error("[INGEST] Pipeline error:", err);
+    return NextResponse.json({ error: "Pipeline failed", message: err instanceof Error ? err.message : "Unknown" }, { status: 500 });
   }
-
-  // 5-6) Sentiment + bias snapshots run ALWAYS (opinions valid 24/7)
-  const sentiment = await saveSentimentSnapshots();
-  const bias = await saveBiasSnapshots();
-
-  return NextResponse.json({ marketOpen, ingest, ...classify, prices, scoring, pairing, sentiment, bias });
 }
 
 export async function GET() {

@@ -34,7 +34,7 @@ export async function saveSentimentSnapshots() {
 }
 
 /** Get sentiment history for sparklines (last N hours) */
-export async function getSentimentHistory(asset: string, hours = 2) {
+export async function getSentimentHistory(asset: string, hours = 6) {
   const supabase = getSupabaseAdmin();
   const since = new Date(Date.now() - hours * 60 * 60_000).toISOString();
 

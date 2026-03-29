@@ -99,6 +99,15 @@ export async function GET() {
     ),
   ]);
 
+  // Pipeline run log (last 20 runs)
+  const pipelineRuns = await safeRows(
+    supabase.from("pipeline_runs")
+      .select("id, started_at, finished_at, duration_ms, status, market_open, ingested, processed, signals, skipped, scored, openai_calls, error_message")
+      .order("started_at", { ascending: false })
+      .limit(20)
+      .then((r) => (r.data ?? []) as any[])
+  );
+
   // Aggregate signals by asset
   const assetBreakdown: Record<string, { total: number; bullish: number; bearish: number; entries: number; exits: number }> = {};
   for (const s of signalsByAsset) {
@@ -113,11 +122,24 @@ export async function GET() {
     if (s.signal_type === "exited") a.exits++;
   }
 
+  // Estimate OpenAI cost from pipeline runs (gpt-4o-mini: ~$0.00015 per call)
+  const COST_PER_CALL = 0.00015;
+  const todayRuns = pipelineRuns.filter((r: any) => {
+    const d = new Date(r.started_at);
+    const today = new Date();
+    return d.toDateString() === today.toDateString();
+  });
+  const todayOpenAICalls = todayRuns.reduce((sum: number, r: any) => sum + (r.openai_calls ?? 0), 0);
+  const todayCostUsd = Math.round(todayOpenAICalls * COST_PER_CALL * 10000) / 10000;
+
   return NextResponse.json({
     unprocessed, recentSignals, recentMessages,
     latestSignal, latestMessage,
     biasHistory, assetBreakdown, recentClassifications,
     totalMessages, totalSignals,
+    pipelineRuns,
+    todayOpenAICalls,
+    todayCostUsd,
     checkedAt: new Date().toISOString(),
   });
 }

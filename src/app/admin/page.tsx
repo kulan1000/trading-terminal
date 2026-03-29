@@ -3,10 +3,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { FetchError } from "@/components/ui/fetch-error";
 import { StatusCard } from "@/components/admin/status-cards";
+import { CostCard } from "@/components/admin/cost-card";
 import { BiasHistoryChart } from "@/components/admin/bias-history-chart";
 import { AssetBreakdown } from "@/components/admin/asset-breakdown";
 import { RecentClassifications } from "@/components/admin/recent-classifications";
+import { PipelineLog } from "@/components/admin/pipeline-log";
 import { PipelineTrigger } from "@/components/admin/pipeline-trigger";
+import { SystemHealth } from "@/components/admin/system-health";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface PipelineData {
@@ -20,6 +23,9 @@ interface PipelineData {
   recentClassifications: any[];
   totalMessages: number;
   totalSignals: number;
+  pipelineRuns: any[];
+  todayOpenAICalls: number;
+  todayCostUsd: number;
   checkedAt: string;
 }
 
@@ -65,12 +71,10 @@ export default function AdminPage() {
         <div className="flex items-center gap-3">
           {data && (
             <span className="font-mono text-[10px] text-white/20">
-              Totalt: {data.totalMessages.toLocaleString()} meddelanden · {data.totalSignals.toLocaleString()} signaler
+              {data.totalMessages.toLocaleString()} meddelanden · {data.totalSignals.toLocaleString()} signaler
             </span>
           )}
-          <span className="font-mono text-[11px] text-white/25">
-            Auto-refresh 15s
-          </span>
+          <span className="font-mono text-[11px] text-white/25">Auto-refresh 15s</span>
         </div>
       </div>
 
@@ -83,21 +87,21 @@ export default function AdminPage() {
               Pipeline har inte producerat signaler på {fmtAgo(data.latestSignal)}
             </p>
             <p className="mt-0.5 font-sans text-[11px] text-[#EF5350]/60">
-              Kontrollera att cron-jobbet kör, att OpenAI API-nyckel är giltig, och att Discord-token fungerar
+              Kontrollera cron-jobb, OpenAI API-nyckel och Discord-token
             </p>
           </div>
         </div>
       )}
 
-      {/* Status cards */}
+      {/* Status cards + cost */}
       {!data ? (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+          {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="h-[110px] animate-pulse rounded-xl border border-white/[0.06] bg-[#111111]" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
           <StatusCard
             label="Obehandlade"
             value={data.unprocessed}
@@ -127,13 +131,25 @@ export default function AdminPage() {
             }
             sub={data.latestSignal ? new Date(data.latestSignal).toLocaleString("sv-SE") : "Ingen data"}
           />
+          <CostCard todayOpenAICalls={data.todayOpenAICalls} todayCostUsd={data.todayCostUsd} />
         </div>
       )}
 
-      {/* Bias history chart */}
-      {data && <BiasHistoryChart data={data.biasHistory} />}
+      {/* System health + bias chart */}
+      {data && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <SystemHealth
+            runs={data.pipelineRuns}
+            latestSignal={data.latestSignal}
+            latestMessage={data.latestMessage}
+          />
+          <div className="lg:col-span-2">
+            <BiasHistoryChart data={data.biasHistory} />
+          </div>
+        </div>
+      )}
 
-      {/* Two-column: asset breakdown + recent classifications */}
+      {/* Asset breakdown + recent classifications */}
       {data && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <AssetBreakdown data={data.assetBreakdown} />
@@ -141,7 +157,10 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Pipeline trigger */}
+      {/* Pipeline log */}
+      {data && <PipelineLog runs={data.pipelineRuns} />}
+
+      {/* Manual trigger */}
       <PipelineTrigger onComplete={fetchStatus} />
     </div>
   );
