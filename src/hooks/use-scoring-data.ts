@@ -57,14 +57,21 @@ export function useScoringData() {
     traderSignals: {}, traderActivity: [], tradePairs: [], scoreHistory: [],
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch("/api/scoring")
-      .then((r) => r.json())
-      .then((d) => setData(d))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    let mounted = true;
+    const fetchData = () => {
+      fetch("/api/scoring")
+        .then((r) => r.json())
+        .then((d) => { if (mounted) { setData(d); setError(false); } })
+        .catch(() => { if (mounted) setError(true); })
+        .finally(() => { if (mounted) setLoading(false); });
+    };
+    fetchData();
+    const id = setInterval(fetchData, 60_000);
+    return () => { mounted = false; clearInterval(id); };
   }, []);
 
-  return { ...data, loading };
+  return { ...data, loading, error };
 }

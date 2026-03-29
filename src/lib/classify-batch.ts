@@ -66,7 +66,14 @@ export async function processUnclassified(limit = 50) {
       await new Promise((r) => setTimeout(r, 200));
     }
 
-    const results = await classifyMessage(msg.content, msg.channel, contextMessages, marketOpen);
+    let results;
+    try {
+      results = await classifyMessage(msg.content, msg.channel, contextMessages, marketOpen);
+    } catch (err) {
+      console.error(`[CLASSIFY] GPT error for msg ${msg.id}:`, err);
+      await supabase.from("discord_messages").update({ processed: true }).eq("id", msg.id);
+      continue;
+    }
     openaiCalls++;
     for (const result of results) {
       if (result.asset && result.direction && result.confidence != null) {

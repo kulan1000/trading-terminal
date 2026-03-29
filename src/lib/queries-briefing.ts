@@ -47,7 +47,8 @@ export async function getDailyBriefing(): Promise<DailyBriefing> {
       .from("signals")
       .select("asset, direction, confidence, strength, signal_type, author, created_at, discord_messages(content)")
       .gte("created_at", since)
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(500),
     supabase
       .from("discord_messages")
       .select("id", { count: "exact", head: true })

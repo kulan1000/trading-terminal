@@ -172,9 +172,9 @@ function calcAssetSentiment(asset: Asset, signals: RawSignal[], nowMs: number): 
   const coldRate = coldSignals / (WINDOWS.primary - WINDOWS.hot);
   const acceleration = coldRate > 0 ? Math.round((hotRate / coldRate) * 100) / 100 : hotSignals > 0 ? 2.0 : 0;
 
-  // Find most recent signal
+  // Find most recent signal (safe: reduce needs initial value from first element)
   const lastSignalAt = signals.length > 0
-    ? signals.reduce((latest, s) => s.created_at > latest ? s.created_at : latest, signals[0].created_at)
+    ? signals.reduce((latest, s) => s.created_at > latest ? s.created_at : latest, signals[0]!.created_at)
     : null;
 
   return {

@@ -1,14 +1,8 @@
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { STRENGTH } from "@/lib/decay-utils";
 import type { Asset } from "@/lib/types";
 
 const ASSETS: Asset[] = ["Gold", "Silver", "Oil"];
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 interface TopTrader {
   author: string;
@@ -31,7 +25,7 @@ interface DailySummaryRow {
 
 /** Generate and save daily summaries for all assets */
 export async function generateDailySummary(dateStr?: string) {
-  const supabase = getSupabase();
+  const supabase = getSupabaseAdmin();
   const targetDate = dateStr ?? new Date().toISOString().slice(0, 10);
   const dayStart = `${targetDate}T00:00:00Z`;
   const dayEnd = `${targetDate}T23:59:59Z`;
@@ -56,9 +50,8 @@ export async function generateDailySummary(dateStr?: string) {
 
     // Calculate bias
     let bullW = 0, bearW = 0;
-    const STR: Record<string, number> = { strong: 3, medium: 2, weak: 1 };
     for (const s of rows) {
-      const w = (STR[s.strength] ?? 2) * s.confidence;
+      const w = (STRENGTH[s.strength] ?? 2) * s.confidence;
       if (s.direction === "bullish") bullW += w;
       else if (s.direction === "bearish") bearW += w;
     }
@@ -126,7 +119,7 @@ export async function generateDailySummary(dateStr?: string) {
 
 /** Fetch daily summaries for a given date */
 export async function getDailySummaries(dateStr?: string): Promise<DailySummaryRow[]> {
-  const supabase = getSupabase();
+  const supabase = getSupabaseAdmin();
   const target = dateStr ?? new Date().toISOString().slice(0, 10);
 
   const { data } = await supabase

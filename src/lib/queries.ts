@@ -146,7 +146,8 @@ export async function getFilteredFeed(options?: {
   dateTo?: string;
   limit?: number;
 }): Promise<FeedMessage[]> {
-  const { channel, asset, query, author, signalType, dateFrom, dateTo, limit = 50 } = options ?? {};
+  const { channel, asset, query, author, signalType, dateFrom, dateTo, limit: rawLimit = 50 } = options ?? {};
+  const limit = Math.min(rawLimit, 100);
 
   let q = supabase
     .from("discord_messages")

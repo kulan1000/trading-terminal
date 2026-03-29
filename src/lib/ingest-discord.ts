@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 /** Discord channel IDs for FoFtyTrades */
 const CHANNELS: Record<string, string> = {
@@ -7,13 +7,6 @@ const CHANNELS: Record<string, string> = {
 };
 
 const DISCORD_API = "https://discord.com/api/v10";
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 interface DiscordMsg {
   id: string;
@@ -41,7 +34,7 @@ async function fetchDiscordMessages(channelId: string, limit = 50): Promise<Disc
 
 /** Fetch new messages from all Discord channels and upsert into Supabase */
 export async function ingestDiscord(): Promise<{ ingested: number }> {
-  const supabase = getSupabase();
+  const supabase = getSupabaseAdmin();
   let totalNew = 0;
 
   for (const [channelName, channelId] of Object.entries(CHANNELS)) {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { ingestDiscord } from "@/lib/ingest-discord";
 import { processUnclassified } from "@/lib/classify-batch";
 import { savePriceSnapshots } from "@/lib/price-snapshots";
@@ -10,13 +10,6 @@ import { saveBiasSnapshots } from "@/lib/bias-snapshots";
 import { generateDailySummary } from "@/lib/daily-summary";
 import { isMarketOpen } from "@/lib/market-hours";
 import { checkRateLimit } from "@/lib/rate-limit";
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 // POST /api/ingest — full pipeline: ingest → classify → prices → score → sentiment → bias
 export async function POST(request: Request) {
@@ -38,7 +31,7 @@ export async function POST(request: Request) {
 
   const marketOpen = isMarketOpen();
   const startedAt = new Date();
-  const supabase = getSupabase();
+  const supabase = getSupabaseAdmin();
 
   // Create pipeline run log entry
   const { data: runRow } = await supabase

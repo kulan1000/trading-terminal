@@ -94,7 +94,11 @@ export async function pairTrades() {
   if (paired > 0) {
     const authors = [...new Set(unmatched.map((e) => e.author))];
     for (const author of authors) {
-      await refreshCredibility(supabase, author);
+      try {
+        await refreshCredibility(supabase, author);
+      } catch (err) {
+        console.error(`[TRADE-PAIR] Credibility refresh failed for ${author}:`, err);
+      }
     }
   }
 
