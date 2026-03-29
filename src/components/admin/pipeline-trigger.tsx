@@ -57,12 +57,12 @@ export function PipelineTrigger({ onComplete }: Props) {
             value={secret}
             onChange={(e) => setSecret(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && trigger()}
-            className="h-9 flex-1 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 font-mono text-[12px] text-white/70 placeholder:text-white/20 focus:border-[#2962FF]/40 focus:outline-none transition-colors"
+            className="h-9 flex-1 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 font-mono text-[12px] text-white/70 placeholder:text-white/20 focus:border-[#FF9800]/40 focus:outline-none transition-colors"
           />
           <button
             onClick={trigger}
             disabled={running || !secret.trim()}
-            className="h-9 shrink-0 rounded-lg bg-[#2962FF] px-5 font-sans text-[12px] font-medium text-white shadow-[0_0_12px_-3px_rgba(41,98,255,0.4)] transition-all hover:shadow-[0_0_16px_-3px_rgba(41,98,255,0.5)] disabled:opacity-30 disabled:shadow-none"
+            className="h-9 shrink-0 rounded-lg bg-[#FF9800] px-5 font-sans text-[12px] font-medium text-white shadow-[0_0_12px_-3px_rgba(255,152,0,0.4)] transition-all hover:shadow-[0_0_16px_-3px_rgba(255,152,0,0.5)] disabled:opacity-30 disabled:shadow-none"
           >
             {running ? "Kör..." : "Kör pipeline"}
           </button>

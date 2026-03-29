@@ -27,9 +27,9 @@ const DIR_BG: Record<string, string> = {
 const TYPE_STYLE: Record<string, { label: string; cls: string }> = {
   entry: { label: "ENTRY", cls: "bg-[#26A69A]/15 text-[#26A69A]" },
   exited: { label: "EXIT", cls: "bg-white/[0.04] text-white/40" },
-  position: { label: "HOLD", cls: "bg-[#2962FF]/15 text-[#2962FF]" },
+  position: { label: "HOLD", cls: "bg-[#FF9800]/15 text-[#FF9800]" },
   opinion: { label: "OPINION", cls: "bg-[#FF9800]/10 text-[#FF9800]" },
-  target: { label: "TARGET", cls: "bg-[#2962FF]/10 text-[#2962FF]" },
+  target: { label: "TARGET", cls: "bg-[#FF9800]/10 text-[#FF9800]" },
 };
 
 export function RecentClassifications({ data }: { data: Classification[] }) {

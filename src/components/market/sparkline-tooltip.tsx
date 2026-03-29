@@ -22,13 +22,13 @@ export function SparklineTooltip({ price, change, changePct, time, x, width }: S
           : `calc(${pctX}% + 6px)`,
       }}
     >
-      <div className="font-semibold text-terminal-text">
+      <div className="font-semibold text-white">
         {price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </div>
-      <div className={change >= 0 ? "text-terminal-green" : "text-terminal-red"}>
+      <div style={{ color: change >= 0 ? "#26A69A" : "#EF5350" }}>
         {change >= 0 ? "+" : ""}{change.toFixed(2)} ({changePct >= 0 ? "+" : ""}{changePct.toFixed(2)}%)
       </div>
-      {time && <div className="text-terminal-muted">{time}</div>}
+      {time && <div style={{ color: "rgba(255,255,255,0.3)" }}>{time}</div>}
     </div>
   );
 }

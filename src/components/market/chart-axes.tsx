@@ -34,9 +34,9 @@ export function TimeAxis({ timestamps, dataLength, toX, height: H }: TimeAxisPro
     const x = toX(idx);
     ticks.push(
       <g key={i}>
-        <line x1={x} y1={H - 2} x2={x} y2={H + 4} stroke="#52525b" strokeWidth="0.5" />
+        <line x1={x} y1={H - 2} x2={x} y2={H + 4} stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
         <text x={x} y={H + 14} textAnchor="middle"
-          fill="#71717a" fontSize="9" fontFamily="ui-monospace, monospace">
+          fill="#71717a" fontSize="9" fontFamily="-apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif">
           {fmtTimeEpoch(ts)}
         </text>
       </g>
@@ -66,11 +66,11 @@ export function PriceAxis({ data, toY, width: W, height: H }: PriceAxisProps) {
         return (
           <g key={v}>
             <line x1={0} y1={y} x2={W} y2={y}
-              stroke="#3f3f46" strokeWidth="0.4" strokeDasharray="4 6" opacity={0.5} />
+              stroke="rgba(255,255,255,0.04)" strokeWidth="0.4" strokeDasharray="4 6" opacity={0.5} />
             <rect x={W - 62} y={y - 8} width={58} height={16} rx={3}
               fill="rgba(10,10,14,0.75)" />
             <text x={W - 6} y={y + 3.5} textAnchor="end"
-              fill="#a1a1aa" fontSize="9.5" fontFamily="ui-monospace, monospace">
+              fill="#a1a1aa" fontSize="9.5" fontFamily="-apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif">
               {v.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}
             </text>
           </g>

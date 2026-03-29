@@ -81,7 +81,7 @@ export function Sparkline({
   const points = data.map((v, i) => `${toX(i).toFixed(1)},${toY(v).toFixed(1)}`);
 
   const isUp = data[data.length - 1] >= data[0];
-  const color = isUp ? "var(--color-terminal-green)" : "var(--color-terminal-red)";
+  const color = isUp ? "#26A69A" : "#EF5350";
 
   const openY = toY(data[0]);
   const fillPath = `M${points[0]} ${points.join(" L")} L${width},${height} L0,${height} Z`;
@@ -114,7 +114,7 @@ export function Sparkline({
         </defs>
 
         <line x1={0} y1={openY} x2={width} y2={openY}
-          stroke="var(--color-terminal-muted)" strokeWidth="0.5" strokeDasharray="4 3" opacity={0.4} />
+          stroke="rgba(255,255,255,0.3)" strokeWidth="0.5" strokeDasharray="4 3" opacity={0.4} />
 
         <path d={fillPath} fill={`url(#${gradId})`} />
 
@@ -126,8 +126,8 @@ export function Sparkline({
         {hover !== null && (
           <>
             <line x1={hx} y1={0} x2={hx} y2={height}
-              stroke="var(--color-terminal-muted)" strokeWidth="0.5" opacity={0.6} />
-            <circle cx={hx} cy={hy} r="3" fill={color} stroke="var(--color-terminal-bg)" strokeWidth="1" />
+              stroke="rgba(255,255,255,0.3)" strokeWidth="0.5" opacity={0.6} />
+            <circle cx={hx} cy={hy} r="3" fill={color} stroke="#0a0a0e" strokeWidth="1" />
           </>
         )}
       </svg>

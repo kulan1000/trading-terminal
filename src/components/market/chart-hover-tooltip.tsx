@@ -22,13 +22,13 @@ export function ChartHoverTooltip({ hoverIdx, data, hx, width, hTime }: Props) {
           : `calc(${(hx / width) * 100}% + 12px)`,
       }}
     >
-      <div className="font-semibold text-tv-text">
+      <div className="font-semibold text-white">
         {price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </div>
-      <div className={diff >= 0 ? "text-terminal-green" : "text-terminal-red"}>
+      <div style={{ color: diff >= 0 ? "#26A69A" : "#EF5350" }}>
         {diff >= 0 ? "+" : ""}{diff.toFixed(2)}
       </div>
-      {hTime && <div className="text-tv-muted">{hTime}</div>}
+      {hTime && <div className="text-white/50">{hTime}</div>}
     </div>
   );
 }

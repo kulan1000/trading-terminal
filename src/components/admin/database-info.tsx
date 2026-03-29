@@ -43,7 +43,7 @@ export function DatabaseInfo({ tableCounts }: Props) {
                 </div>
                 <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/[0.03]">
                   <div
-                    className="absolute inset-y-0 left-0 rounded-full bg-[#2962FF]/30 transition-all duration-500"
+                    className="absolute inset-y-0 left-0 rounded-full bg-[#FF9800]/30 transition-all duration-500"
                     style={{ width: `${pct}%` }}
                   />
                 </div>

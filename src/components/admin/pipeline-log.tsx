@@ -21,7 +21,7 @@ interface PipelineRun {
 const STATUS_STYLE: Record<string, { dot: string; text: string }> = {
   success: { dot: "bg-[#26A69A]", text: "text-[#26A69A]" },
   error: { dot: "bg-[#EF5350]", text: "text-[#EF5350]" },
-  running: { dot: "bg-[#2962FF] animate-pulse", text: "text-[#2962FF]" },
+  running: { dot: "bg-[#FF9800] animate-pulse", text: "text-[#FF9800]" },
 };
 
 export function PipelineLog({ runs }: { runs: PipelineRun[] }) {
@@ -53,7 +53,7 @@ export function PipelineLog({ runs }: { runs: PipelineRun[] }) {
               {runs.slice(0, 20).reverse().map((r, i) => (
                 <div
                   key={i}
-                  className={`h-1.5 w-1.5 rounded-full ${r.status === "success" ? "bg-[#26A69A]/60" : r.status === "error" ? "bg-[#EF5350]/60" : "bg-[#2962FF]/40"}`}
+                  className={`h-1.5 w-1.5 rounded-full ${r.status === "success" ? "bg-[#26A69A]/60" : r.status === "error" ? "bg-[#EF5350]/60" : "bg-[#FF9800]/40"}`}
                   title={`${fmtTimeFull(r.started_at)} — ${r.status}`}
                 />
               ))}
