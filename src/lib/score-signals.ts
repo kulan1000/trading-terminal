@@ -18,8 +18,18 @@ interface UnscoredSignal {
   asset: string;
   signal_type: string;
   position: string | null;
+  direction: string | null;
   price_at_signal: number;
   created_at: string;
+}
+
+/** Resolve effective position from position field or direction fallback */
+function resolvePosition(signal: UnscoredSignal): string | null {
+  if (signal.position) return signal.position;
+  // Fallback: derive from direction
+  if (signal.direction === "bearish") return "short";
+  if (signal.direction === "bullish") return "long";
+  return null;
 }
 
 /** Calculate score for a single checkpoint */
@@ -51,7 +61,7 @@ export async function scoreSignals() {
 
   const { data: signals } = await supabase
     .from("signals")
-    .select("id, author, asset, signal_type, position, price_at_signal, created_at")
+    .select("id, author, asset, signal_type, position, direction, price_at_signal, created_at")
     .in("signal_type", ["entry", "exited", "position"])
     .not("price_at_signal", "is", null)
     .not("author", "is", null)
@@ -78,6 +88,7 @@ export async function scoreSignals() {
 
   for (const signal of unscored) {
     const signalTime = new Date(signal.created_at);
+    const effectivePosition = resolvePosition(signal);
     const prices: Record<string, number | null> = {};
     const scores: Record<string, number | null> = {};
 
@@ -90,7 +101,7 @@ export async function scoreSignals() {
 
       if (price != null) {
         scores[cp.key] = checkpointScore(
-          signal.signal_type, signal.position, signal.price_at_signal, price
+          signal.signal_type, effectivePosition, signal.price_at_signal, price
         );
       } else {
         scores[cp.key] = null;
@@ -116,7 +127,7 @@ export async function scoreSignals() {
     await supabase.from("signal_scores").insert({
       signal_id: signal.id,
       signal_type: signal.signal_type,
-      position: signal.position,
+      position: effectivePosition ?? signal.position,
       asset: signal.asset,
       author: signal.author,
       price_at_signal: signal.price_at_signal,

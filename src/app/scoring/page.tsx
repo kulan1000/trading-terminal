@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useScoringData } from "@/hooks/use-scoring-data";
 import { ScoreboardTable } from "@/components/scoring/scoreboard-table";
+import { RecentScored } from "@/components/scoring/recent-trades";
 import { TradePairs } from "@/components/scoring/trade-pairs";
 import { ScoringStatus } from "@/components/scoring/scoring-status";
 import { BackfillButton } from "@/components/scoring/backfill-button";
@@ -50,6 +51,10 @@ export default function ScoringPage() {
         })
         .filter((t) => t.signals >= 1);
 
+  const filteredRecent = asset === "all"
+    ? recentScored
+    : recentScored.filter((s) => s.asset.toLowerCase() === asset);
+
   const filteredPairs = asset === "all"
     ? tradePairs
     : tradePairs.filter((p) => p.asset.toLowerCase() === asset);
@@ -58,7 +63,7 @@ export default function ScoringPage() {
     <div className="animate-fade-in space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">
-          TRADER SCORING
+          Trader Scoring
         </h1>
         <div className="flex items-center gap-3">
           <div className="flex gap-1">
@@ -104,7 +109,10 @@ export default function ScoringPage() {
           {/* Scoreboard — main ranking, click trader for drilldown */}
           <ScoreboardTable traders={filteredScoreboard} traderSignals={filteredSignals} />
 
-          {/* Trade pairs */}
+          {/* Recent scored entries/exits with 30m/1h/2h/4h scores */}
+          <RecentScored signals={filteredRecent} />
+
+          {/* Trade pairs: entry → exit matching */}
           <TradePairs pairs={filteredPairs} />
         </>
       )}
