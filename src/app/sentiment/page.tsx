@@ -1,6 +1,7 @@
 "use client";
 
 import { MarketBiasSection } from "@/components/bias/market-bias-section";
+import { DailyRecap } from "@/components/bias/daily-recap";
 import { FetchError } from "@/components/ui/fetch-error";
 import { usePollingFetch } from "@/hooks/use-polling-fetch";
 
@@ -32,6 +33,8 @@ export default function SentimentPage() {
           </div>
         )}
       </section>
+
+      <DailyRecap />
     </div>
   );
 }

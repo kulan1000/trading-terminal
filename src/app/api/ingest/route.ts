@@ -6,6 +6,7 @@ import { scoreSignals } from "@/lib/score-signals";
 import { pairTrades } from "@/lib/trade-pairing";
 import { saveSentimentSnapshots } from "@/lib/sentiment-snapshots";
 import { saveBiasSnapshots } from "@/lib/bias-snapshots";
+import { generateDailySummary } from "@/lib/daily-summary";
 import { isMarketOpen } from "@/lib/market-hours";
 import { checkRateLimit } from "@/lib/rate-limit";
 
@@ -138,6 +139,9 @@ export async function POST(request: Request) {
     const sentiment = await saveSentimentSnapshots();
     const bias = await saveBiasSnapshots();
 
+    // 7) Daily summary — refresh current day's recap
+    const dailySummary = await generateDailySummary();
+
     // Log successful run
     const durationMs = Date.now() - startedAt.getTime();
     if (runId) {
@@ -154,7 +158,7 @@ export async function POST(request: Request) {
       }).eq("id", runId);
     }
 
-    return NextResponse.json({ marketOpen, ingest, ...classify, prices, scoring, pairing, sentiment, bias });
+    return NextResponse.json({ marketOpen, ingest, ...classify, prices, scoring, pairing, sentiment, bias, dailySummary: dailySummary.length });
   } catch (err) {
     // Log failed run
     if (runId) {
