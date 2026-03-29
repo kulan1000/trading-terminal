@@ -66,28 +66,34 @@ export function BiasDetailChart({ history, signals, intradayPrices, asset }: Pro
   const fillColor = trending ? "rgba(38,166,154,0.08)" : "rgba(239,83,80,0.08)";
 
   // --- Price line (right Y-axis: $) ---
-  const hasPriceData = (intradayPrices?.length ?? 0) >= 2;
+  // Only show price line if data overlaps with chart x-axis window
+  const xEnd = xStart + xSpan;
+  const priceOverlaps = (intradayPrices?.length ?? 0) >= 2 &&
+    intradayPrices!.some((p) => p.ts * 1000 >= xStart && p.ts * 1000 <= xEnd);
+  const hasPriceData = priceOverlaps;
   let priceLine = "";
   let priceYLabels: { val: number; y: number }[] = [];
 
   if (hasPriceData && asset) {
-    const pd = intradayPrices!;
-    const prices = pd.map((p) => p.price);
-    const pMin = Math.min(...prices);
-    const pMax = Math.max(...prices);
-    const pPad = (pMax - pMin) * 0.1 || 1;
-    const pMinP = pMin - pPad;
-    const pMaxP = pMax + pPad;
-    const pRange = pMaxP - pMinP || 1;
+    // Filter to only points within chart window
+    const pd = intradayPrices!.filter((p) => p.ts * 1000 >= xStart && p.ts * 1000 <= xEnd);
+    if (pd.length >= 2) {
+      const prices = pd.map((p) => p.price);
+      const pMin = Math.min(...prices);
+      const pMax = Math.max(...prices);
+      const pPad = (pMax - pMin) * 0.1 || 1;
+      const pMinP = pMin - pPad;
+      const pMaxP = pMax + pPad;
+      const pRange = pMaxP - pMinP || 1;
 
-    // Map price timestamps to same x-axis as bias data
-    const pricePoints = pd.map((p) => ({
-      x: timeToX(p.ts * 1000, xStart, xSpan, chartW, PAD.left),
-      y: PAD.top + chartH - ((p.price - pMinP) / pRange) * chartH,
-    }));
+      const pricePoints = pd.map((p) => ({
+        x: timeToX(p.ts * 1000, xStart, xSpan, chartW, PAD.left),
+        y: PAD.top + chartH - ((p.price - pMinP) / pRange) * chartH,
+      }));
 
-    priceLine = pointsToPath(pricePoints);
-    priceYLabels = yAxisLabels(pMinP, pRange, 5, PAD.top, chartH);
+      priceLine = pointsToPath(pricePoints);
+      priceYLabels = yAxisLabels(pMinP, pRange, 5, PAD.top, chartH);
+    }
   }
 
   const yLabels = yAxisLabels(bMin, bRange, 5, PAD.top, chartH).map((l) => ({ ...l, val: Math.round(l.val) }));
@@ -117,7 +123,8 @@ export function BiasDetailChart({ history, signals, intradayPrices, asset }: Pro
     if (!tooClose) markers.push(m);
   }
 
-  const showClosedNote = hasPriceData && intradayPrices!.length > 0 &&
+  const hasAnyPriceData = (intradayPrices?.length ?? 0) >= 2;
+  const showClosedNote = hasAnyPriceData &&
     (now / 1000 - intradayPrices![intradayPrices!.length - 1].ts) > 3600;
 
   return (
