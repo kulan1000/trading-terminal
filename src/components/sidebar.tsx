@@ -18,12 +18,12 @@ import {
 } from "lucide-react";
 
 const navItems = [
+  { name: "Market", href: "/market", icon: LineChart },
   { name: "Sentiment", href: "/sentiment", icon: TrendingUp },
   { name: "Scoring", href: "/scoring", icon: Trophy },
   { name: "Community", href: "/community", icon: MessageSquare },
   { name: "Discord Intel", href: "/discord-intel", icon: Search },
   { name: "Data", href: "/data", icon: BarChart3 },
-  { name: "Market", href: "/market", icon: LineChart },
   { name: "Stocks", href: "/stocks", icon: Briefcase },
   { name: "Trades", href: "/trades", icon: ClipboardList },
   { name: "Admin", href: "/admin", icon: Settings },
