@@ -12,6 +12,7 @@ import { PipelineTrigger } from "@/components/admin/pipeline-trigger";
 import { SystemHealth } from "@/components/admin/system-health";
 import { DatabaseInfo } from "@/components/admin/database-info";
 import { PipelineHistory } from "@/components/admin/pipeline-history";
+import { SignalHistory } from "@/components/admin/signal-history";
 import { fmtAgo } from "@/lib/format-utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -28,6 +29,7 @@ interface PipelineData {
   totalSignals: number;
   pipelineRuns: any[];
   pipelineHistory: any[];
+  signalHistory: any[];
   todayOpenAICalls: number;
   todayCostUsd: number;
   tableCounts: Record<string, number>;
@@ -164,8 +166,13 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Pipeline history chart */}
-      {data && <PipelineHistory runs={data.pipelineHistory} />}
+      {/* History charts: pipeline + signals */}
+      {data && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <PipelineHistory runs={data.pipelineHistory} />
+          <SignalHistory signals={data.signalHistory} />
+        </div>
+      )}
 
       {/* Asset breakdown + recent classifications */}
       {data && (

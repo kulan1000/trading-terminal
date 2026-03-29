@@ -67,13 +67,13 @@ export async function GET() {
         .then((r) => (r.data ?? []) as any[])
     ),
 
-    // --- NEW: signals by asset last 24h ---
+    // --- signals by asset last 7d (used for 24h breakdown + 7d history chart) ---
     safeRows(
       supabase.from("signals")
         .select("asset, direction, signal_type, confidence, created_at")
-        .gte("created_at", new Date(now - 24 * 60 * 60_000).toISOString())
+        .gte("created_at", new Date(now - 7 * 24 * 60 * 60_000).toISOString())
         .order("created_at", { ascending: false })
-        .limit(500)
+        .limit(2000)
         .then((r) => (r.data ?? []) as any[])
     ),
 
@@ -134,9 +134,11 @@ export async function GET() {
     ),
   ]);
 
-  // Aggregate signals by asset
+  // Aggregate signals by asset (24h only for breakdown panel)
+  const cutoff24h = new Date(now - 24 * 60 * 60_000).toISOString();
   const assetBreakdown: Record<string, { total: number; bullish: number; bearish: number; entries: number; exits: number }> = {};
   for (const s of signalsByAsset) {
+    if (s.created_at < cutoff24h) continue;
     if (!assetBreakdown[s.asset]) {
       assetBreakdown[s.asset] = { total: 0, bullish: 0, bearish: 0, entries: 0, exits: 0 };
     }
@@ -147,6 +149,13 @@ export async function GET() {
     if (s.signal_type === "entry") a.entries++;
     if (s.signal_type === "exited") a.exits++;
   }
+
+  // Signal history for 7d chart (minimal: date, asset, direction)
+  const signalHistory = signalsByAsset.map((s: any) => ({
+    asset: s.asset,
+    direction: s.direction,
+    created_at: s.created_at,
+  }));
 
   // Estimate OpenAI cost from pipeline runs (gpt-4o-mini: ~$0.00015 per call)
   const COST_PER_CALL = 0.00015;
@@ -165,6 +174,7 @@ export async function GET() {
     totalMessages, totalSignals,
     pipelineRuns,
     pipelineHistory,
+    signalHistory,
     todayOpenAICalls,
     todayCostUsd,
     tableCounts,
