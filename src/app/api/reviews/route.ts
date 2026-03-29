@@ -122,6 +122,33 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // If approved with a trader_pattern marker, create a trader pattern rule
+  if (action === "approved" && feedbackNote?.startsWith("__trader_pattern__:")) {
+    const parts = feedbackNote.split(":");
+    const traderName = parts[1];
+    const traderAsset = parts[2];
+    if (traderName && traderAsset) {
+      // Check if pattern already exists for this trader+asset
+      const { data: existing } = await supabase
+        .from("classification_feedback")
+        .select("id")
+        .eq("category", "trader_pattern")
+        .ilike("rule_text", `%${traderName}%${traderAsset}%`)
+        .eq("active", true)
+        .limit(1);
+
+      if (!existing?.length) {
+        await supabase.from("classification_feedback").insert({
+          category: "trader_pattern",
+          rule_text: `Trader "${traderName}" primarily trades ${traderAsset}. When "${traderName}" posts ambiguous messages without mentioning a specific commodity, assume ${traderAsset}.`,
+          source_review_id: reviewId,
+        });
+      }
+    }
+    // Clear the marker from the stored feedback note
+    updateData.feedback_note = `Trader pattern: ${parts[1]} → ${parts[2]}`;
+  }
+
   // If rejected, mark the signal as low-quality (drop confidence)
   if (action === "rejected") {
     const { data: review } = await supabase

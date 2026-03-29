@@ -93,6 +93,14 @@ export function ReviewQueue({ reviews, onAction }: Props) {
     setSubmitting(null);
   }
 
+  async function handleTraderPattern(id: number, author: string, asset: string) {
+    setSubmitting(id);
+    await onAction(id, "approved", {
+      note: `__trader_pattern__:${author}:${asset}`,
+    });
+    setSubmitting(null);
+  }
+
   return (
     <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
       <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
@@ -205,6 +213,16 @@ export function ReviewQueue({ reviews, onAction }: Props) {
                         >
                           ✕ Avvisa
                         </button>
+                        {r.asset_source !== "explicit" && (
+                          <button
+                            onClick={() => handleTraderPattern(r.id, r.author, r.gpt_asset)}
+                            disabled={submitting === r.id}
+                            className="rounded-md bg-[#2962FF]/20 px-3 py-1.5 font-sans text-[11px] font-medium text-[#2962FF] transition hover:bg-[#2962FF]/30 disabled:opacity-50"
+                            title={`Spara: ${r.author} pratar alltid om ${r.gpt_asset}`}
+                          >
+                            ⚡ {r.author} = {r.gpt_asset}
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <div className="space-y-2 rounded-lg bg-white/[0.03] p-3">

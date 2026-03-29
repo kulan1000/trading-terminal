@@ -100,17 +100,27 @@ export async function getLearnedFeedback(): Promise<string | null> {
     .select("category, rule_text")
     .eq("active", true)
     .order("created_at", { ascending: false })
-    .limit(20);
+    .limit(30);
 
   if (!data?.length) return null;
 
-  const rules = (data as Array<{ category: string; rule_text: string }>)
-    .map((r) => `- ${r.rule_text}`)
-    .join("\n");
+  const typed = data as Array<{ category: string; rule_text: string }>;
+  const traderPatterns = typed.filter((r) => r.category === "trader_pattern");
+  const corrections = typed.filter((r) => r.category !== "trader_pattern");
 
-  return `\n═══════════════════════════════════════
-LEARNED CORRECTIONS (from human review)
-═══════════════════════════════════════
-These rules come from verified human feedback on past classifications. Follow them strictly:
-${rules}`;
+  const sections: string[] = [];
+
+  if (corrections.length > 0) {
+    sections.push(
+      `LEARNED CORRECTIONS (from human review)\nFollow these rules strictly:\n${corrections.map((r) => `- ${r.rule_text}`).join("\n")}`,
+    );
+  }
+
+  if (traderPatterns.length > 0) {
+    sections.push(
+      `KNOWN TRADER PATTERNS (verified by human)\nUse these when the message author matches — they override channel/context guessing:\n${traderPatterns.map((r) => `- ${r.rule_text}`).join("\n")}`,
+    );
+  }
+
+  return `\n${"═".repeat(50)}\n${sections.join("\n\n")}\n${"═".repeat(50)}`;
 }
