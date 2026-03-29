@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { supabase } from "@/lib/supabase";
-import { ASSETS } from "@/lib/constants";
+import { ASSETS, YAHOO_SYMBOLS } from "@/lib/constants";
 import { getAssetPrice } from "@/lib/price-snapshot";
 import { fetchYahoo } from "@/lib/data-yahoo";
 import { STRENGTH, timeDecay } from "@/lib/decay-utils";
 import { isWeekendDeadZone } from "@/lib/market-hours";
 import type { Asset } from "@/lib/types";
-
-const YAHOO_SYMBOLS: Record<Asset, string> = { Gold: "GC=F", Silver: "SI=F", Oil: "CL=F" };
 
 export const revalidate = 60;
 

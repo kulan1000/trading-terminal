@@ -17,6 +17,13 @@ export const DIRECTION_COLOR: Record<Direction | "long" | "short", string> = {
   short: "text-[#EF5350]",
 };
 
+// Yahoo Finance ticker symbols for price fetching
+export const YAHOO_SYMBOLS: Record<Asset, string> = {
+  Gold: "GC=F",
+  Silver: "SI=F",
+  Oil: "CL=F",
+};
+
 // Asset tag colors for signal feed & message list
 export const ASSET_TAG_COLORS: Record<string, string> = {
   Gold: "bg-[#FFEB3B]/15 text-[#FFEB3B]",

@@ -1,26 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-
-interface Review {
-  id: number;
-  signal_id: number;
-  gpt_asset: string;
-  gpt_direction: string;
-  gpt_signal_type: string;
-  gpt_confidence: number;
-  gpt_interpretation: string;
-  asset_source: string;
-  flag_reason: string;
-  original_message: string;
-  context_messages: string[];
-  channel: string;
-  author: string;
-  status: string;
-  correct_asset: string | null;
-  feedback_note: string | null;
-  created_at: string;
-}
+import type { Review } from "@/components/scoring/review-item";
 
 export function useReviews() {
   const [reviews, setReviews] = useState<Review[]>([]);

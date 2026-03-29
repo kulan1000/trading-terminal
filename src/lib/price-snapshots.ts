@@ -3,22 +3,17 @@
 
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { fetchYahoo } from "@/lib/data-yahoo";
+import { YAHOO_SYMBOLS } from "@/lib/constants";
 import type { Asset } from "@/lib/types";
-
-const SYMBOLS: Record<Asset, string> = {
-  Gold: "GC=F",
-  Silver: "SI=F",
-  Oil: "CL=F",
-};
 
 /** Fetch current prices and insert into price_snapshots */
 export async function savePriceSnapshots() {
   const supabase = getSupabaseAdmin();
-  const assets = Object.keys(SYMBOLS) as Asset[];
+  const assets = Object.keys(YAHOO_SYMBOLS) as Asset[];
 
   const results = await Promise.all(
     assets.map(async (asset) => {
-      const data = await fetchYahoo(asset, SYMBOLS[asset]);
+      const data = await fetchYahoo(asset, YAHOO_SYMBOLS[asset]);
       if (!data?.price) return null;
       return { asset, price: data.price };
     })
