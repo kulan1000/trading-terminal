@@ -11,56 +11,113 @@ async function safeString(promise: PromiseLike<string | null>): Promise<string |
   try { return await promise; } catch { return null; }
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+async function safeRows<T>(promise: PromiseLike<T[]>): Promise<T[]> {
+  try { return await promise; } catch { return []; }
+}
+
 export async function GET() {
   const supabase = getSupabaseAdmin();
+  const now = Date.now();
 
-  const [unprocessed, recentSignals, recentMessages, latestSignal, latestMessage] =
-    await Promise.all([
-      safeCount(
-        supabase
-          .from("discord_messages")
-          .select("id", { count: "exact", head: true })
-          .eq("processed", false)
-          .then((r) => r.count ?? 0)
-      ),
-      safeCount(
-        supabase
-          .from("signals")
-          .select("id", { count: "exact", head: true })
-          .gte("created_at", new Date(Date.now() - 60 * 60_000).toISOString())
-          .then((r) => r.count ?? 0)
-      ),
-      safeCount(
-        supabase
-          .from("discord_messages")
-          .select("id", { count: "exact", head: true })
-          .gte("timestamp", new Date(Date.now() - 60 * 60_000).toISOString())
-          .then((r) => r.count ?? 0)
-      ),
-      safeString(
-        supabase
-          .from("signals")
-          .select("created_at")
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .then((r) => (r.data?.[0] as { created_at: string } | undefined)?.created_at ?? null)
-      ),
-      safeString(
-        supabase
-          .from("discord_messages")
-          .select("timestamp")
-          .order("timestamp", { ascending: false })
-          .limit(1)
-          .then((r) => (r.data?.[0] as { timestamp: string } | undefined)?.timestamp ?? null)
-      ),
-    ]);
+  const [
+    unprocessed, recentSignals, recentMessages,
+    latestSignal, latestMessage,
+    biasHistory, signalsByAsset, recentClassifications,
+    totalMessages, totalSignals,
+  ] = await Promise.all([
+    // --- existing ---
+    safeCount(
+      supabase.from("discord_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("processed", false)
+        .then((r) => r.count ?? 0)
+    ),
+    safeCount(
+      supabase.from("signals")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", new Date(now - 60 * 60_000).toISOString())
+        .then((r) => r.count ?? 0)
+    ),
+    safeCount(
+      supabase.from("discord_messages")
+        .select("id", { count: "exact", head: true })
+        .gte("timestamp", new Date(now - 60 * 60_000).toISOString())
+        .then((r) => r.count ?? 0)
+    ),
+    safeString(
+      supabase.from("signals")
+        .select("created_at")
+        .order("created_at", { ascending: false }).limit(1)
+        .then((r) => (r.data?.[0] as any)?.created_at ?? null)
+    ),
+    safeString(
+      supabase.from("discord_messages")
+        .select("timestamp")
+        .order("timestamp", { ascending: false }).limit(1)
+        .then((r) => (r.data?.[0] as any)?.timestamp ?? null)
+    ),
+
+    // --- NEW: bias history (24h, one row per snapshot) ---
+    safeRows(
+      supabase.from("bias_snapshots")
+        .select("asset, direction, score, created_at")
+        .gte("created_at", new Date(now - 24 * 60 * 60_000).toISOString())
+        .order("created_at", { ascending: true })
+        .then((r) => (r.data ?? []) as any[])
+    ),
+
+    // --- NEW: signals by asset last 24h ---
+    safeRows(
+      supabase.from("signals")
+        .select("asset, direction, signal_type, confidence, created_at")
+        .gte("created_at", new Date(now - 24 * 60 * 60_000).toISOString())
+        .order("created_at", { ascending: false })
+        .limit(500)
+        .then((r) => (r.data ?? []) as any[])
+    ),
+
+    // --- NEW: last 15 classifications ---
+    safeRows(
+      supabase.from("signals")
+        .select("asset, direction, signal_type, confidence, author, interpretation, created_at")
+        .order("created_at", { ascending: false })
+        .limit(15)
+        .then((r) => (r.data ?? []) as any[])
+    ),
+
+    // --- NEW: total counts ---
+    safeCount(
+      supabase.from("discord_messages")
+        .select("id", { count: "exact", head: true })
+        .then((r) => r.count ?? 0)
+    ),
+    safeCount(
+      supabase.from("signals")
+        .select("id", { count: "exact", head: true })
+        .then((r) => r.count ?? 0)
+    ),
+  ]);
+
+  // Aggregate signals by asset
+  const assetBreakdown: Record<string, { total: number; bullish: number; bearish: number; entries: number; exits: number }> = {};
+  for (const s of signalsByAsset) {
+    if (!assetBreakdown[s.asset]) {
+      assetBreakdown[s.asset] = { total: 0, bullish: 0, bearish: 0, entries: 0, exits: 0 };
+    }
+    const a = assetBreakdown[s.asset];
+    a.total++;
+    if (s.direction === "bullish") a.bullish++;
+    if (s.direction === "bearish") a.bearish++;
+    if (s.signal_type === "entry") a.entries++;
+    if (s.signal_type === "exited") a.exits++;
+  }
 
   return NextResponse.json({
-    unprocessed,
-    recentSignals,
-    recentMessages,
-    latestSignal,
-    latestMessage,
+    unprocessed, recentSignals, recentMessages,
+    latestSignal, latestMessage,
+    biasHistory, assetBreakdown, recentClassifications,
+    totalMessages, totalSignals,
     checkedAt: new Date().toISOString(),
   });
 }
