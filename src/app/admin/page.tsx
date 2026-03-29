@@ -143,8 +143,8 @@ export default function AdminPage() {
             value={fmtAgo(data.latestSignal)}
             color={
               !data.latestSignal ? "muted"
-                : signalAge < 15 * 60_000 ? "green"
-                  : signalAge < 60 * 60_000 ? "orange"
+                : signalAge < 2 * 60 * 60_000 ? "green"
+                  : signalAge < 6 * 60 * 60_000 ? "orange"
                     : "red"
             }
             sub={data.latestSignal ? new Date(data.latestSignal).toLocaleString("sv-SE") : "Ingen data"}
