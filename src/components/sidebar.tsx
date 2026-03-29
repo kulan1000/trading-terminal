@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useReviewBadge } from "@/hooks/use-review-badge";
 import {
   BarChart3,
   TrendingUp,
@@ -32,6 +33,7 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState(false);
+  const pendingReviews = useReviewBadge();
 
   return (
     <aside
@@ -73,7 +75,14 @@ export function Sidebar() {
               {isActive && (
                 <div className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-tv-blue" />
               )}
-              <Icon size={18} strokeWidth={1.8} className="shrink-0" />
+              <span className="relative shrink-0">
+                <Icon size={18} strokeWidth={1.8} />
+                {item.name === "Scoring" && pendingReviews > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF9800] px-1 text-[9px] font-bold text-black">
+                    {pendingReviews > 9 ? "9+" : pendingReviews}
+                  </span>
+                )}
+              </span>
               {expanded && <span className="truncate">{item.name}</span>}
             </Link>
           );
