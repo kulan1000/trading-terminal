@@ -126,31 +126,60 @@ Write a brief, factual summary. No fluff.`;
   const biasChange = oldSnap ? { score: oldSnap.score, direction: oldSnap.direction } : null;
 
   // Trader consensus with decay weight + latest signal time
-  const traderMap = new Map<string, { direction: string; weight: number; count: number; types: string[]; latestAt: string }>();
+  // Direction = majority weighted direction (not first signal)
+  const traderMap = new Map<string, { bullW: number; bearW: number; totalW: number; count: number; types: string[]; latestAt: string }>();
   for (const s of signals) {
     const w = timeDecay(s.created_at, now) * (STR[s.strength] ?? 2) * s.confidence;
     const ex = traderMap.get(s.author);
     if (ex) {
-      ex.weight += w;
+      if (s.direction === "bullish") ex.bullW += w;
+      else if (s.direction === "bearish") ex.bearW += w;
+      ex.totalW += w;
       ex.count++;
       if (s.signal_type && !ex.types.includes(s.signal_type)) ex.types.push(s.signal_type);
       if (s.created_at > ex.latestAt) ex.latestAt = s.created_at;
     } else {
-      traderMap.set(s.author, { direction: s.direction, weight: w, count: 1, types: s.signal_type ? [s.signal_type] : [], latestAt: s.created_at });
+      traderMap.set(s.author, {
+        bullW: s.direction === "bullish" ? w : 0,
+        bearW: s.direction === "bearish" ? w : 0,
+        totalW: w, count: 1,
+        types: s.signal_type ? [s.signal_type] : [],
+        latestAt: s.created_at,
+      });
     }
   }
   const traderConsensus = [...traderMap.entries()]
-    .map(([author, d]) => ({ author, direction: d.direction, count: d.count, types: d.types, latestAt: d.latestAt }))
-    .sort((a, b) => (traderMap.get(b.author)?.weight ?? 0) - (traderMap.get(a.author)?.weight ?? 0));
+    .map(([author, d]) => ({
+      author,
+      direction: d.bullW > d.bearW ? "bullish" : d.bearW > d.bullW ? "bearish" : "neutral",
+      count: d.count, types: d.types, latestAt: d.latestAt,
+    }))
+    .sort((a, b) => (traderMap.get(b.author)?.totalW ?? 0) - (traderMap.get(a.author)?.totalW ?? 0));
 
-  // Build intraday price series filtered to last 6h
-  const sixHAgoEpoch = Math.floor((now - 6 * 60 * 60 * 1000) / 1000);
+  // Build intraday price series — show last 6h of available data
+  // When market is closed, Yahoo still returns last trading session data
+  // so we show the most recent 6h window of whatever is available
   let intradayPrices: { ts: number; price: number }[] = [];
-  if (yahooData) {
+  if (yahooData && yahooData.intraday.length >= 2) {
+    const allPoints: { ts: number; price: number }[] = [];
     for (let i = 0; i < yahooData.intraday.length; i++) {
       const ts = yahooData.intradayTs[i] ?? 0;
-      if (ts >= sixHAgoEpoch) {
-        intradayPrices.push({ ts, price: yahooData.intraday[i] });
+      if (ts > 0) allPoints.push({ ts, price: yahooData.intraday[i] });
+    }
+
+    if (allPoints.length >= 2) {
+      // Try 6h window from now first
+      const sixHAgoEpoch = Math.floor((now - 6 * 60 * 60 * 1000) / 1000);
+      const recent = allPoints.filter((p) => p.ts >= sixHAgoEpoch);
+
+      if (recent.length >= 2) {
+        // Market was active in last 6h — use those points
+        intradayPrices = recent;
+      } else {
+        // Market closed — show last 6h of available data from last session
+        const lastTs = allPoints[allPoints.length - 1].ts;
+        const sessionStart = lastTs - 6 * 60 * 60;
+        intradayPrices = allPoints.filter((p) => p.ts >= sessionStart);
       }
     }
   }

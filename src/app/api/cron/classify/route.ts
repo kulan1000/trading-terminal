@@ -4,28 +4,36 @@ import { pairTrades } from "@/lib/trade-pairing";
 import { savePriceSnapshots } from "@/lib/price-snapshots";
 import { scoreSignals } from "@/lib/score-signals";
 import { saveSentimentSnapshots } from "@/lib/sentiment-snapshots";
+import { saveBiasSnapshots } from "@/lib/bias-snapshots";
+import { isMarketOpen } from "@/lib/market-hours";
 
-// Vercel Cron calls this every 5 minutes
+// Vercel Cron — backup trigger (pg_cron is primary at 15min interval)
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 1) Save price snapshots (for time-horizon scoring)
-  const snapshots = await savePriceSnapshots();
+  const marketOpen = isMarketOpen();
 
-  // 2) Classify new messages
+  // 1) Always classify new messages
   const classify = await processUnclassified();
 
-  // 3) Pair entries with exits (legacy)
-  const pairing = await pairTrades();
+  // 2) Price-dependent steps only when market is open
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  let snapshots: any = { saved: 0, skipped: "market closed" };
+  let scoring: any = { scored: 0, skipped: "market closed" };
+  let pairing: any = { paired: 0, skipped: "market closed" };
 
-  // 4) Score signals using time-horizon method
-  const scoring = await scoreSignals();
+  if (marketOpen) {
+    snapshots = await savePriceSnapshots();
+    scoring = await scoreSignals();
+    pairing = await pairTrades();
+  }
 
-  // 5) Save sentiment snapshots (for sparkline history)
+  // 3) Sentiment + bias snapshots always (opinions valid 24/7)
   const sentiment = await saveSentimentSnapshots();
+  const bias = await saveBiasSnapshots();
 
-  return NextResponse.json({ snapshots, ...classify, ...pairing, scoring, sentiment });
+  return NextResponse.json({ marketOpen, snapshots, ...classify, pairing, scoring, sentiment, bias });
 }

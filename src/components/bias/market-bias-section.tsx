@@ -30,7 +30,6 @@ export function MarketBiasSection({ biases }: Props) {
           count={selected.count}
           price={selected.price}
           changePercent={selected.changePercent}
-          biasAgo={selected.biasAgo}
           onClose={() => setSelectedAsset(null)}
         />
       )}

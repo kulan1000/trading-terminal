@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { processUnclassified } from "@/lib/classify-batch";
 import { savePriceSnapshots } from "@/lib/price-snapshots";
 import { scoreSignals } from "@/lib/score-signals";
+import { pairTrades } from "@/lib/trade-pairing";
 import { saveSentimentSnapshots } from "@/lib/sentiment-snapshots";
 import { saveBiasSnapshots } from "@/lib/bias-snapshots";
 import { isMarketOpen } from "@/lib/market-hours";
@@ -100,22 +101,24 @@ export async function POST(request: Request) {
   // 2) Always classify (opinions are valid anytime)
   const classify = await processUnclassified();
 
-  // 3-6) Only run price-dependent steps when market is open
-  // When closed: prices don't move → duplicate snapshots, meaningless scores
+  // 3-4) Price snapshots + scoring only when market is open
+  // Prices don't move when closed → duplicate snapshots, meaningless scores
   /* eslint-disable @typescript-eslint/no-explicit-any */
   let prices: any = { saved: 0, skipped: "market closed" };
   let scoring: any = { scored: 0, skipped: "market closed" };
-  let sentiment: any = { saved: 0, skipped: "market closed" };
-  let bias: any = { saved: 0, skipped: "market closed" };
+  let pairing: any = { paired: 0, skipped: "market closed" };
 
   if (marketOpen) {
     prices = await savePriceSnapshots();
     scoring = await scoreSignals();
-    sentiment = await saveSentimentSnapshots();
-    bias = await saveBiasSnapshots();
+    pairing = await pairTrades();
   }
 
-  return NextResponse.json({ marketOpen, ingest, ...classify, prices, scoring, sentiment, bias });
+  // 5-6) Sentiment + bias snapshots run ALWAYS (opinions valid 24/7)
+  const sentiment = await saveSentimentSnapshots();
+  const bias = await saveBiasSnapshots();
+
+  return NextResponse.json({ marketOpen, ingest, ...classify, prices, scoring, pairing, sentiment, bias });
 }
 
 export async function GET() {

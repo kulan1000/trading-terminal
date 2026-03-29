@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { ASSET_PAIRS } from "@/lib/constants";
 import { fmtPrice } from "@/lib/format-utils";
 import type { Asset } from "@/lib/types";
-import type { BiasDetailData, BiasAgo } from "./bias-detail-types";
+import type { BiasDetailData } from "./bias-detail-types";
 import { BiasDetailChart } from "./bias-detail-chart";
 import { BiasDetailSignals } from "./bias-detail-signals";
 import { BiasStatsBar } from "./bias-stats-bar";
@@ -18,7 +18,6 @@ interface Props {
   count: number;
   price: number;
   changePercent: number;
-  biasAgo: BiasAgo | null;
   onClose: () => void;
 }
 
