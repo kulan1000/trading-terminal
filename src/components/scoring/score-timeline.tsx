@@ -21,7 +21,6 @@ const PAD = { top: 16, right: 50, bottom: 28, left: 38 };
 const CW = W - PAD.left - PAD.right;
 const CH = H - PAD.top - PAD.bottom;
 const BAR_AREA = 40; // px height reserved for volume bars at bottom
-
 /* ── helpers ── */
 function fmtHour(iso: string) {
   const d = new Date(iso);
@@ -42,7 +41,6 @@ function pointsToPath(pts: { x: number; y: number }[]): string {
   }
   return d;
 }
-
 export function ScoreTimeline({ history }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
@@ -77,7 +75,6 @@ export function ScoreTimeline({ history }: Props) {
       </div>
     );
   }
-
   /* ── summary stats ── */
   const totalSignals = history.reduce((s, h) => s + h.count, 0);
   const totalWins = history.reduce((s, h) => s + h.wins, 0);
@@ -107,7 +104,6 @@ export function ScoreTimeline({ history }: Props) {
   /* ── y-axis labels ── */
   const yLevels = [0, 25, 50, 75, 100];
   const yLabels = yLevels.map((v) => ({ val: v, y: toY(v / 100) }));
-
   /* ── x-axis labels ── */
   const step = Math.max(1, Math.floor(history.length / 7));
   const xLabels = history
@@ -135,8 +131,7 @@ export function ScoreTimeline({ history }: Props) {
         <div className="flex items-center justify-between">
           <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">
             Scoring Timeline
-          </h3>
-          <div className="flex items-center gap-4 font-sans text-[11px] tabular-nums">
+          </h3>          <div className="flex items-center gap-4 font-sans text-[11px] tabular-nums">
             <span className="text-white/40">{totalSignals} scored</span>
             <span className={overallRate >= 50 ? "text-[#26A69A]" : "text-[#EF5350]"}>
               {overallRate}% win rate
@@ -163,7 +158,6 @@ export function ScoreTimeline({ history }: Props) {
                 <stop offset="100%" stopColor={lineColor} stopOpacity={0.01} />
               </linearGradient>
             </defs>
-
             {/* Grid lines */}
             {yLabels.map((yl) => (
               <line
@@ -202,7 +196,6 @@ export function ScoreTimeline({ history }: Props) {
                 strokeLinecap="round"
               />
             )}
-
             {/* End dot */}
             {linePoints.length > 0 && (
               <>
@@ -242,7 +235,6 @@ export function ScoreTimeline({ history }: Props) {
                 />
               );
             })}
-
             {/* Y-axis labels */}
             {yLabels.map((yl) => (
               <text
@@ -292,7 +284,6 @@ export function ScoreTimeline({ history }: Props) {
               </>
             )}
           </svg>
-
           {/* Hover tooltip */}
           {hp && hoverIdx !== null && (
             <div
@@ -329,7 +320,6 @@ export function ScoreTimeline({ history }: Props) {
             </div>
           )}
         </div>
-
         {/* Legend */}
         <div className="mt-2 flex items-center gap-4 border-t border-white/[0.04] pt-3">
           <div className="flex items-center gap-1.5">
