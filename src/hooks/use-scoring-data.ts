@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { TraderActivityRow } from "@/components/scoring/trader-activity";
 import type { TradePairRow } from "@/components/scoring/trade-pairs";
 import type { ScoreHistoryPoint } from "@/components/scoring/score-timeline";
 
@@ -49,7 +48,6 @@ interface ScoringData {
   openPositions: OpenPosition[];
   recentScored: ScoredSignal[];
   traderSignals: Record<string, ScoredSignal[]>;
-  traderActivity: TraderActivityRow[];
   tradePairs: TradePairRow[];
   scoreHistory: ScoreHistoryPoint[];
 }
@@ -57,7 +55,7 @@ interface ScoringData {
 export function useScoringData() {
   const [data, setData] = useState<ScoringData>({
     scoreboard: [], openPositions: [], recentScored: [],
-    traderSignals: {}, traderActivity: [], tradePairs: [], scoreHistory: [],
+    traderSignals: {}, tradePairs: [], scoreHistory: [],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);

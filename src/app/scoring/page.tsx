@@ -16,8 +16,7 @@ type AssetFilter = (typeof ASSETS)[number];
 export default function ScoringPage() {
   const {
     scoreboard, recentScored, traderSignals,
-    traderActivity, tradePairs, scoreHistory, loading,
-    openPositions,
+    tradePairs, loading,
   } = useScoringData();
   const { reviews, handleAction: handleReviewAction } = useReviews();
   const [asset, setAsset] = useState<AssetFilter>("all");
@@ -50,10 +49,6 @@ export default function ScoringPage() {
           };
         })
         .filter((t) => t.signals >= 1);
-
-  const filteredRecent = asset === "all"
-    ? recentScored
-    : recentScored.filter((s) => s.asset.toLowerCase() === asset);
 
   const filteredPairs = asset === "all"
     ? tradePairs
@@ -94,18 +89,19 @@ export default function ScoringPage() {
           {/* Status overview */}
           <ScoringStatus
             totalScored={recentScored.length}
-            totalTraders={traderActivity.length}
+            totalTraders={scoreboard.length}
+            totalEntries={scoreboard.reduce((s, t) => s + t.entries, 0)}
+            totalExits={scoreboard.reduce((s, t) => s + t.exits, 0)}
             totalPairs={tradePairs.length}
-            openPositions={openPositions.length}
           />
 
-          {/* GPT Review Queue — human feedback loop */}
+          {/* GPT Review Queue */}
           <ReviewQueue reviews={reviews} onAction={handleReviewAction} />
 
           {/* GPT improvement stats */}
           <ReviewStats />
 
-          {/* Scoreboard — main feature, all traders ranked */}
+          {/* Scoreboard — main ranking, click trader for drilldown */}
           <ScoreboardTable traders={filteredScoreboard} traderSignals={filteredSignals} />
 
           {/* Trade pairs */}
