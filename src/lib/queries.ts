@@ -35,18 +35,36 @@ function toFeedMessages(rows: RawMessageWithSignals[]): FeedMessage[] {
     .filter((m) => m.assets.length > 0); // Drop messages with only noise signals
 }
 
+/** Fetch credibility scores as Map<author, score 0-100> */
+async function getCredibilityMap(): Promise<Map<string, number>> {
+  const { data } = await supabase
+    .from("user_credibility" as never)
+    .select("discord_user, score")
+    .gt("score", 0);
+
+  const map = new Map<string, number>();
+  for (const r of (data ?? []) as Array<{ discord_user: string; score: number }>) {
+    map.set(r.discord_user, r.score);
+  }
+  return map;
+}
+
 export async function getAssetBias(asset: Asset) {
   const since6h = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
 
-  const { data } = await supabase
-    .from("signals")
-    .select("direction, confidence, strength, signal_type, created_at")
-    .eq("asset", asset)
-    .gte("created_at", since6h)
-    .order("created_at", { ascending: false })
-    .limit(50);
+  // Fetch signals + credibility scores in parallel
+  const [signalRes, credMap] = await Promise.all([
+    supabase
+      .from("signals")
+      .select("direction, confidence, strength, signal_type, author, created_at")
+      .eq("asset", asset)
+      .gte("created_at", since6h)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    getCredibilityMap(),
+  ]);
 
-  const signals = (data ?? []) as (SignalRow & { created_at: string })[];
+  const signals = (signalRes.data ?? []) as (SignalRow & { author: string | null; created_at: string })[];
   if (!signals.length) return { direction: "neutral" as const, score: 0, count: 0 };
 
   // Strength multiplier: strong=3, medium=2, weak=1
@@ -67,7 +85,10 @@ export async function getAssetBias(asset: Asset) {
     const strength = STR[s.strength] ?? 2;
     const decay = timeDecay(s.created_at);
     const convictionBoost = s.signal_type === "position" ? 1.5 : 1;
-    const weight = decay * strength * s.confidence * convictionBoost;
+    // Credibility: 0→0.5x, 50→1.0x, 100→1.5x. Unknown traders → 1.0x
+    const cred = s.author ? credMap.get(s.author) : undefined;
+    const credMultiplier = cred != null ? 0.5 + cred / 100 : 1.0;
+    const weight = decay * strength * s.confidence * convictionBoost * credMultiplier;
 
     if (s.direction === "bullish") bullW += weight;
     else if (s.direction === "bearish") bearW += weight;
