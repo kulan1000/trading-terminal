@@ -104,7 +104,13 @@ export function BiasDetailModal({ asset, direction, score, count, price, changeP
                   <p className="mt-2 font-sans text-[13px] leading-relaxed text-white/70">{data.summary}</p>
                 </div>
               </div>
-              <BiasDetailChart history={data.history} signals={data.signals} intradayPrices={data.intradayPrices} price={price} asset={asset} />
+              <BiasDetailChart
+                history={data.history}
+                signals={data.signals.filter((s) => !s.signal_type || s.signal_type === "opinion" || s.signal_type === "position")}
+                intradayPrices={data.intradayPrices}
+                price={price}
+                asset={asset}
+              />
               {data.traderConsensus?.length > 0 && <BiasTraderConsensus traders={data.traderConsensus} />}
               <BiasDetailSignals signals={data.signals} />
             </>

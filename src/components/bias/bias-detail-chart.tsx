@@ -101,11 +101,21 @@ export function BiasDetailChart({ history, signals, intradayPrices, asset }: Pro
     time: fmtTime(new Date(xStart + (i / xSteps) * xSpan).toISOString()),
   }));
 
-  // --- Signal markers ---
-  const markers = (signals ?? []).filter((s) => {
+  // --- Signal markers (opinions/positions only — entries/exits filtered by parent) ---
+  const rawMarkers = (signals ?? []).filter((s) => {
     const t = new Date(s.created_at).getTime();
     return t >= xStart && t <= xStart + xSpan;
   });
+  // Deduplicate markers that overlap within ~15px to avoid visual clutter
+  const markers: SignalMarker[] = [];
+  for (const m of rawMarkers) {
+    const mx = isoToX(m.created_at, xStart, xSpan, chartW, PAD.left);
+    const tooClose = markers.some((prev) => {
+      const px = isoToX(prev.created_at, xStart, xSpan, chartW, PAD.left);
+      return Math.abs(mx - px) < 12 && prev.direction === m.direction;
+    });
+    if (!tooClose) markers.push(m);
+  }
 
   const showClosedNote = hasPriceData && intradayPrices!.length > 0 &&
     (now / 1000 - intradayPrices![intradayPrices!.length - 1].ts) > 3600;
@@ -150,12 +160,11 @@ export function BiasDetailChart({ history, signals, intradayPrices, asset }: Pro
             const mx = isoToX(s.created_at, xStart, xSpan, chartW, PAD.left);
             const isBull = s.direction === "bullish";
             const color = isBull ? "#26A69A" : "#EF5350";
-            const my = isBull ? PAD.top + 8 : PAD.top + chartH - 8;
+            const my = isBull ? PAD.top + 6 : PAD.top + chartH - 6;
             return (
               <g key={`m-${i}`}>
-                <line x1={mx} y1={PAD.top} x2={mx} y2={PAD.top + chartH} stroke={color} strokeWidth="0.5" opacity="0.15" />
-                <circle cx={mx} cy={my} r="4" fill={color} opacity="0.8" />
-                <circle cx={mx} cy={my} r="7" fill={color} opacity="0.15" />
+                <circle cx={mx} cy={my} r="3" fill={color} opacity="0.7" />
+                <circle cx={mx} cy={my} r="5.5" fill={color} opacity="0.12" />
               </g>
             );
           })}

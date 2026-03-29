@@ -24,7 +24,18 @@ export function yAxisLabels(min: number, range: number, count: number, top: numb
   });
 }
 
-/** Build an SVG path from {x,y}[] points */
+/** Build a smooth SVG path from {x,y}[] points using cubic bezier curves */
 export function pointsToPath(pts: { x: number; y: number }[]): string {
-  return pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  if (pts.length < 2) return "";
+  if (pts.length === 2) return `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)} L${pts[1].x.toFixed(1)},${pts[1].y.toFixed(1)}`;
+
+  let d = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+  for (let i = 1; i < pts.length; i++) {
+    const prev = pts[i - 1];
+    const curr = pts[i];
+    const tension = 0.3;
+    const dx = (curr.x - prev.x) * tension;
+    d += ` C${(prev.x + dx).toFixed(1)},${prev.y.toFixed(1)} ${(curr.x - dx).toFixed(1)},${curr.y.toFixed(1)} ${curr.x.toFixed(1)},${curr.y.toFixed(1)}`;
+  }
+  return d;
 }

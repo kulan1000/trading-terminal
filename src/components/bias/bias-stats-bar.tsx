@@ -3,11 +3,12 @@
 import type { BiasDetailStats } from "./bias-detail-types";
 
 export function BiasStatsBar({ stats }: { stats: BiasDetailStats }) {
+  const opinions = stats.total - stats.entries - stats.exits;
   const items = [
     { label: "Bullish", value: `${stats.weightedBullPct}%`, sub: `${stats.bullish} st`, cls: "text-[#26A69A]" },
     { label: "Bearish", value: `${stats.weightedBearPct}%`, sub: `${stats.bearish} st`, cls: "text-[#EF5350]" },
-    { label: "Entries", value: String(stats.entries), sub: null, cls: "text-[#2962FF]" },
-    { label: "Exits", value: String(stats.exits), sub: null, cls: "text-white/50" },
+    { label: "Opinions", value: String(opinions), sub: stats.entries + stats.exits > 0 ? `${stats.entries}E ${stats.exits}X` : null, cls: "text-[#FF9800]" },
+    { label: "Signaler", value: String(stats.total), sub: null, cls: "text-white" },
     { label: "Traders", value: String(stats.uniqueTraders), sub: null, cls: "text-white" },
   ];
 
