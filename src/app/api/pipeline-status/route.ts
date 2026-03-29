@@ -86,7 +86,7 @@ export async function GET() {
         .then((r) => (r.data ?? []) as any[])
     ),
 
-    // --- NEW: total counts ---
+    // --- total counts ---
     safeCount(
       supabase.from("discord_messages")
         .select("id", { count: "exact", head: true })
@@ -98,6 +98,22 @@ export async function GET() {
         .then((r) => r.count ?? 0)
     ),
   ]);
+
+  // Table row counts for database overview
+  const [totalBiasSnapshots, totalPipelineRuns, totalSentimentSnapshots, totalPriceSnapshots] = await Promise.all([
+    safeCount(supabase.from("bias_snapshots").select("id", { count: "exact", head: true }).then((r) => r.count ?? 0)),
+    safeCount(supabase.from("pipeline_runs").select("id", { count: "exact", head: true }).then((r) => r.count ?? 0)),
+    safeCount(supabase.from("sentiment_snapshots").select("id", { count: "exact", head: true }).then((r) => r.count ?? 0)),
+    safeCount(supabase.from("price_snapshots").select("id", { count: "exact", head: true }).then((r) => r.count ?? 0)),
+  ]);
+  const tableCounts = {
+    discord_messages: totalMessages,
+    signals: totalSignals,
+    bias_snapshots: totalBiasSnapshots,
+    pipeline_runs: totalPipelineRuns,
+    sentiment_snapshots: totalSentimentSnapshots,
+    price_snapshots: totalPriceSnapshots,
+  };
 
   // Pipeline run log (last 20 runs)
   const pipelineRuns = await safeRows(
@@ -140,6 +156,7 @@ export async function GET() {
     pipelineRuns,
     todayOpenAICalls,
     todayCostUsd,
+    tableCounts,
     checkedAt: new Date().toISOString(),
   });
 }

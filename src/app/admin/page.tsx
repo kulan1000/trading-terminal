@@ -10,6 +10,7 @@ import { RecentClassifications } from "@/components/admin/recent-classifications
 import { PipelineLog } from "@/components/admin/pipeline-log";
 import { PipelineTrigger } from "@/components/admin/pipeline-trigger";
 import { SystemHealth } from "@/components/admin/system-health";
+import { DatabaseInfo } from "@/components/admin/database-info";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface PipelineData {
@@ -26,6 +27,7 @@ interface PipelineData {
   pipelineRuns: any[];
   todayOpenAICalls: number;
   todayCostUsd: number;
+  tableCounts: Record<string, number>;
   checkedAt: string;
 }
 
@@ -157,8 +159,15 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Pipeline log */}
-      {data && <PipelineLog runs={data.pipelineRuns} />}
+      {/* Pipeline log + database info */}
+      {data && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <PipelineLog runs={data.pipelineRuns} />
+          </div>
+          <DatabaseInfo tableCounts={data.tableCounts} />
+        </div>
+      )}
 
       {/* Manual trigger */}
       <PipelineTrigger onComplete={fetchStatus} />

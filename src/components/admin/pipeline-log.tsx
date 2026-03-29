@@ -40,9 +40,23 @@ export function PipelineLog({ runs }: { runs: PipelineRun[] }) {
     <div className="rounded-xl border border-white/[0.06] bg-[#111111] p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-sans text-[13px] font-medium text-white/70">Pipeline-logg (senaste 20)</h2>
-        <span className="font-mono text-[10px] text-white/20">
-          {runs.filter((r) => r.status === "success").length} lyckade / {runs.filter((r) => r.status === "error").length} misslyckade
-        </span>
+        <div className="flex items-center gap-3">
+          {/* Mini success-rate dots */}
+          <div className="flex items-center gap-0.5">
+            {runs.slice(0, 20).reverse().map((r, i) => (
+              <div
+                key={i}
+                className={`h-2 w-2 rounded-full ${r.status === "success" ? "bg-[#26A69A]/60" : r.status === "error" ? "bg-[#EF5350]/60" : "bg-[#2962FF]/40"}`}
+                title={`${fmtTime(r.started_at)} — ${r.status}`}
+              />
+            ))}
+          </div>
+          <span className="font-mono text-[10px] text-white/20">
+            {runs.length > 0
+              ? `${Math.round((runs.filter((r) => r.status === "success").length / runs.length) * 100)}% OK`
+              : "—"}
+          </span>
+        </div>
       </div>
 
       <div className="space-y-1">
