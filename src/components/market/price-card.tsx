@@ -57,7 +57,7 @@ export function PriceCard({ quote, pair, sentiment, variant = "default" }: Price
         />
       )}
       <div
-        className={`animate-fade-in cursor-pointer overflow-hidden rounded-xl border min-h-[280px] ${borderColor} bg-[#111111] transition-all duration-200 hover:border-white/[0.12] hover:bg-[#151515] ${isHero ? `${glowColor} hover:scale-[1.005]` : ""}`}
+        className={`animate-fade-in cursor-pointer overflow-hidden rounded-xl border ${borderColor} bg-[#111111] transition-all duration-200 hover:border-white/[0.12] hover:bg-[#151515] ${isHero ? `${glowColor} hover:scale-[1.005]` : ""}`}
         onClick={() => setExpanded(true)}
       >
         {/* Asset accent bar on top + glossy sheen */}
@@ -104,17 +104,17 @@ export function PriceCard({ quote, pair, sentiment, variant = "default" }: Price
           <span>L: <AnimatedPrice value={quote.low} className="text-white/60" /></span>
         </div>
 
-        {/* Intraday chart — bigger for hero variant */}
-        {quote.sparkline && quote.sparkline.length > 2 && (
-          <div className={`${isHero ? "mt-3 px-2 pb-2" : "mt-2 px-1 pb-1"}`}>
+        {/* Intraday chart — always reserve space in hero to prevent layout shift */}
+        <div className={`${isHero ? "mt-3 px-2 pb-2" : "mt-2 px-1 pb-1"}`} style={{ height: isHero ? 132 : 65 }}>
+          {quote.sparkline && quote.sparkline.length > 2 && (
             <Sparkline
               data={quote.sparkline}
               timestamps={quote.sparklineTs}
               height={isHero ? 120 : 56}
               markers={markers}
             />
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Marker count */}
         <div className={`flex items-center justify-between ${isHero ? "px-5 pb-3" : "px-4 pb-2"}`}>
