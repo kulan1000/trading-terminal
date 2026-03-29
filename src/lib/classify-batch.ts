@@ -20,6 +20,8 @@ export async function processUnclassified(limit = 50) {
   if (!messages?.length) return { processed: 0, signals: 0 };
   let signalCount = 0;
   let skipped = 0;
+  let openaiCalls = 0;
+  const touchedAuthors = new Set<string>();
 
   for (const msg of messages) {
     // STEP 1: Fast local pre-filter
@@ -59,7 +61,13 @@ export async function processUnclassified(limit = 50) {
     const msgTime = msg.timestamp ? new Date(msg.timestamp) : new Date();
     const marketOpen = isMarketOpen(msgTime);
 
+    // Delay between OpenAI calls to stay under rate limits (applies to ALL calls, not just signal-producing ones)
+    if (openaiCalls > 0) {
+      await new Promise((r) => setTimeout(r, 200));
+    }
+
     const results = await classifyMessage(msg.content, msg.channel, contextMessages, marketOpen);
+    openaiCalls++;
     for (const result of results) {
       if (result.asset && result.direction && result.confidence != null) {
         // Hard safety net: block entry/exited when market is closed
@@ -95,18 +103,18 @@ export async function processUnclassified(limit = 50) {
     }
 
     if (signalCount > 0 && msg.author) {
-      await refreshTraderProfile(supabase, msg.author);
+      touchedAuthors.add(msg.author);
     }
 
     await supabase
       .from("discord_messages")
       .update({ processed: true })
       .eq("id", msg.id);
+  }
 
-    // Small delay between OpenAI calls to stay well under rate limits
-    if (signalCount > 0) {
-      await new Promise((r) => setTimeout(r, 200));
-    }
+  // Batch refresh trader profiles (once per author, not per message)
+  for (const author of touchedAuthors) {
+    await refreshTraderProfile(supabase, author);
   }
 
   return { processed: messages.length, signals: signalCount, skipped };

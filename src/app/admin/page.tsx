@@ -86,6 +86,11 @@ export default function AdminPage() {
               {data.totalMessages.toLocaleString()} msg · {data.totalSignals.toLocaleString()} signals
             </span>
           )}
+          {data?.checkedAt && (
+            <span className="font-mono text-[10px] text-white/15">
+              {new Date(data.checkedAt).toLocaleTimeString("sv-SE")}
+            </span>
+          )}
           <span className="rounded-md bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-white/25">
             Auto 15s
           </span>

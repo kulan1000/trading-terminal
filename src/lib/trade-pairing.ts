@@ -16,14 +16,16 @@ interface Signal {
 /** Pair unmatched entries with exits and compute PnL */
 export async function pairTrades() {
   const supabase = getSupabaseAdmin();
+  const since30d = new Date(Date.now() - 30 * 24 * 60 * 60_000).toISOString();
 
-  // Get all entry signals not yet paired
+  // Get entry signals not yet paired (last 30 days to bound query size)
   const { data: entries } = await supabase
     .from("signals")
     .select("id, author, asset, signal_type, position, price_at_signal, created_at")
     .eq("signal_type", "entry")
     .not("price_at_signal", "is", null)
     .not("author", "is", null)
+    .gte("created_at", since30d)
     .order("created_at", { ascending: true });
 
   if (!entries?.length) return { paired: 0 };
@@ -38,12 +40,13 @@ export async function pairTrades() {
   const unmatched = (entries as Signal[]).filter((e) => !pairedSet.has(e.id));
   if (!unmatched.length) return { paired: 0 };
 
-  // Get all exit signals
+  // Get exit signals (last 30 days)
   const { data: exits } = await supabase
     .from("signals")
     .select("id, author, asset, signal_type, position, price_at_signal, created_at")
     .eq("signal_type", "exited")
     .not("price_at_signal", "is", null)
+    .gte("created_at", since30d)
     .order("created_at", { ascending: true });
 
   const { data: pairedExits } = await supabase

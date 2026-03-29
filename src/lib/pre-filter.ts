@@ -49,6 +49,11 @@ const COMMODITY_CHANNELS = new Set([
 
 /** Returns true if message MIGHT contain a commodity signal (fast, cheap) */
 export function maybeCommodityRelevant(content: string, channel?: string): boolean {
+  // Too short to contain useful signal (e.g. "lol", "ok", emoji-only)
+  if (content.trim().length < 8) return false;
+
+  // Commodity channels: still pass most messages, but skip obvious noise
   if (channel && COMMODITY_CHANNELS.has(channel)) return true;
+
   return COMMODITY_KEYWORDS.test(content);
 }
