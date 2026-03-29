@@ -54,9 +54,9 @@ export function SystemHealth({ runs, latestSignal, latestMessage }: Props) {
       "Inga fel",
       errorRuns.length === 0 ? "Alla senaste körningar lyckades" : `${errorRuns.length} fel senaste timmen`
     ),
-    // Speed: green <30s, yellow <45s, red >45s (pipeline does Discord+GPT+scoring)
+    // Speed: green <60s, yellow <90s, red >90s (pipeline does Discord+GPT+scoring+snapshots)
     check(
-      avgDuration === 0 ? "ok" : avgDuration < 30_000 ? "ok" : avgDuration < 45_000 ? "warn" : "error",
+      avgDuration === 0 ? "ok" : avgDuration < 60_000 ? "ok" : avgDuration < 90_000 ? "warn" : "error",
       "Snabb pipeline",
       avgDuration > 0 ? `Snitt ${(avgDuration / 1000).toFixed(1)}s` : "Ingen data"
     ),
