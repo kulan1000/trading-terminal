@@ -1,7 +1,6 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { TerminalCard } from "@/components/ui/terminal-card";
 import { MessageList } from "@/components/discord/message-list";
 import { AdvancedSearch } from "@/components/discord/advanced-search";
 import { DailyBriefingPanel } from "@/components/discord/daily-briefing";
@@ -29,10 +28,10 @@ function DiscordIntelContent() {
     briefing: any;
   }>({ url });
 
-  const channel = searchParams.get("channel") ?? undefined;
-  const asset = searchParams.get("asset") ?? undefined;
   const q = searchParams.get("q") ?? undefined;
   const author = searchParams.get("author") ?? undefined;
+  const channel = searchParams.get("channel") ?? undefined;
+  const asset = searchParams.get("asset") ?? undefined;
   const signalType = searchParams.get("signalType") ?? undefined;
   const dateFrom = searchParams.get("dateFrom") ?? undefined;
   const dateTo = searchParams.get("dateTo") ?? undefined;
@@ -47,36 +46,54 @@ function DiscordIntelContent() {
 
   const stats = data?.stats ?? { total: 0, processed: 0, signals: 0 };
   const messages = data?.messages ?? [];
-  const title = hasFilters
-    ? `Sökresultat: ${filterParts.join(" + ")} (${messages.length})`
-    : `Raw Feed (${messages.length})`;
 
   return (
     <div className="animate-fade-in space-y-4">
+      {/* Page header */}
       <div className="flex items-center justify-between">
-        <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">
-          Discord Intel
-        </h1>
-        <div className="flex items-center gap-4 font-sans text-[11px]">
-          <span className="text-white/40">Messages: <span className="tabular-nums text-white/70">{stats.total}</span></span>
-          <span className="text-white/40">Processed: <span className="tabular-nums text-[#26A69A]">{stats.processed}</span></span>
-          <span className="text-white/40">Signals: <span className="tabular-nums text-[#2962FF]">{stats.signals}</span></span>
+        <div className="flex items-center gap-3">
+          <h1 className="font-sans text-[18px] font-bold text-white">Discord Intel</h1>
+          <span className="rounded-md bg-[#2962FF]/15 px-2 py-0.5 font-sans text-[10px] font-bold text-[#2962FF]">LIVE</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <StatBadge label="Messages" value={stats.total} />
+          <StatBadge label="Processed" value={stats.processed} color="#26A69A" />
+          <StatBadge label="Signals" value={stats.signals} color="#2962FF" />
         </div>
       </div>
 
       {data?.briefing && <DailyBriefingPanel data={data.briefing} />}
-
       <AdvancedSearch />
 
       {data ? (
-        <TerminalCard title={title}>
-          <MessageList messages={messages} highlight={q} />
-        </TerminalCard>
+        <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+          <div className="px-5 pt-4 pb-2">
+            <div className="mb-3 flex items-center justify-between">
+              <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">
+                {hasFilters ? `Sökresultat: ${filterParts.join(" + ")}` : "Raw Feed"}
+              </h4>
+              <span className="font-mono text-[10px] tabular-nums text-white/20">{messages.length} meddelanden</span>
+            </div>
+            <MessageList messages={messages} highlight={q} />
+          </div>
+        </div>
       ) : error ? (
         <FetchError onRetry={retry} />
       ) : (
         <div className="h-[300px] animate-pulse rounded-xl border border-white/[0.06] bg-[#111111]" />
       )}
+    </div>
+  );
+}
+
+function StatBadge({ label, value, color }: { label: string; value: number; color?: string }) {
+  return (
+    <div className="rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-1.5">
+      <span className="font-sans text-[9px] uppercase tracking-[0.06em] text-white/30">{label}</span>
+      <span className="ml-1.5 font-mono text-[12px] font-bold tabular-nums" style={{ color: color ?? "white" }}>
+        {value.toLocaleString()}
+      </span>
     </div>
   );
 }

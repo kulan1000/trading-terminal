@@ -40,69 +40,86 @@ export function AdvancedSearch() {
     router.push("/discord-intel");
   }
 
-  const inputCls = "w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 font-sans text-[12px] text-white placeholder:text-white/20 transition-colors focus:border-[#2962FF]/50 focus:outline-none focus:bg-white/[0.04]";
-  const selectCls = "w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 font-sans text-[12px] text-white transition-colors focus:border-[#2962FF]/50 focus:outline-none";
+  const inputCls = "w-full rounded-lg border border-white/[0.06] bg-[#0a0a0a] px-3 py-2 font-sans text-[12px] text-white placeholder:text-white/20 transition-all focus:border-[#2962FF]/40 focus:outline-none focus:ring-1 focus:ring-[#2962FF]/20";
+  const selectCls = "w-full appearance-none rounded-lg border border-white/[0.06] bg-[#0a0a0a] px-3 py-2 font-sans text-[12px] text-white/70 transition-all focus:border-[#2962FF]/40 focus:outline-none focus:ring-1 focus:ring-[#2962FF]/20";
 
   return (
-    <form onSubmit={search} className="space-y-2">
+    <form onSubmit={search}>
       <div className="flex gap-2">
-        <input type="text" value={q} onChange={(e) => setQ(e.target.value)}
-          placeholder="Sök meddelanden... (gold, short, 2400)" className={`flex-1 ${inputCls}`} />
+        <div className="relative flex-1">
+          <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/20" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+          </svg>
+          <input type="text" value={q} onChange={(e) => setQ(e.target.value)}
+            placeholder="Sök meddelanden..."
+            className={`${inputCls} pl-9`} />
+        </div>
         <button type="submit"
-          className="rounded-lg bg-[#2962FF] px-4 py-2 font-sans text-[12px] font-medium text-white shadow-[0_0_12px_-3px_rgba(41,98,255,0.4)] transition-all hover:bg-[#1E53E5] hover:shadow-[0_0_16px_-3px_rgba(41,98,255,0.5)]">
+          className="rounded-lg bg-[#2962FF] px-4 py-2 font-sans text-[12px] font-semibold text-white shadow-[0_0_12px_-3px_rgba(41,98,255,0.4)] transition-all hover:bg-[#1E53E5] hover:shadow-[0_0_16px_-3px_rgba(41,98,255,0.5)]">
           Sök
         </button>
         <button type="button" onClick={() => setOpen(!open)}
-          className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 font-sans text-[12px] text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/70">
-          {open ? "Färre filter" : "▼ Fler filter"}
+          className="rounded-lg border border-white/[0.06] bg-[#0a0a0a] px-3 py-2 font-sans text-[11px] text-white/40 transition-colors hover:bg-white/[0.04] hover:text-white/60">
+          <span className="flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform ${open ? "rotate-180" : ""}`}>
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+            Filter
+          </span>
         </button>
       </div>
 
       {open && (
-        <div className="grid grid-cols-2 gap-3 rounded-xl border border-white/[0.06] bg-[#111111] p-4 md:grid-cols-4">
-          <div>
-            <label className="mb-1.5 block font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-white/25">Trader</label>
-            <input type="text" value={author} onChange={(e) => setAuthor(e.target.value)}
-              placeholder="Namn..." className={inputCls} />
-          </div>
-          <div>
-            <label className="mb-1.5 block font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-white/25">Kanal</label>
-            <select value={channel} onChange={(e) => setChannel(e.target.value)} className={selectCls}>
-              {CHANNELS.map((c) => <option key={c} value={c}>{c === "all" ? "Alla kanaler" : `#${c}`}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-white/25">Asset</label>
-            <select value={asset} onChange={(e) => setAsset(e.target.value)} className={selectCls}>
-              {ASSETS.map((a) => <option key={a} value={a}>{a === "all" ? "Alla" : a}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-white/25">Signal-typ</label>
-            <select value={signalType} onChange={(e) => setSignalType(e.target.value)} className={selectCls}>
-              {SIGNAL_TYPES.map((t) => <option key={t} value={t}>{t === "all" ? "Alla typer" : t.toUpperCase()}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-white/25">Från datum</label>
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={inputCls} />
-          </div>
-          <div>
-            <label className="mb-1.5 block font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-white/25">Till datum</label>
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={inputCls} />
-          </div>
-          <div className="col-span-2 flex items-end gap-2 md:col-span-2">
-            <button type="submit"
-              className="rounded-lg bg-[#2962FF] px-4 py-2 font-sans text-[12px] font-medium text-white shadow-[0_0_12px_-3px_rgba(41,98,255,0.4)] transition-all hover:bg-[#1E53E5]">
-              Filtrera
-            </button>
-            <button type="button" onClick={reset}
-              className="rounded-lg border border-white/[0.08] px-3 py-2 font-sans text-[12px] text-white/40 transition-colors hover:text-white/70 hover:bg-white/[0.04]">
-              Rensa
-            </button>
+        <div className="mt-2 overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+          <div className="grid grid-cols-2 gap-3 p-4 md:grid-cols-4">
+            <FilterField label="Trader">
+              <input type="text" value={author} onChange={(e) => setAuthor(e.target.value)}
+                placeholder="Namn..." className={inputCls} />
+            </FilterField>
+            <FilterField label="Kanal">
+              <select value={channel} onChange={(e) => setChannel(e.target.value)} className={selectCls}>
+                {CHANNELS.map((c) => <option key={c} value={c}>{c === "all" ? "Alla kanaler" : `#${c}`}</option>)}
+              </select>
+            </FilterField>
+            <FilterField label="Asset">
+              <select value={asset} onChange={(e) => setAsset(e.target.value)} className={selectCls}>
+                {ASSETS.map((a) => <option key={a} value={a}>{a === "all" ? "Alla" : a}</option>)}
+              </select>
+            </FilterField>
+            <FilterField label="Signal-typ">
+              <select value={signalType} onChange={(e) => setSignalType(e.target.value)} className={selectCls}>
+                {SIGNAL_TYPES.map((t) => <option key={t} value={t}>{t === "all" ? "Alla typer" : t.toUpperCase()}</option>)}
+              </select>
+            </FilterField>
+            <FilterField label="Från datum">
+              <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={inputCls} />
+            </FilterField>
+            <FilterField label="Till datum">
+              <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={inputCls} />
+            </FilterField>
+            <div className="col-span-2 flex items-end gap-2">
+              <button type="submit"
+                className="rounded-lg bg-[#2962FF] px-4 py-2 font-sans text-[12px] font-semibold text-white shadow-[0_0_12px_-3px_rgba(41,98,255,0.4)] transition-all hover:bg-[#1E53E5]">
+                Filtrera
+              </button>
+              <button type="button" onClick={reset}
+                className="rounded-lg border border-white/[0.06] px-3 py-2 font-sans text-[12px] text-white/40 transition-colors hover:text-white/60 hover:bg-white/[0.04]">
+                Rensa
+              </button>
+            </div>
           </div>
         </div>
       )}
     </form>
+  );
+}
+
+function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="mb-1.5 block font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-white/25">{label}</label>
+      {children}
+    </div>
   );
 }
