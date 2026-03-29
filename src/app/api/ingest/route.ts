@@ -7,6 +7,7 @@ import { pairTrades } from "@/lib/trade-pairing";
 import { saveSentimentSnapshots } from "@/lib/sentiment-snapshots";
 import { saveBiasSnapshots } from "@/lib/bias-snapshots";
 import { isMarketOpen } from "@/lib/market-hours";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 // Discord channel IDs for FoFtyTrades
 const CHANNELS: Record<string, string> = {
@@ -92,6 +93,15 @@ export async function POST(request: Request) {
 
   if (!authHeader || authHeader !== expected) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Rate limit: max 6 calls per 5 minutes (covers cron every 5 min + some manual triggers)
+  const limited = checkRateLimit("ingest", 6, 5 * 60_000);
+  if (limited) {
+    return NextResponse.json(
+      { error: "Rate limited", retryAfterMs: limited.retryAfterMs },
+      { status: 429 }
+    );
   }
 
   const marketOpen = isMarketOpen();
