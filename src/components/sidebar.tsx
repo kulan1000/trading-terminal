@@ -14,6 +14,7 @@ import {
   Briefcase,
   ChevronLeft,
   ChevronRight,
+  Settings,
 } from "lucide-react";
 
 const navItems = [
@@ -25,6 +26,7 @@ const navItems = [
   { name: "Market", href: "/market", icon: LineChart },
   { name: "Stocks", href: "/stocks", icon: Briefcase },
   { name: "Trades", href: "/trades", icon: ClipboardList },
+  { name: "Admin", href: "/admin", icon: Settings },
 ] as const;
 
 export function Sidebar() {

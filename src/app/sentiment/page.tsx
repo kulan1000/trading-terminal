@@ -1,25 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
 import { MarketBiasSection } from "@/components/bias/market-bias-section";
 import { FetchError } from "@/components/ui/fetch-error";
+import { usePollingFetch } from "@/hooks/use-polling-fetch";
 
 export default function SentimentPage() {
-  const [biases, setBiases] = useState<unknown[] | null>(null);
-  const [error, setError] = useState(false);
-
-  const fetchData = useCallback(() => {
-    fetch("/api/bias-page-data")
-      .then((r) => r.json())
-      .then((d) => { setBiases(d); setError(false); })
-      .catch(() => setError(true));
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-    const id = setInterval(fetchData, 30_000);
-    return () => clearInterval(id);
-  }, [fetchData]);
+  const { data: biases, error, retry } = usePollingFetch<unknown[]>({ url: "/api/bias-page-data" });
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -37,7 +23,7 @@ export default function SentimentPage() {
           /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
           <MarketBiasSection biases={biases as any} />
         ) : error ? (
-          <FetchError onRetry={fetchData} />
+          <FetchError onRetry={retry} />
         ) : (
           <div className="grid grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (

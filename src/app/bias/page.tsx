@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
 import { ASSET_PAIRS } from "@/lib/constants";
 import type { Asset } from "@/lib/types";
 import { AssetBiasCard } from "@/components/bias/asset-bias-card";
@@ -10,6 +9,7 @@ import { TargetsPanel } from "@/components/bias/targets-panel";
 import { BiasSummary } from "@/components/bias/bias-summary";
 import { TraderLeaderboard } from "@/components/bias/trader-leaderboard";
 import { FetchError } from "@/components/ui/fetch-error";
+import { usePollingFetch } from "@/hooks/use-polling-fetch";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface BiasData {
@@ -23,26 +23,12 @@ interface BiasData {
 }
 
 export default function BiasPage() {
-  const [data, setData] = useState<BiasData | null>(null);
-  const [error, setError] = useState(false);
-
-  const fetchData = useCallback(() => {
-    fetch("/api/bias-data")
-      .then((r) => r.json())
-      .then((d) => { setData(d); setError(false); })
-      .catch(() => setError(true));
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-    const id = setInterval(fetchData, 30_000);
-    return () => clearInterval(id);
-  }, [fetchData]);
+  const { data, error, retry } = usePollingFetch<BiasData>({ url: "/api/bias-data" });
 
   if (error) {
     return (
       <div className="py-10">
-        <FetchError onRetry={fetchData} />
+        <FetchError onRetry={retry} />
       </div>
     );
   }

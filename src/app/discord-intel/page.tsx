@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { TerminalCard } from "@/components/ui/terminal-card";
 import { MessageList } from "@/components/discord/message-list";
 import { AdvancedSearch } from "@/components/discord/advanced-search";
 import { DailyBriefingPanel } from "@/components/discord/daily-briefing";
 import { FetchError } from "@/components/ui/fetch-error";
+import { usePollingFetch } from "@/hooks/use-polling-fetch";
 import { Suspense } from "react";
 
 export default function DiscordIntelPage() {
@@ -17,26 +17,17 @@ export default function DiscordIntelPage() {
   );
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 function DiscordIntelContent() {
   const searchParams = useSearchParams();
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  const [data, setData] = useState<{ messages: any[]; stats: { total: number; processed: number; signals: number }; briefing: any } | null>(null);
-  const [error, setError] = useState(false);
+  const qs = searchParams.toString();
+  const url = `/api/discord-intel-data${qs ? `?${qs}` : ""}`;
 
-  const fetchData = useCallback(() => {
-    const qs = searchParams.toString();
-    const url = `/api/discord-intel-data${qs ? `?${qs}` : ""}`;
-    fetch(url)
-      .then((r) => r.json())
-      .then((d) => { setData(d); setError(false); })
-      .catch(() => setError(true));
-  }, [searchParams]);
-
-  useEffect(() => {
-    fetchData();
-    const id = setInterval(fetchData, 30_000);
-    return () => clearInterval(id);
-  }, [fetchData]);
+  const { data, error, retry } = usePollingFetch<{
+    messages: any[];
+    stats: { total: number; processed: number; signals: number };
+    briefing: any;
+  }>({ url });
 
   const channel = searchParams.get("channel") ?? undefined;
   const asset = searchParams.get("asset") ?? undefined;
@@ -82,7 +73,7 @@ function DiscordIntelContent() {
           <MessageList messages={messages} highlight={q} />
         </TerminalCard>
       ) : error ? (
-        <FetchError onRetry={fetchData} />
+        <FetchError onRetry={retry} />
       ) : (
         <div className="h-[300px] animate-pulse rounded-xl border border-white/[0.06] bg-[#111111]" />
       )}
