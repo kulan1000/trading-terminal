@@ -89,7 +89,8 @@ Write a brief, factual summary. No fluff.`;
         max_tokens: 150,
       });
       summary = resp.choices[0]?.message?.content?.trim() ?? summary;
-    } catch {
+    } catch (err) {
+      console.error(`[BIAS-DETAIL] OpenAI summary failed for ${asset}:`, err);
       summary = `${sBull} bullish vs ${sBear} bearish opinions in the last 6h.`;
     }
   }

@@ -63,6 +63,7 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               title={expanded ? undefined : item.name}
+              aria-label={item.name}
               className={`relative mx-0 flex h-11 items-center gap-3 rounded-[6px] px-4 text-[13px] font-medium transition-all duration-150 ${
                 isActive
                   ? "bg-tv-blue/10 text-tv-blue"
