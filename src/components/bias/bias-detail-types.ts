@@ -1,8 +1,6 @@
 export interface BiasDetailStats {
   bullish: number;
   bearish: number;
-  entries: number;
-  exits: number;
   uniqueTraders: number;
   total: number;
   weightedBullPct: number;

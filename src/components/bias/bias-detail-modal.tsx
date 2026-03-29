@@ -112,7 +112,7 @@ export function BiasDetailModal({ asset, direction, score, count, price, changeP
                 asset={asset}
               />
               {data.traderConsensus?.length > 0 && <BiasTraderConsensus traders={data.traderConsensus} />}
-              <BiasDetailSignals signals={data.signals} />
+              <BiasDetailSignals signals={data.signals.filter((s) => !s.signal_type || s.signal_type === "opinion" || s.signal_type === "position")} />
             </>
           ) : (
             <p className="text-center font-sans text-[13px] text-white/30">Kunde inte ladda data.</p>

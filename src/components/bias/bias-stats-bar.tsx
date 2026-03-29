@@ -3,17 +3,15 @@
 import type { BiasDetailStats } from "./bias-detail-types";
 
 export function BiasStatsBar({ stats }: { stats: BiasDetailStats }) {
-  const opinions = stats.total - stats.entries - stats.exits;
   const items = [
     { label: "Bullish", value: `${stats.weightedBullPct}%`, sub: `${stats.bullish} st`, cls: "text-[#26A69A]" },
     { label: "Bearish", value: `${stats.weightedBearPct}%`, sub: `${stats.bearish} st`, cls: "text-[#EF5350]" },
-    { label: "Opinions", value: String(opinions), sub: stats.entries + stats.exits > 0 ? `${stats.entries}E ${stats.exits}X` : null, cls: "text-[#FF9800]" },
-    { label: "Signaler", value: String(stats.total), sub: null, cls: "text-white" },
+    { label: "Opinions", value: String(stats.total), sub: null, cls: "text-[#FF9800]" },
     { label: "Traders", value: String(stats.uniqueTraders), sub: null, cls: "text-white" },
   ];
 
   return (
-    <div className="grid grid-cols-5 gap-3">
+    <div className="grid grid-cols-4 gap-3">
       {items.map((s) => (
         <div key={s.label} className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111] text-center">
           <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />

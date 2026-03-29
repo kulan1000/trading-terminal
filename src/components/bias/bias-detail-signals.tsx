@@ -5,11 +5,8 @@ import type { DetailSignal } from "./bias-detail-types";
 import { fmtTime, fmtAgo } from "@/lib/format-utils";
 
 const TYPE_LABELS: Record<string, { label: string; cls: string }> = {
-  entry: { label: "ENTRY", cls: "bg-[#26A69A]/20 text-[#26A69A] ring-1 ring-[#26A69A]/30" },
-  exited: { label: "EXIT", cls: "bg-white/[0.04] text-white/50 ring-1 ring-white/[0.06]" },
   position: { label: "HOLD", cls: "bg-[#2962FF]/15 text-[#2962FF] ring-1 ring-[#2962FF]/30" },
   opinion: { label: "OPINION", cls: "bg-[#FF9800]/15 text-[#FF9800]" },
-  target: { label: "TARGET", cls: "bg-[#2962FF]/20 text-[#2962FF] ring-1 ring-[#2962FF]/30" },
 };
 
 

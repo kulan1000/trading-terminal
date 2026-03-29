@@ -34,12 +34,13 @@ export async function GET(req: NextRequest) {
   const around7hAgo = new Date(now - 7 * 60 * 60 * 1000).toISOString();
 
   const [signalsRes, historyRes, price, oldBiasRes, yahooData, credibilityRes] = await Promise.all([
-    // Only 6h signals — matches getAssetBias window
+    // Only opinions & positions — entries/exits belong in Market tab
     supabase
       .from("signals")
       .select("id, direction, confidence, strength, signal_type, position, interpretation, author, created_at, discord_messages(content)")
       .eq("asset", asset)
       .gte("created_at", since6h)
+      .in("signal_type", ["opinion", "position"])
       .order("created_at", { ascending: false })
       .limit(50),
     // Chart history 6h to match decay window
@@ -78,12 +79,10 @@ export async function GET(req: NextRequest) {
   if (signals.length > 0) {
     const sBull = signals.filter((s) => s.direction === "bullish").length;
     const sBear = signals.filter((s) => s.direction === "bearish").length;
-    const sEntries = signals.filter((s) => s.signal_type === "entry").length;
-    const sExits = signals.filter((s) => s.signal_type === "exited").length;
 
     const prompt = `You are a trading terminal AI. Summarize the community sentiment for ${asset} in exactly 2-3 sentences. Be concise and terminal-style.
 
-Recent signals (last 6h): ${signals.length} total, ${sEntries} entries, ${sExits} exits, ${sBull} bullish, ${sBear} bearish.
+Recent opinions (last 6h): ${signals.length} total, ${sBull} bullish, ${sBear} bearish.
 Key interpretations: ${signals.slice(0, 8).map((s) => `${s.author}: "${s.interpretation ?? s.discord_messages?.content ?? ""}"`).filter(Boolean).join("; ")}
 
 Write a brief, factual summary. No fluff.`;
@@ -97,15 +96,13 @@ Write a brief, factual summary. No fluff.`;
       });
       summary = resp.choices[0]?.message?.content?.trim() ?? summary;
     } catch {
-      summary = `${sBull} bullish vs ${sBear} bearish signals. ${sEntries} entries, ${sExits} exits in the last 6h.`;
+      summary = `${sBull} bullish vs ${sBear} bearish opinions in the last 6h.`;
     }
   }
 
   // Raw counts + decay-weighted percentages
   const rawBull = signals.filter((s) => s.direction === "bullish").length;
   const rawBear = signals.filter((s) => s.direction === "bearish").length;
-  const rawEntries = signals.filter((s) => s.signal_type === "entry").length;
-  const rawExits = signals.filter((s) => s.signal_type === "exited").length;
   const uniqueTraders = new Set(signals.map((s) => s.author)).size;
 
   // Decay-weighted bull/bear for accurate representation
@@ -206,8 +203,6 @@ Write a brief, factual summary. No fluff.`;
     stats: {
       bullish: rawBull,
       bearish: rawBear,
-      entries: rawEntries,
-      exits: rawExits,
       uniqueTraders,
       total: signals.length,
       weightedBullPct,
