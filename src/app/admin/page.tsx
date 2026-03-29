@@ -11,6 +11,7 @@ import { PipelineLog } from "@/components/admin/pipeline-log";
 import { PipelineTrigger } from "@/components/admin/pipeline-trigger";
 import { SystemHealth } from "@/components/admin/system-health";
 import { DatabaseInfo } from "@/components/admin/database-info";
+import { PipelineHistory } from "@/components/admin/pipeline-history";
 import { fmtAgo } from "@/lib/format-utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -26,6 +27,7 @@ interface PipelineData {
   totalMessages: number;
   totalSignals: number;
   pipelineRuns: any[];
+  pipelineHistory: any[];
   todayOpenAICalls: number;
   todayCostUsd: number;
   tableCounts: Record<string, number>;
@@ -161,6 +163,9 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* Pipeline history chart */}
+      {data && <PipelineHistory runs={data.pipelineHistory} />}
 
       {/* Asset breakdown + recent classifications */}
       {data && (

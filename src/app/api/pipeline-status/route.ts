@@ -115,14 +115,24 @@ export async function GET() {
     price_snapshots: totalPriceSnapshots,
   };
 
-  // Pipeline run log (last 20 runs)
-  const pipelineRuns = await safeRows(
-    supabase.from("pipeline_runs")
-      .select("id, started_at, finished_at, duration_ms, status, market_open, ingested, processed, signals, skipped, scored, openai_calls, error_message")
-      .order("started_at", { ascending: false })
-      .limit(20)
-      .then((r) => (r.data ?? []) as any[])
-  );
+  // Pipeline run log (last 20 runs) + 7-day history for chart
+  const [pipelineRuns, pipelineHistory] = await Promise.all([
+    safeRows(
+      supabase.from("pipeline_runs")
+        .select("id, started_at, finished_at, duration_ms, status, market_open, ingested, processed, signals, skipped, scored, openai_calls, error_message")
+        .order("started_at", { ascending: false })
+        .limit(20)
+        .then((r) => (r.data ?? []) as any[])
+    ),
+    safeRows(
+      supabase.from("pipeline_runs")
+        .select("started_at, status, duration_ms, signals")
+        .gte("started_at", new Date(now - 7 * 24 * 60 * 60_000).toISOString())
+        .order("started_at", { ascending: true })
+        .limit(700)
+        .then((r) => (r.data ?? []) as any[])
+    ),
+  ]);
 
   // Aggregate signals by asset
   const assetBreakdown: Record<string, { total: number; bullish: number; bearish: number; entries: number; exits: number }> = {};
@@ -154,6 +164,7 @@ export async function GET() {
     biasHistory, assetBreakdown, recentClassifications,
     totalMessages, totalSignals,
     pipelineRuns,
+    pipelineHistory,
     todayOpenAICalls,
     todayCostUsd,
     tableCounts,
