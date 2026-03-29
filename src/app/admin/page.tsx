@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { FetchError } from "@/components/ui/fetch-error";
 import { StatusCard } from "@/components/admin/status-cards";
 import { CostCard } from "@/components/admin/cost-card";
-import { BiasHistoryChart } from "@/components/admin/bias-history-chart";
+
 import { AssetBreakdown } from "@/components/admin/asset-breakdown";
 import { RecentClassifications } from "@/components/admin/recent-classifications";
 import { PipelineLog } from "@/components/admin/pipeline-log";
@@ -157,16 +157,15 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* System health + bias chart */}
+      {/* System health */}
       {data && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <SystemHealth
-            runs={data.pipelineRuns}
-            latestSignal={data.latestSignal}
-            latestMessage={data.latestMessage}
-          />
-          <div className="lg:col-span-2">
-            <BiasHistoryChart data={data.biasHistory} />
+          <div className="lg:col-span-3">
+            <SystemHealth
+              runs={data.pipelineRuns}
+              latestSignal={data.latestSignal}
+              latestMessage={data.latestMessage}
+            />
           </div>
         </div>
       )}
