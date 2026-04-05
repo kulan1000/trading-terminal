@@ -35,7 +35,7 @@ export function BiasDetailModal({ asset, direction, score, count, price, changeP
     fetch(`/api/bias-detail?asset=${asset}`)
       .then((r) => r.json())
       .then((d) => setData(d))
-      .catch(() => {})
+      .catch((err) => console.error("[BiasDetailModal]", err))
       .finally(() => setLoading(false));
   }, [asset]);
 

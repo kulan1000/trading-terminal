@@ -11,7 +11,7 @@ export function useReviews() {
     fetch("/api/reviews?status=pending")
       .then((r) => r.json())
       .then((d) => setReviews(d.reviews ?? []))
-      .catch(() => {})
+      .catch((err) => console.error("[useReviews]", err))
       .finally(() => setLoading(false));
   }, []);
 

@@ -39,7 +39,7 @@ export function TraderProfileView({ author }: { author: string }) {
     fetch(`/api/trader/${encodeURIComponent(author)}`)
       .then((r) => r.json())
       .then((d) => setData(d))
-      .catch(() => {})
+      .catch((err) => console.error("[TraderProfileView]", err))
       .finally(() => setLoading(false));
   }, [author]);
 

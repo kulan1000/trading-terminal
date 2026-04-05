@@ -43,7 +43,7 @@ export function useReviewBadge() {
           }
           prevCount.current = n;
         })
-        .catch(() => {});
+        .catch((err) => console.error("[useReviewBadge]", err));
     };
 
     poll();

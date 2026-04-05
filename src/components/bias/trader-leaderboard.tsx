@@ -26,7 +26,7 @@ export function TraderLeaderboard() {
     fetch("/api/leaderboard")
       .then((r) => r.json())
       .then((d) => setTraders(d.traders ?? []))
-      .catch(() => {});
+      .catch((err) => console.error("[TraderLeaderboard]", err));
   }, []);
 
   if (!traders.length) {

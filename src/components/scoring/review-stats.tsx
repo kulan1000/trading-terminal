@@ -19,7 +19,7 @@ export function ReviewStats() {
     fetch("/api/review-stats")
       .then((r) => r.json())
       .then(setStats)
-      .catch(() => {});
+      .catch((err) => console.error("[ReviewStats]", err));
   }, []);
 
   if (!stats || stats.total === 0) return null;

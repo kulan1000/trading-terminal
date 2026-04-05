@@ -16,7 +16,7 @@ export function BiasSummary() {
     fetch("/api/bias-summary")
       .then((r) => r.json())
       .then((d) => setSummaries(d.summaries ?? []))
-      .catch(() => {})
+      .catch((err) => console.error("[BiasSummary]", err))
       .finally(() => setLoading(false));
   }, []);
 

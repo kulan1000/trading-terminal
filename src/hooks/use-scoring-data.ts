@@ -79,7 +79,7 @@ export function useScoringData() {
           setWatchlist(new Set(d.watchlist.map((w: { author: string }) => w.author)));
         }
       })
-      .catch(() => {});
+      .catch((err) => console.error("[useScoringData] watchlist:", err));
 
     fetchData();
     const id = setInterval(fetchData, 60_000);

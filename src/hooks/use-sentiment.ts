@@ -41,7 +41,7 @@ export function useSentiment() {
     fetch("/api/sentiment")
       .then((r) => r.json())
       .then((d) => setData(d))
-      .catch(() => {});
+      .catch((err) => console.error("[useSentiment]", err));
   }, []);
 
   useEffect(() => {
