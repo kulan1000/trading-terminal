@@ -1,0 +1,646 @@
+<!doctype html>
+<html><head><meta charset="utf-8"/><title>Scoring v1</title>
+<style>
+  :root {
+    --tv-bg:#0a0a0a; --tv-surface:#111; --tv-elevated:#1a1a1a; --tv-sidebar:#060606;
+    --tv-text:#D1D4DC; --tv-heading:#fff; --tv-secondary:#787B86; --tv-muted:#434651;
+    --tv-bull:#26A69A; --tv-bear:#EF5350; --tv-blue:#2962FF; --tv-orange:#FF9800; --tv-gold:#FFD700;
+    --border:rgba(255,255,255,0.06); --border-d:rgba(255,255,255,0.08); --border-h:rgba(255,255,255,0.12);
+    --divider:rgba(255,255,255,0.05);
+  }
+  html,body{margin:0;height:100%;background:var(--tv-bg);
+    background-image:radial-gradient(ellipse 80% 60% at 50% 0%, rgba(20,25,40,.35) 0%, transparent 70%);
+    color:var(--tv-text);
+    font-family:-apple-system,BlinkMacSystemFont,"Trebuchet MS",Roboto,Ubuntu,sans-serif;
+    font-feature-settings:"tnum";}
+  *{scrollbar-width:thin;scrollbar-color:var(--border-d) transparent;box-sizing:border-box}
+  ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:var(--border-d);border-radius:3px}
+  @keyframes ping{75%,100%{transform:scale(2);opacity:0}}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  @keyframes modal-in{from{opacity:0;transform:scale(.94) translateY(16px)}to{opacity:1;transform:none}}
+  @keyframes backdrop-in{from{opacity:0}to{opacity:1}}
+  .fade{animation:fade .2s ease both}
+  .tnum{font-variant-numeric:tabular-nums}
+  .hair{height:1px;width:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent)}
+  .card{background:var(--tv-surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;
+    transition:border-color .2s, background .2s, transform .2s, box-shadow .2s}
+  .card.clickable,.card.hoverable{cursor:pointer}
+  .card.clickable:hover,.card.hoverable:hover{border-color:var(--border-h);background:#151515;transform:translateY(-1px);
+    box-shadow:0 0 30px -10px rgba(255,255,255,.08)}
+  .chip{display:inline-flex;align-items:center;padding:3px 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.3px}
+  .pulse{position:relative;display:inline-flex;width:8px;height:8px}
+  .pulse::before{content:'';position:absolute;inset:0;border-radius:50%;background:var(--tv-bull);opacity:.5;animation:ping 1.5s cubic-bezier(0,0,.2,1) infinite}
+  .pulse::after{content:'';position:absolute;inset:0;border-radius:50%;background:var(--tv-bull)}
+  .nav-item{position:relative;height:44px;display:flex;align-items:center;justify-content:center;
+    margin:3px 8px;border-radius:8px;color:#787B86;cursor:pointer;transition:all .15s}
+  .nav-item:hover{color:#D1D4DC;background:rgba(255,255,255,.03)}
+  .nav-item.active{color:#2962FF;background:rgba(41,98,255,.08)}
+  .nav-item.active::before{content:'';position:absolute;left:-8px;top:50%;transform:translateY(-50%);
+    width:3px;height:20px;border-radius:0 3px 3px 0;background:#2962FF;box-shadow:0 0 8px rgba(41,98,255,.6)}
+  .nav-item svg{width:17px;height:17px;transition:filter .15s}
+  .nav-item.active svg{filter:drop-shadow(0 0 6px rgba(41,98,255,.55))}
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);
+    z-index:9998;animation:backdrop-in .25s ease both;display:flex;align-items:center;justify-content:center;padding:16px}
+  .modal{position:relative;z-index:9999;width:95vw;max-width:960px;max-height:90vh;overflow-y:auto;
+    background:var(--tv-surface);border:1px solid var(--border);border-radius:12px;
+    box-shadow:0 20px 70px rgba(0,0,0,.6);animation:modal-in .35s cubic-bezier(.16,1,.3,1) both}
+  .close-btn{display:flex;width:28px;height:28px;align-items:center;justify-content:center;
+    border-radius:6px;color:var(--tv-muted);cursor:pointer;transition:all .15s;background:transparent;border:none;font-size:14px}
+  .close-btn:hover{background:rgba(255,255,255,.06);color:var(--tv-text)}
+  /* Scoring specific */
+  .asset-pill{display:inline-flex;align-items:center;padding:6px 14px;border-radius:6px;font-size:11px;
+    font-weight:600;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:all .15s;
+    background:rgba(255,255,255,.03);color:rgba(255,255,255,.4);border:1px solid transparent}
+  .asset-pill:hover{color:rgba(255,255,255,.75)}
+  .asset-pill.active{background:rgba(255,152,0,.12);color:#FF9800;border-color:rgba(255,152,0,.25);
+    box-shadow:0 0 16px -4px rgba(255,152,0,.35)}
+  .tab{padding:10px 18px;font-size:12px;font-weight:500;color:var(--tv-secondary);cursor:pointer;
+    border-bottom:2px solid transparent;transition:all .15s;margin-bottom:-1px}
+  .tab:hover{color:rgba(255,255,255,.7)}
+  .tab.active{color:#fff;border-bottom-color:#2962FF}
+  .row-click{cursor:pointer;transition:background .15s}
+  .row-click:hover{background:rgba(255,255,255,.025)}
+</style>
+</head><body>
+<div style="display:flex;height:100vh">
+  <!-- sidebar -->
+  <aside style="width:56px;background:var(--tv-sidebar);border-right:1px solid var(--border-d);
+    background-image:linear-gradient(180deg,rgba(20,25,40,.15),transparent 40%);display:flex;flex-direction:column">
+    <div style="height:56px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border-d)">
+      <div style="width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#2962FF,rgba(41,98,255,.4));
+        box-shadow:0 0 16px -2px rgba(41,98,255,.55);display:flex;align-items:center;justify-content:center;
+        font-size:11px;font-weight:800;color:#fff;letter-spacing:-.3px">TT</div>
+    </div>
+    <nav style="flex:1;padding:6px 0" id="nav"></nav>
+    <div style="padding:14px;display:flex;justify-content:center;border-top:1px solid var(--border-d)">
+      <span class="pulse"></span>
+    </div>
+  </aside>
+
+  <!-- main -->
+  <main style="flex:1;overflow-y:auto;padding:20px 24px">
+    <!-- Header -->
+    <div class="fade" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <h1 style="margin:0;font-size:15px;font-weight:600;letter-spacing:.3px;color:#fff">
+          Trader Scoring
+        </h1>
+        <span class="pulse"></span>
+        <span style="font-size:11px;color:var(--tv-secondary)">Scored over 30m · 1h · 2h · 4h horizons</span>
+      </div>
+      <div style="display:flex;gap:4px" id="asset-filter"></div>
+    </div>
+
+    <!-- 4 stat cards -->
+    <div class="fade" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px" id="stats"></div>
+
+    <!-- Podium (top 3 as cards) -->
+    <div class="fade" style="margin-bottom:20px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;padding:0 2px">
+        <h2 style="margin:0;font-size:12px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:rgba(255,255,255,.55)">
+          Top Performers
+        </h2>
+        <span style="font-size:10px;color:var(--tv-secondary)">ranked by weighted score · 7d</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px" id="podium"></div>
+    </div>
+
+    <!-- Leaderboard (main) + Recent Activity (right) -->
+    <div class="fade" style="display:grid;grid-template-columns:1fr 380px;gap:14px;margin-bottom:20px">
+      <!-- Leaderboard -->
+      <div class="card">
+        <div style="padding:16px 20px 8px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--divider)">
+          <span style="font-size:13px;color:#fff;font-weight:500">Full Leaderboard</span>
+          <span style="font-size:11px;color:var(--tv-secondary)">click any trader for details</span>
+        </div>
+        <div id="leaderboard"></div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="card">
+        <div style="padding:16px 20px 8px;border-bottom:1px solid var(--divider)">
+          <span style="font-size:13px;color:#fff;font-weight:500">Recent Scored</span>
+        </div>
+        <div id="recent" style="max-height:560px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <!-- Tabs: Trade Pairs / Asset Accuracy / GPT Reviews -->
+    <div class="fade card" style="margin-bottom:20px">
+      <div style="display:flex;padding:0 16px;border-bottom:1px solid var(--divider)">
+        <div class="tab active" data-tab="pairs">Trade Pairs <span class="tnum" style="color:var(--tv-muted);margin-left:4px">12</span></div>
+        <div class="tab" data-tab="accuracy">Asset Accuracy</div>
+        <div class="tab" data-tab="reviews">GPT Reviews <span class="chip" style="background:rgba(255,152,0,.15);color:#FF9800;margin-left:6px">3 new</span></div>
+      </div>
+      <div id="tab-body"></div>
+    </div>
+
+    <!-- Market status -->
+    <div class="fade card">
+      <div class="hair"></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 20px">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#26A69A;animation:ping 2s infinite"></span>
+        <span style="font-size:13px;font-weight:500;color:rgba(255,255,255,.8)">Scoring engine active</span>
+        <span style="font-size:12px;color:rgba(255,255,255,.3)">next batch in 8m</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="modal-root"></div>
+
+<script>
+// ── ICONS ────────────────────────────────────────────────────────────
+const I = {
+  market: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14l4-4 3 3 5-6 4 4"/><path d="M2 18h16"/></svg>`,
+  sentiment: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><path d="M7 8.5h.01M13 8.5h.01M6.5 12.5c.8 1.2 2 2 3.5 2s2.7-.8 3.5-2"/></svg>`,
+  scoring: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2l2.3 4.9 5.2.7-3.8 3.8.9 5.3L10 14l-4.6 2.7.9-5.3L2.5 7.6l5.2-.7L10 2z"/></svg>`,
+  community: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="8" r="2.5"/><circle cx="13.5" cy="8" r="2"/><path d="M2.5 16c.5-2.5 2.5-4 4.5-4s3.5 1.2 4 3.2M11 15c.5-1.8 2-2.8 3.5-2.8s2.5 1 3 2.3"/></svg>`,
+  discord: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h11A1.5 1.5 0 0 1 17 4.5v9A1.5 1.5 0 0 1 15.5 15H7l-4 3V4.5z"/></svg>`,
+  data: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="10" cy="4.5" rx="6" ry="2"/><path d="M4 4.5v11c0 1.1 2.7 2 6 2s6-.9 6-2v-11M4 10c0 1.1 2.7 2 6 2s6-.9 6-2"/></svg>`,
+  stocks: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="3" height="6" rx=".5"/><rect x="8.5" y="7" width="3" height="10" rx=".5"/><rect x="14" y="3.5" width="3" height="13.5" rx=".5"/></svg>`,
+  trades: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11l-3-3M17 13H6l3 3"/></svg>`,
+  admin: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l6 2v5c0 3.5-2.5 6.7-6 8-3.5-1.3-6-4.5-6-8v-5l6-2z"/></svg>`,
+};
+const navItems = [
+  ['Market','market'],['Sentiment','sentiment'],['Scoring','scoring'],['Community','community'],
+  ['Discord','discord'],['Data','data'],['Stocks','stocks'],['Trades','trades'],['Admin','admin']
+];
+document.getElementById('nav').innerHTML = navItems.map(([n,k]) =>
+  `<div class="nav-item ${n==='Scoring'?'active':''}" title="${n}">${I[k]}</div>`
+).join('');
+
+// ── ASSET FILTER ─────────────────────────────────────────────────────
+const ASSETS = ['All','Gold','Silver','Oil'];
+let currentAsset = 'All';
+function renderAssetFilter(){
+  document.getElementById('asset-filter').innerHTML = ASSETS.map(a =>
+    `<div class="asset-pill ${a===currentAsset?'active':''}" data-asset="${a}">${a}</div>`
+  ).join('');
+  document.querySelectorAll('[data-asset]').forEach(n => {
+    n.addEventListener('click', () => { currentAsset = n.dataset.asset; renderAll(); });
+  });
+}
+
+// ── DATA ─────────────────────────────────────────────────────────────
+const TRADERS = [
+  {name:'Apex',    signals:42, entries:22, exits:20, winRate:76, avgScore:2.14, consistency:38, pnl:+128.4, assets:['Gold','Oil'],    trend:[1,2,3,4,5,7,8,10,12]},
+  {name:'Viper',   signals:31, entries:16, exits:15, winRate:71, avgScore:1.82, consistency:26, pnl:+86.2,  assets:['Gold'],          trend:[2,3,3,4,6,7,8,9,10]},
+  {name:'Kilo',    signals:28, entries:14, exits:14, winRate:64, avgScore:1.35, consistency:20, pnl:+62.8,  assets:['Oil','Silver'],  trend:[1,2,4,3,5,5,6,7,8]},
+  {name:'Nox',     signals:36, entries:18, exits:18, winRate:58, avgScore:0.92, consistency:22, pnl:+34.1,  assets:['Silver','Gold'], trend:[3,4,3,5,4,6,5,6,7]},
+  {name:'Raven',   signals:24, entries:12, exits:12, winRate:54, avgScore:0.61, consistency:14, pnl:+18.4,  assets:['Gold'],          trend:[2,3,2,4,4,5,5,6,6]},
+  {name:'Juno',    signals:19, entries:10, exits:9,  winRate:52, avgScore:0.42, consistency:10, pnl:+8.2,   assets:['Oil'],           trend:[4,3,4,4,5,4,5,5,5]},
+  {name:'Tempo',   signals:22, entries:11, exits:11, winRate:45, avgScore:-0.18,consistency:10, pnl:-4.6,   assets:['Silver'],        trend:[6,5,5,4,5,4,4,4,3]},
+  {name:'Dusk',    signals:17, entries:9,  exits:8,  winRate:41, avgScore:-0.52,consistency:7,  pnl:-12.3,  assets:['Gold','Oil'],    trend:[7,6,5,5,4,4,3,3,3]},
+  {name:'Mara',    signals:15, entries:8,  exits:7,  winRate:33, avgScore:-1.24,consistency:5,  pnl:-24.8,  assets:['Silver'],        trend:[8,7,6,5,4,4,3,3,2]},
+];
+
+const RECENT = [
+  {t:'14:47', trader:'Apex',  kind:'ENTRY', pos:'LONG',  asset:'GOLD',   score:+2.4, horizons:[+0.8,+1.5,+2.1,+2.4], msg:'XAUUSD long 3270 sl 3255 tp 3290'},
+  {t:'14:41', trader:'Viper', kind:'EXIT',  pos:'SHORT', asset:'GOLD',   score:+1.8, horizons:[+0.4,+0.9,+1.5,+1.8], msg:'XAU short closed at 3265, +18 pips'},
+  {t:'14:22', trader:'Kilo',  kind:'ENTRY', pos:'LONG',  asset:'OIL',    score:+1.2, horizons:[+0.2,+0.6,+0.9,+1.2], msg:'WTI long 62.80 target 63.50'},
+  {t:'14:10', trader:'Nox',   kind:'EXIT',  pos:'LONG',  asset:'SILVER', score:-0.6, horizons:[+0.1,-0.2,-0.4,-0.6], msg:'silver exit at 42.10 — tight stop'},
+  {t:'13:58', trader:'Apex',  kind:'ENTRY', pos:'SHORT', asset:'OIL',    score:+0.8, horizons:[-0.1,+0.3,+0.6,+0.8], msg:'oil short 63.20 reject'},
+  {t:'13:45', trader:'Raven', kind:'ENTRY', pos:'LONG',  asset:'GOLD',   score:+0.4, horizons:[+0.1,+0.2,+0.3,+0.4], msg:'XAU 3265 hold for 3280'},
+  {t:'13:20', trader:'Dusk',  kind:'EXIT',  pos:'SHORT', asset:'GOLD',   score:-1.2, horizons:[-0.3,-0.7,-1.0,-1.2], msg:'XAU short stopped out'},
+  {t:'12:58', trader:'Tempo', kind:'ENTRY', pos:'LONG',  asset:'SILVER', score:-0.4, horizons:[-0.1,-0.2,-0.3,-0.4], msg:'XAG 42.00 bounce play'},
+  {t:'12:30', trader:'Viper', kind:'ENTRY', pos:'LONG',  asset:'GOLD',   score:+1.4, horizons:[+0.5,+0.9,+1.2,+1.4], msg:'XAU reload long 3262'},
+  {t:'12:10', trader:'Juno',  kind:'EXIT',  pos:'LONG',  asset:'OIL',    score:+0.6, horizons:[+0.2,+0.4,+0.5,+0.6], msg:'WTI +40 ticks, out'},
+];
+
+const PAIRS = [
+  {trader:'Apex',  asset:'GOLD',   pos:'LONG',  entry:3262.40, exit:3284.10, pnl:+21.70, when:'2h ago'},
+  {trader:'Viper', asset:'GOLD',   pos:'SHORT', entry:3268.00, exit:3252.50, pnl:+15.50, when:'3h ago'},
+  {trader:'Kilo',  asset:'OIL',    pos:'LONG',  entry:62.40,   exit:63.20,   pnl:+0.80,  when:'4h ago'},
+  {trader:'Apex',  asset:'OIL',    pos:'SHORT', entry:63.10,   exit:62.85,   pnl:+0.25,  when:'6h ago'},
+  {trader:'Nox',   asset:'SILVER', pos:'SHORT', entry:42.60,   exit:42.10,   pnl:+0.50,  when:'6h ago'},
+  {trader:'Raven', asset:'GOLD',   pos:'LONG',  entry:3264.20, exit:3271.00, pnl:+6.80,  when:'8h ago'},
+  {trader:'Juno',  asset:'OIL',    pos:'LONG',  entry:62.10,   exit:62.50,   pnl:+0.40,  when:'9h ago'},
+  {trader:'Dusk',  asset:'GOLD',   pos:'SHORT', entry:3266.00, exit:3278.40, pnl:-12.40, when:'12h ago'},
+  {trader:'Tempo', asset:'SILVER', pos:'LONG',  entry:42.20,   exit:41.90,   pnl:-0.30,  when:'14h ago'},
+  {trader:'Mara',  asset:'SILVER', pos:'LONG',  entry:42.00,   exit:41.60,   pnl:-0.40,  when:'16h ago'},
+];
+
+const ASSET_ACCURACY = [
+  {asset:'Gold',   color:'#FFD700', signals:186, wins:132, winPct:71, avgScore:1.42, trend:'up'},
+  {asset:'Silver', color:'#D0D5DE', signals:84,  wins:39,  winPct:46, avgScore:-0.18, trend:'down'},
+  {asset:'Oil',    color:'#C9843F', signals:124, wins:76,  winPct:61, avgScore:0.88, trend:'up'},
+];
+
+const REVIEWS = [
+  {t:'5m ago',  trader:'Apex',  asset:'GOLD',   reason:'Ambiguous direction — "watching 3270"',  status:'pending'},
+  {t:'14m ago', trader:'Viper', asset:'OIL',    reason:'No TP/SL specified in entry message',    status:'pending'},
+  {t:'32m ago', trader:'Kilo',  asset:'SILVER', reason:'Conflicts with earlier short signal',     status:'pending'},
+  {t:'1h ago',  trader:'Nox',   asset:'GOLD',   reason:'Low confidence classification (47%)',     status:'resolved'},
+];
+
+// ── HELPERS ──────────────────────────────────────────────────────────
+const color = (v) => v > 0 ? '#26A69A' : v < 0 ? '#EF5350' : '#787B86';
+const sign = (v) => v > 0 ? '+' : '';
+const winColor = (pct) => pct >= 65 ? '#26A69A' : pct >= 50 ? '#FF9800' : '#EF5350';
+
+function sparkline(values, w=80, h=24, col='#26A69A'){
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = max - min || 1;
+  const pts = values.map((v,i) => `${(i/(values.length-1)*w).toFixed(1)},${(h - ((v-min)/range)*(h-2) - 1).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="flex-shrink:0">
+    <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+// ── FILTER ───────────────────────────────────────────────────────────
+function filterTraders(){
+  if (currentAsset === 'All') return TRADERS;
+  return TRADERS.filter(t => t.assets.includes(currentAsset));
+}
+function filterRecent(){
+  if (currentAsset === 'All') return RECENT;
+  return RECENT.filter(r => r.asset.toLowerCase() === currentAsset.toLowerCase());
+}
+
+// ── STAT CARDS ───────────────────────────────────────────────────────
+function renderStats(){
+  const traders = filterTraders();
+  const recent = filterRecent();
+  const totalScored = traders.reduce((s,t) => s+t.signals, 0);
+  const avgWin = traders.length ? (traders.reduce((s,t) => s+t.winRate, 0) / traders.length).toFixed(0) : 0;
+  const totalPnl = PAIRS.reduce((s,p) => s+p.pnl, 0);
+
+  const items = [
+    {label:'Active Traders', value: traders.length, sub: `of ${TRADERS.length} total`, color:'#fff'},
+    {label:'Signals Scored', value: totalScored, sub:`last 7 days`, color:'#fff'},
+    {label:'Avg Win Rate',   value: `${avgWin}%`, sub: Number(avgWin) >= 60 ? 'above benchmark' : Number(avgWin) >= 50 ? 'near benchmark' : 'below benchmark', color: winColor(Number(avgWin))},
+    {label:'Total P&L',      value: `${sign(totalPnl)}${totalPnl.toFixed(1)}`, sub:`${PAIRS.filter(p=>p.pnl>0).length}W / ${PAIRS.filter(p=>p.pnl<0).length}L`, color: color(totalPnl)},
+  ];
+
+  document.getElementById('stats').innerHTML = items.map(it => `
+    <div class="card hoverable" style="padding:16px 18px">
+      <div style="font-size:11px;color:var(--tv-secondary);font-weight:500">${it.label}</div>
+      <div class="tnum" style="font-size:26px;font-weight:700;color:${it.color};letter-spacing:-.5px;margin-top:4px">${it.value}</div>
+      <div style="font-size:11px;color:var(--tv-muted);margin-top:2px">${it.sub}</div>
+    </div>`).join('');
+}
+
+// ── PODIUM ───────────────────────────────────────────────────────────
+function renderPodium(){
+  const top = filterTraders().slice(0,3);
+  const medals = [
+    {emoji:'🥇', color:'#FFD700', glow:'0 0 60px -10px rgba(255,215,0,.45), 0 0 20px -6px rgba(255,215,0,.2)', border:'rgba(255,215,0,.28)', rank:'1st'},
+    {emoji:'🥈', color:'#C0C5CE', glow:'0 0 60px -10px rgba(192,197,206,.35)', border:'rgba(192,197,206,.22)', rank:'2nd'},
+    {emoji:'🥉', color:'#CD7F32', glow:'0 0 60px -10px rgba(205,127,50,.3)',  border:'rgba(205,127,50,.22)',  rank:'3rd'},
+  ];
+  document.getElementById('podium').innerHTML = top.map((t,i) => {
+    const m = medals[i];
+    return `
+    <div class="card clickable" data-trader="${t.name}" style="box-shadow:${m.glow};border-color:${m.border}">
+      <div style="height:2px;background:linear-gradient(90deg,transparent,${m.color},transparent)"></div>
+      <div style="padding:18px 22px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <span style="font-size:22px">${m.emoji}</span>
+          <span style="font-size:10px;font-weight:700;color:${m.color};letter-spacing:.6px;text-transform:uppercase">${m.rank} place</span>
+          <div style="flex:1"></div>
+          <span class="tnum" style="font-size:11px;color:var(--tv-secondary)">${t.signals} signals</span>
+        </div>
+        <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-.4px;margin-bottom:2px">@${t.name}</div>
+        <div style="font-size:12px;color:var(--tv-secondary);margin-bottom:14px">trades ${t.assets.join(' · ')}</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="flex:1">
+            <div style="font-size:10px;color:var(--tv-secondary);font-weight:500">Win rate</div>
+            <div class="tnum" style="font-size:18px;font-weight:600;color:${winColor(t.winRate)};margin-top:2px">${t.winRate}%</div>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:10px;color:var(--tv-secondary);font-weight:500">Avg score</div>
+            <div class="tnum" style="font-size:18px;font-weight:600;color:${color(t.avgScore)};margin-top:2px">${sign(t.avgScore)}${t.avgScore.toFixed(2)}%</div>
+          </div>
+          <div style="align-self:flex-end;margin-bottom:2px">
+            ${sparkline(t.trend, 70, 34, color(t.avgScore))}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('[data-trader]').forEach(n => {
+    n.addEventListener('click', () => openTraderModal(n.dataset.trader));
+  });
+}
+
+// ── LEADERBOARD TABLE ────────────────────────────────────────────────
+function renderLeaderboard(){
+  const traders = filterTraders();
+  const rows = traders.map((t,i) => `
+    <tr class="row-click" data-trader-row="${t.name}">
+      <td style="padding:11px 16px;color:var(--tv-muted);font-size:12px;width:40px" class="tnum">${i+1}</td>
+      <td style="padding:11px 12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:#fff;font-size:13px;font-weight:500">@${t.name}</span>
+          ${i<3 ? `<span style="font-size:11px">${['🥇','🥈','🥉'][i]}</span>` : ''}
+        </div>
+        <div style="font-size:10px;color:var(--tv-muted);margin-top:1px">${t.entries}E · ${t.exits}X · ${t.assets.join(', ')}</div>
+      </td>
+      <td style="padding:11px 12px;text-align:right" class="tnum">
+        <span style="color:#fff;font-size:13px">${t.signals}</span>
+      </td>
+      <td style="padding:11px 12px;text-align:right">
+        <span class="chip tnum" style="background:${winColor(t.winRate)}1f;color:${winColor(t.winRate)}">${t.winRate}%</span>
+      </td>
+      <td style="padding:11px 12px;text-align:right" class="tnum">
+        <span style="color:${color(t.avgScore)};font-size:13px;font-weight:500">${sign(t.avgScore)}${t.avgScore.toFixed(2)}%</span>
+      </td>
+      <td style="padding:11px 12px;text-align:right" class="tnum">
+        <span style="color:rgba(255,255,255,.7);font-size:12px">${t.consistency}<span style="color:var(--tv-muted)">/${t.signals}</span></span>
+      </td>
+      <td style="padding:11px 16px;text-align:right;width:100px">
+        ${sparkline(t.trend, 70, 24, color(t.avgScore))}
+      </td>
+    </tr>
+  `).join('');
+
+  document.getElementById('leaderboard').innerHTML = `
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="background:rgba(255,255,255,.015);border-bottom:1px solid var(--divider)">
+          <th style="padding:9px 16px;text-align:left;font-size:10px;color:var(--tv-secondary);font-weight:600;letter-spacing:.3px;text-transform:uppercase">#</th>
+          <th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--tv-secondary);font-weight:600;letter-spacing:.3px;text-transform:uppercase">Trader</th>
+          <th style="padding:9px 12px;text-align:right;font-size:10px;color:var(--tv-secondary);font-weight:600;letter-spacing:.3px;text-transform:uppercase">Signals</th>
+          <th style="padding:9px 12px;text-align:right;font-size:10px;color:var(--tv-secondary);font-weight:600;letter-spacing:.3px;text-transform:uppercase">Win Rate</th>
+          <th style="padding:9px 12px;text-align:right;font-size:10px;color:var(--tv-secondary);font-weight:600;letter-spacing:.3px;text-transform:uppercase">Avg Score</th>
+          <th style="padding:9px 12px;text-align:right;font-size:10px;color:var(--tv-secondary);font-weight:600;letter-spacing:.3px;text-transform:uppercase">Consistent</th>
+          <th style="padding:9px 16px;text-align:right;font-size:10px;color:var(--tv-secondary);font-weight:600;letter-spacing:.3px;text-transform:uppercase">Trend</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  document.querySelectorAll('[data-trader-row]').forEach(n => {
+    n.addEventListener('click', () => openTraderModal(n.dataset.trader));
+  });
+}
+
+// ── RECENT ACTIVITY ──────────────────────────────────────────────────
+function renderRecent(){
+  const items = filterRecent();
+  const KIND_BG = {ENTRY:'rgba(38,166,154,.12)', EXIT:'rgba(255,152,0,.12)'};
+  const KIND_FG = {ENTRY:'#26A69A', EXIT:'#FF9800'};
+  document.getElementById('recent').innerHTML = items.map((r,i) => {
+    const last = i === items.length-1;
+    return `
+    <div style="padding:12px 18px;${last?'':'border-bottom:1px solid var(--divider)'}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="color:#fff;font-size:12px;font-weight:500">@${r.trader}</span>
+        <span class="chip" style="background:${KIND_BG[r.kind]};color:${KIND_FG[r.kind]}">${r.kind} ${r.pos}</span>
+        <span style="font-size:10px;color:var(--tv-secondary);font-weight:500">${r.asset}</span>
+        <div style="flex:1"></div>
+        <span class="tnum" style="font-size:12px;color:${color(r.score)};font-weight:600">${sign(r.score)}${r.score.toFixed(2)}%</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="tnum" style="font-size:10px;color:var(--tv-muted);min-width:36px">${r.t}</span>
+        <div style="flex:1;display:flex;gap:4px">
+          ${r.horizons.map((h,j) => {
+            const labels = ['30m','1h','2h','4h'];
+            const c = color(h);
+            return `<div style="flex:1;text-align:center">
+              <div style="font-size:9px;color:var(--tv-muted)">${labels[j]}</div>
+              <div class="tnum" style="font-size:10px;color:${c};font-weight:500">${sign(h)}${h.toFixed(1)}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── TABS ─────────────────────────────────────────────────────────────
+let currentTab = 'pairs';
+function renderTabBody(){
+  if (currentTab === 'pairs') renderPairsTab();
+  else if (currentTab === 'accuracy') renderAccuracyTab();
+  else renderReviewsTab();
+}
+function renderPairsTab(){
+  const rows = PAIRS.map(p => `
+    <tr style="border-bottom:1px solid var(--divider)">
+      <td style="padding:10px 16px;color:#fff;font-size:12px;font-weight:500">@${p.trader}</td>
+      <td style="padding:10px 12px">
+        <span style="color:var(--tv-secondary);font-size:11px;font-weight:500">${p.asset}</span>
+        <span class="chip" style="background:rgba(255,255,255,.04);color:var(--tv-secondary);margin-left:6px">${p.pos}</span>
+      </td>
+      <td style="padding:10px 12px;text-align:right;color:rgba(255,255,255,.6);font-size:12px" class="tnum">${p.entry.toFixed(2)}</td>
+      <td style="padding:10px 12px;text-align:right;color:rgba(255,255,255,.6);font-size:12px" class="tnum">${p.exit.toFixed(2)}</td>
+      <td style="padding:10px 12px;text-align:right" class="tnum">
+        <span style="color:${color(p.pnl)};font-size:13px;font-weight:600">${sign(p.pnl)}${p.pnl.toFixed(2)}</span>
+      </td>
+      <td style="padding:10px 16px;text-align:right;color:var(--tv-muted);font-size:11px">${p.when}</td>
+    </tr>`).join('');
+  document.getElementById('tab-body').innerHTML = `
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="background:rgba(255,255,255,.015);border-bottom:1px solid var(--divider)">
+          <th style="padding:9px 16px;text-align:left;font-size:10px;color:var(--tv-secondary);font-weight:600;letter-spacing:.3px;text-transform:uppercase">Trader</th>
+          <th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--tv-secondary);font-weight:600;letter-spacing:.3px;text-transform:uppercase">Asset</th>
+          <th style="padding:9px 12px;text-align:right;font-size:10px;color:var(--tv-secondary);font-weight:600;letter-spacing:.3px;text-transform:uppercase">Entry</th>
+          <th style="padding:9px 12px;text-align:right;font-size:10px;color:var(--tv-secondary);font-weight:600;letter-spacing:.3px;text-transform:uppercase">Exit</th>
+          <th style="padding:9px 12px;text-align:right;font-size:10px;color:var(--tv-secondary);font-weight:600;letter-spacing:.3px;text-transform:uppercase">P&L</th>
+          <th style="padding:9px 16px;text-align:right;font-size:10px;color:var(--tv-secondary);font-weight:600;letter-spacing:.3px;text-transform:uppercase">When</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+function renderAccuracyTab(){
+  document.getElementById('tab-body').innerHTML = `
+    <div style="padding:20px 24px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+      ${ASSET_ACCURACY.map(a => {
+        const c = winColor(a.winPct);
+        return `
+        <div class="card hoverable" style="padding:18px 20px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <span style="width:8px;height:8px;border-radius:50%;background:${a.color};box-shadow:0 0 8px ${a.color}"></span>
+            <span style="font-size:14px;color:#fff;font-weight:500">${a.asset}</span>
+            <div style="flex:1"></div>
+            <span class="tnum" style="font-size:11px;color:var(--tv-secondary)">${a.signals} signals</span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:14px">
+            <span class="tnum" style="font-size:28px;font-weight:700;color:${c};letter-spacing:-.6px">${a.winPct}<span style="font-size:16px;opacity:.6">%</span></span>
+            <span style="font-size:11px;color:var(--tv-secondary)">win rate · ${a.wins}W/${a.signals-a.wins}L</span>
+          </div>
+          <div style="border-top:1px solid var(--divider);padding-top:10px;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:10px;color:var(--tv-secondary);font-weight:500">Avg score</div>
+              <div class="tnum" style="font-size:15px;color:${color(a.avgScore)};font-weight:600;margin-top:2px">${sign(a.avgScore)}${a.avgScore.toFixed(2)}%</div>
+            </div>
+            <span style="font-size:11px;color:${a.trend==='up'?'#26A69A':'#EF5350'}">${a.trend==='up'?'▲':'▼'} trending</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+function renderReviewsTab(){
+  const STATUS_BG = {pending:'rgba(255,152,0,.12)', resolved:'rgba(38,166,154,.12)'};
+  const STATUS_FG = {pending:'#FF9800', resolved:'#26A69A'};
+  document.getElementById('tab-body').innerHTML = `
+    <div>
+      ${REVIEWS.map((r,i) => `
+        <div style="padding:14px 20px;border-bottom:${i===REVIEWS.length-1?'none':'1px solid var(--divider)'};display:flex;align-items:center;gap:14px">
+          <span class="chip" style="background:${STATUS_BG[r.status]};color:${STATUS_FG[r.status]}">${r.status.toUpperCase()}</span>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+              <span style="color:#fff;font-size:13px;font-weight:500">@${r.trader}</span>
+              <span style="font-size:10px;color:var(--tv-secondary);font-weight:500">${r.asset}</span>
+              <span style="font-size:10px;color:var(--tv-muted)">${r.t}</span>
+            </div>
+            <div style="font-size:12px;color:rgba(255,255,255,.6)">${r.reason}</div>
+          </div>
+          ${r.status==='pending' ? `
+          <div style="display:flex;gap:6px">
+            <button style="padding:6px 12px;background:rgba(38,166,154,.12);color:#26A69A;border:1px solid rgba(38,166,154,.25);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">Approve</button>
+            <button style="padding:6px 12px;background:rgba(239,83,80,.12);color:#EF5350;border:1px solid rgba(239,83,80,.25);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">Reject</button>
+          </div>` : ''}
+        </div>`).join('')}
+    </div>`;
+}
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    currentTab = t.dataset.tab;
+    renderTabBody();
+  });
+});
+
+// ── TRADER MODAL ─────────────────────────────────────────────────────
+function openTraderModal(name){
+  const t = TRADERS.find(x => x.name === name);
+  if (!t) return;
+  const recent = RECENT.filter(r => r.trader === name);
+
+  // trend chart
+  const W=780, H=120;
+  const max = Math.max(...t.trend);
+  const pts = t.trend.map((v,i) => `${(i/(t.trend.length-1)*W).toFixed(1)},${(H - (v/max)*(H-20) - 10).toFixed(1)}`).join(' ');
+  const fill = `M0,${H} L${pts} L${W},${H} Z`;
+  const c = color(t.avgScore);
+
+  const horizonBar = (h) => {
+    const c2 = color(h);
+    return `<div style="flex:1;text-align:center">
+      <div style="font-size:9px;color:var(--tv-muted);letter-spacing:.3px">${h.label}</div>
+      <div class="tnum" style="font-size:14px;color:${c2};font-weight:600;margin-top:3px">${sign(h.val)}${h.val.toFixed(2)}%</div>
+    </div>`;
+  };
+  // mock horizon averages
+  const horizons = [
+    {label:'30m', val: t.avgScore*0.5},
+    {label:'1h',  val: t.avgScore*0.8},
+    {label:'2h',  val: t.avgScore*1.0},
+    {label:'4h',  val: t.avgScore*1.2},
+  ];
+
+  const html = `
+    <div class="backdrop" id="backdrop">
+      <div class="modal" onclick="event.stopPropagation()">
+        <!-- HEADER -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid rgba(255,255,255,.04)">
+          <div style="display:flex;align-items:baseline;gap:16px">
+            <span style="font-size:13px;color:var(--tv-muted)">Trader Profile</span>
+            <span style="font-size:24px;font-weight:700;color:#fff">@${t.name}</span>
+            <span style="font-size:13px;font-weight:600;color:${c}">
+              ${sign(t.avgScore)}${t.avgScore.toFixed(2)}% avg
+            </span>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px">
+            <span class="chip tnum" style="background:${winColor(t.winRate)}1f;color:${winColor(t.winRate)}">${t.winRate}% WIN</span>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+          </div>
+        </div>
+
+        <!-- BODY -->
+        <div style="padding:20px 24px">
+          <!-- Performance chart -->
+          <div style="margin-bottom:14px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px">
+              <span style="font-size:11px;color:var(--tv-secondary);font-weight:500">Score trend · last 9 signals</span>
+              <span style="font-size:10px;color:var(--tv-muted)">trades: ${t.assets.join(' · ')}</span>
+            </div>
+            <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="${c}" stop-opacity=".22"/>
+                  <stop offset="100%" stop-color="${c}" stop-opacity=".02"/>
+                </linearGradient>
+              </defs>
+              <path d="${fill}" fill="url(#tg)"/>
+              <polyline points="${pts}" fill="none" stroke="${c}" stroke-width="1.8"/>
+            </svg>
+          </div>
+
+          <!-- Horizon averages -->
+          <div style="display:flex;gap:12px;padding:14px 0;border-top:1px solid var(--divider);border-bottom:1px solid var(--divider);margin-bottom:18px">
+            <div style="display:flex;flex-direction:column;justify-content:center;min-width:120px">
+              <div style="font-size:10px;color:var(--tv-secondary);font-weight:500">Avg score by horizon</div>
+              <div style="font-size:10px;color:var(--tv-muted);margin-top:2px">how fast signals move</div>
+            </div>
+            ${horizons.map(horizonBar).join('')}
+          </div>
+
+          <!-- Stats grid -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px">
+            ${[
+              ['Signals', t.signals, '#fff'],
+              ['Entries', t.entries, '#fff'],
+              ['Exits', t.exits, '#fff'],
+              ['Consistency', `${t.consistency}/${t.signals}`, '#26A69A'],
+            ].map(([k,v,col]) => `
+              <div style="padding:10px 14px;background:rgba(255,255,255,.02);border:1px solid var(--divider);border-radius:8px">
+                <div style="font-size:10px;color:var(--tv-secondary);font-weight:500">${k}</div>
+                <div class="tnum" style="font-size:18px;color:${col};font-weight:600;margin-top:2px">${v}</div>
+              </div>`).join('')}
+          </div>
+
+          <!-- Recent signals -->
+          <div>
+            <div style="font-size:11px;color:var(--tv-secondary);font-weight:500;margin-bottom:4px">Recent signals (${recent.length})</div>
+            ${recent.length ? recent.map(r => {
+              const KIND_BG = {ENTRY:'rgba(38,166,154,.12)', EXIT:'rgba(255,152,0,.12)'};
+              const KIND_FG = {ENTRY:'#26A69A', EXIT:'#FF9800'};
+              return `
+              <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--divider)">
+                <span class="tnum" style="font-size:10px;color:var(--tv-muted);min-width:40px;padding-top:2px">${r.t}</span>
+                <span class="chip" style="background:${KIND_BG[r.kind]};color:${KIND_FG[r.kind]};align-self:flex-start">${r.kind}</span>
+                <span style="font-size:10px;color:var(--tv-secondary);font-weight:500;align-self:flex-start;padding-top:4px;min-width:50px">${r.asset}</span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:12px;color:#fff;line-height:1.4">${r.msg}</div>
+                </div>
+                <span class="tnum" style="font-size:13px;color:${color(r.score)};font-weight:600;align-self:flex-start;padding-top:1px">${sign(r.score)}${r.score.toFixed(2)}%</span>
+              </div>`;
+            }).join('') : `<div style="font-size:12px;color:var(--tv-muted);padding:14px 0">No recent signals under current filter.</div>`}
+          </div>
+        </div>
+
+        <div style="border-top:1px solid var(--border);padding:11px 24px;font-size:11px;color:rgba(255,255,255,.3)">
+          Scored over 30m · 1h · 2h · 4h windows · ESC to close
+        </div>
+      </div>
+    </div>`;
+  const root = document.getElementById('modal-root');
+  root.innerHTML = html;
+  document.getElementById('backdrop').addEventListener('click', closeModal);
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(){
+  document.getElementById('modal-root').innerHTML = '';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
+// ── INIT ─────────────────────────────────────────────────────────────
+function renderAll(){
+  renderStats();
+  renderPodium();
+  renderLeaderboard();
+  renderRecent();
+  renderTabBody();
+}
+renderAssetFilter();
+renderAll();
+</script>
+</body></html>

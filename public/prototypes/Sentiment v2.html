@@ -1,0 +1,758 @@
+<!doctype html>
+<html><head><meta charset="utf-8"/><title>Sentiment v2</title>
+<style>
+  :root {
+    --tv-bg:#0a0a0a; --tv-surface:#111; --tv-elevated:#1a1a1a; --tv-sidebar:#060606;
+    --tv-text:#D1D4DC; --tv-heading:#fff; --tv-secondary:#787B86; --tv-muted:#434651;
+    --tv-bull:#26A69A; --tv-bear:#EF5350; --tv-blue:#2962FF; --tv-orange:#FF9800; --tv-yellow:#FFEB3B;
+    --border:rgba(255,255,255,0.06); --border-d:rgba(255,255,255,0.08); --border-h:rgba(255,255,255,0.12);
+    --divider:rgba(255,255,255,0.05);
+  }
+  html,body{margin:0;height:100%;background:var(--tv-bg);
+    background-image:radial-gradient(ellipse 80% 60% at 50% 0%, rgba(20,25,40,.35) 0%, transparent 70%);
+    color:var(--tv-text);
+    font-family:-apple-system,BlinkMacSystemFont,"Trebuchet MS",Roboto,Ubuntu,sans-serif;
+    font-feature-settings:"tnum";}
+  *{scrollbar-width:thin;scrollbar-color:var(--border-d) transparent;box-sizing:border-box}
+  ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:var(--border-d);border-radius:3px}
+  @keyframes ping{75%,100%{transform:scale(2);opacity:0}}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  @keyframes modal-in{from{opacity:0;transform:scale(.94) translateY(16px)}to{opacity:1;transform:none}}
+  @keyframes backdrop-in{from{opacity:0}to{opacity:1}}
+  .fade{animation:fade .2s ease both}
+  .tnum{font-variant-numeric:tabular-nums}
+  .hair{height:1px;width:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent)}
+  .card{background:var(--tv-surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;
+    transition:border-color .2s, background .2s, transform .2s}
+  .card.clickable{cursor:pointer}
+  .card.clickable:hover{border-color:var(--border-h);background:#151515;transform:translateY(-1px)}
+  .card.hoverable{cursor:default;transition:border-color .2s, background .2s, transform .2s, box-shadow .2s}
+  .card.hoverable:hover{border-color:var(--border-h);background:#151515;transform:translateY(-1px);
+    box-shadow:0 0 30px -10px rgba(255,255,255,.08)}
+  .sec-title{margin:0 0 10px 2px;font-size:11px;font-weight:600;letter-spacing:.4px;color:rgba(255,255,255,.5);text-transform:uppercase}
+  .chip{display:inline-flex;align-items:center;padding:3px 7px;border-radius:4px;
+    font-size:10px;font-weight:700;letter-spacing:.3px}
+  .pulse{position:relative;display:inline-flex;width:8px;height:8px}
+  .pulse::before{content:'';position:absolute;inset:0;border-radius:50%;background:var(--tv-bull);
+    opacity:.5;animation:ping 1.5s cubic-bezier(0,0,.2,1) infinite}
+  .pulse::after{content:'';position:absolute;inset:0;border-radius:50%;background:var(--tv-bull)}
+  /* Sidebar nav */
+  .nav-item{position:relative;height:44px;display:flex;align-items:center;justify-content:center;
+    margin:3px 8px;border-radius:8px;color:#787B86;cursor:pointer;transition:all .15s}
+  .nav-item:hover{color:#D1D4DC;background:rgba(255,255,255,.03)}
+  .nav-item.active{color:#2962FF;background:rgba(41,98,255,.08)}
+  .nav-item.active::before{content:'';position:absolute;left:-8px;top:50%;transform:translateY(-50%);
+    width:3px;height:20px;border-radius:0 3px 3px 0;background:#2962FF;
+    box-shadow:0 0 8px rgba(41,98,255,.6)}
+  .nav-item svg{width:17px;height:17px;transition:filter .15s}
+  .nav-item.active svg{filter:drop-shadow(0 0 6px rgba(41,98,255,.55))}
+  /* Modal */
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);
+    z-index:9998;animation:backdrop-in .25s ease both;display:flex;align-items:center;justify-content:center;padding:16px}
+  .modal{position:relative;z-index:9999;width:95vw;max-width:960px;max-height:90vh;overflow-y:auto;
+    background:var(--tv-surface);border:1px solid var(--border);border-radius:12px;
+    box-shadow:0 20px 70px rgba(0,0,0,.6);animation:modal-in .35s cubic-bezier(.16,1,.3,1) both}
+  .close-btn{display:flex;width:28px;height:28px;align-items:center;justify-content:center;
+    border-radius:6px;color:var(--tv-muted);cursor:pointer;transition:all .15s;
+    background:transparent;border:none;font-size:14px}
+  .close-btn:hover{background:rgba(255,255,255,.06);color:var(--tv-text)}
+</style>
+</head><body>
+<div style="display:flex;height:100vh">
+  <!-- sidebar -->
+  <aside style="width:56px;background:var(--tv-sidebar);border-right:1px solid var(--border-d);
+    background-image:linear-gradient(180deg,rgba(20,25,40,.15),transparent 40%);
+    display:flex;flex-direction:column">
+    <div style="height:56px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border-d)">
+      <div style="width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#2962FF,rgba(41,98,255,.4));
+        box-shadow:0 0 16px -2px rgba(41,98,255,.55);display:flex;align-items:center;justify-content:center;
+        font-size:11px;font-weight:800;color:#fff;letter-spacing:-.3px">TT</div>
+    </div>
+    <nav style="flex:1;padding:6px 0" id="nav"></nav>
+    <div style="padding:14px;display:flex;justify-content:center;border-top:1px solid var(--border-d)">
+      <span class="pulse"></span>
+    </div>
+  </aside>
+
+  <!-- main -->
+  <main style="flex:1;overflow-y:auto;padding:20px 24px">
+    <div class="fade" style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <h1 style="margin:0;font-size:15px;font-weight:600;letter-spacing:.3px;color:#fff">
+          Sentiment — Community Bias
+        </h1>
+        <span class="pulse"></span>
+      </div>
+      <span style="font-size:12px;color:rgba(255,255,255,.4)" class="tnum">Updated 3s ago · 14:47:12</span>
+    </div>
+
+    <!-- 3 hero cards side by side -->
+    <div class="fade" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px" id="cards"></div>
+
+    <!-- STREAKS & MOMENTUM -->
+    <div class="fade" style="margin-bottom:20px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;padding:0 2px">
+        <h2 style="margin:0;font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.65)">
+          Streaks &amp; Momentum
+        </h2>
+        <span style="font-size:10px;color:var(--tv-secondary)">24h window</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px">
+        <div class="card hoverable" data-modal="streaks" style="padding:18px 22px;cursor:pointer">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <span style="font-size:11px;color:var(--tv-secondary);font-weight:500">Active streaks</span>
+            <span style="font-size:10px;color:var(--tv-blue);display:flex;align-items:center;gap:3px">Details <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 2l3 3-3 3"/></svg></span>
+          </div>
+          <div id="streaks"></div>
+        </div>
+        <div class="card hoverable" data-modal="velocity" style="padding:18px 22px;cursor:pointer">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <span style="font-size:11px;color:var(--tv-secondary);font-weight:500">Signal velocity</span>
+            <span style="font-size:10px;color:var(--tv-blue);display:flex;align-items:center;gap:3px">Details <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 2l3 3-3 3"/></svg></span>
+          </div>
+          <div id="velocity"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DAILY RECAP -->
+    <div class="fade" style="margin-bottom:20px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;padding:0 2px">
+        <h2 style="margin:0;font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.65)">
+          Daily Recap
+        </h2>
+        <span class="tnum" style="font-size:10px;color:var(--tv-secondary)">2026-04-21</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px" id="recap"></div>
+    </div>
+
+    <!-- Market status -->
+    <div class="fade card">
+      <div class="hair"></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 20px">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#26A69A;animation:ping 2s infinite"></span>
+        <span style="font-size:13px;font-weight:500;color:rgba(255,255,255,.8)">Market Open</span>
+        <span style="font-size:12px;color:rgba(255,255,255,.3)">closes in 2h 13m</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- modal container -->
+<div id="modal-root"></div>
+
+<script>
+// ── ICONS (glow-ready line icons, TV-ish) ────────────────────────────
+const I = {
+  market: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14l4-4 3 3 5-6 4 4"/><path d="M2 18h16"/></svg>`,
+  sentiment: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><path d="M7 8.5h.01M13 8.5h.01M6.5 12.5c.8 1.2 2 2 3.5 2s2.7-.8 3.5-2"/></svg>`,
+  scoring: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2l2.3 4.9 5.2.7-3.8 3.8.9 5.3L10 14l-4.6 2.7.9-5.3L2.5 7.6l5.2-.7L10 2z"/></svg>`,
+  community: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="8" r="2.5"/><circle cx="13.5" cy="8" r="2"/><path d="M2.5 16c.5-2.5 2.5-4 4.5-4s3.5 1.2 4 3.2M11 15c.5-1.8 2-2.8 3.5-2.8s2.5 1 3 2.3"/></svg>`,
+  discord: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h11A1.5 1.5 0 0 1 17 4.5v9A1.5 1.5 0 0 1 15.5 15H7l-4 3V4.5z"/></svg>`,
+  data: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="10" cy="4.5" rx="6" ry="2"/><path d="M4 4.5v11c0 1.1 2.7 2 6 2s6-.9 6-2v-11M4 10c0 1.1 2.7 2 6 2s6-.9 6-2"/></svg>`,
+  stocks: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="3" height="6" rx=".5"/><rect x="8.5" y="7" width="3" height="10" rx=".5"/><rect x="14" y="3.5" width="3" height="13.5" rx=".5"/></svg>`,
+  trades: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11l-3-3M17 13H6l3 3"/></svg>`,
+  admin: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l6 2v5c0 3.5-2.5 6.7-6 8-3.5-1.3-6-4.5-6-8v-5l6-2z"/></svg>`,
+};
+
+const navItems = [
+  ['Market','market'],['Sentiment','sentiment'],['Scoring','scoring'],['Community','community'],
+  ['Discord','discord'],['Data','data'],['Stocks','stocks'],['Trades','trades'],['Admin','admin']
+];
+const active = 'Sentiment';
+document.getElementById('nav').innerHTML = navItems.map(([n,k]) =>
+  `<div class="nav-item ${n===active?'active':''}" title="${n}">${I[k]}</div>`
+).join('');
+
+// ── SENTIMENT DATA ──────────────────────────────────────────────────
+const ASSETS = [
+  {
+    name:'Gold', pair:'XAUUSD',
+    accent:'#FFD700',
+    glow:'0 0 60px -6px rgba(255,193,37,.35), 0 0 20px -4px rgba(255,193,37,.15)',
+    border:'rgba(234,179,8,.30)',
+    bias:'bullish',
+    strength:'Strong',          // Weak / Moderate / Strong / Very Strong
+    confidence:82,              // 0-100
+    signals:14,
+    traders:9,
+    delta24h:'+18%',            // shift in bias magnitude
+    deltaUp:true,
+    bullCount:11, neutralCount:2, bearCount:1,
+    peakBull:9.1, peakBear:0,
+    topTraders:[
+      {n:'Apex',  dir:'bull', strength:'Strong'},
+      {n:'Viper', dir:'bull', strength:'Moderate'},
+      {n:'Nox',   dir:'neutral', strength:'—'},
+    ],
+    timeline: [78,82,76,72,70,74,68,62,58,55,50,45,42,46,38,32,30,28,24,22,20],
+    recent: [
+      {t:'14:47', trader:'Apex',  text:'XAUUSD long 3270 sl 3255 tp 3290', dir:'bull'},
+      {t:'14:41', trader:'Apex',  text:'target 3290 confirmed on 1H close', dir:'bull'},
+      {t:'14:22', trader:'Viper', text:'gold holding 3265 — bias remains long', dir:'bull'},
+      {t:'13:58', trader:'Nox',   text:'waiting for confirmation above 3275', dir:'neutral'},
+    ]
+  },
+  {
+    name:'Silver', pair:'XAGUSD',
+    accent:'#D0D5DE',
+    glow:'0 0 60px -6px rgba(192,197,206,.40), 0 0 24px -4px rgba(220,225,235,.18)',
+    border:'rgba(209,213,219,.25)',
+    bias:'bearish',
+    strength:'Moderate',
+    confidence:61,
+    signals:9,
+    traders:6,
+    delta24h:'−10%',
+    deltaUp:false,
+    bullCount:1, neutralCount:2, bearCount:6,
+    peakBull:0, peakBear:7.2,
+    topTraders:[
+      {n:'Kilo', dir:'bear', strength:'Strong'},
+      {n:'Nox',  dir:'bear', strength:'Strong'},
+      {n:'Apex', dir:'neutral', strength:'—'},
+    ],
+    timeline: [42,46,50,55,60,58,65,72,78,82,85,88,92,95,98,100,102,98,100,102,100],
+    recent: [
+      {t:'14:44', trader:'Nox',  text:'closed XAG short +0.24, rejection at 42.10', dir:'bear'},
+      {t:'14:20', trader:'Kilo', text:'silver can\'t hold 42 — short', dir:'bear'},
+      {t:'13:45', trader:'Apex', text:'silver ranging, no edge here', dir:'neutral'},
+    ]
+  },
+  {
+    name:'Oil', pair:'WTI',
+    accent:'#C9843F',
+    glow:'0 0 60px -6px rgba(200,130,60,.28), 0 0 24px -4px rgba(150,100,40,.14)',
+    border:'rgba(146,64,14,.25)',
+    bias:'bullish',
+    strength:'Moderate',
+    confidence:74,
+    signals:11,
+    traders:7,
+    delta24h:'+17%',
+    deltaUp:true,
+    bullCount:8, neutralCount:2, bearCount:1,
+    peakBull:8.5, peakBear:3.1,
+    topTraders:[
+      {n:'Viper', dir:'bull', strength:'Strong'},
+      {n:'Kilo',  dir:'bull', strength:'Moderate'},
+      {n:'Nox',   dir:'bear', strength:'Weak'},
+    ],
+    timeline: [70,75,72,68,72,65,60,55,60,52,48,45,50,42,38,35,40,32,30,28,32],
+    recent: [
+      {t:'14:46', trader:'Viper', text:'WTI holding 63.20 — leaning bullish', dir:'bull'},
+      {t:'14:10', trader:'Kilo',  text:'oil long 62.80 tp 63.50', dir:'bull'},
+      {t:'13:22', trader:'Nox',   text:'OPEC headlines fade — short interest', dir:'bear'},
+    ]
+  },
+];
+
+const BIAS_STYLE = {
+  bullish:{label:'BULLISH', fg:'#26A69A', bg:'rgba(38,166,154,.10)'},
+  bearish:{label:'BEARISH', fg:'#EF5350', bg:'rgba(239,83,80,.10)'},
+  neutral:{label:'NEUTRAL', fg:'#FF9800', bg:'rgba(255,152,0,.10)'},
+};
+const DIR_COLOR = { bull:'#26A69A', bear:'#EF5350', neutral:'#FF9800' };
+
+// ── RENDER HERO CARDS ───────────────────────────────────────────────
+function renderCards(){
+  const el = document.getElementById('cards');
+  el.innerHTML = ASSETS.map((a,i) => {
+    const b = BIAS_STYLE[a.bias];
+    const isUp = a.bias==='bullish';
+    const color = isUp ? '#26A69A' : a.bias==='bearish' ? '#EF5350' : '#FF9800';
+    // sparkline path
+    const pts = a.timeline.map((v,j) => `${(j/(a.timeline.length-1)*280).toFixed(1)},${(v*0.7 + 10).toFixed(1)}`);
+    const line = pts.join(' ');
+    const fill = `M${pts[0]} L${line} L280,100 L0,100 Z`;
+    // bull/bear/neutral bar
+    const total = a.bullCount + a.neutralCount + a.bearCount;
+    const bullPct = (a.bullCount/total*100).toFixed(1);
+    const neuPct  = (a.neutralCount/total*100).toFixed(1);
+    const bearPct = (a.bearCount/total*100).toFixed(1);
+
+    return `
+    <div class="card clickable" data-asset="${a.name}" style="box-shadow:${a.glow};border-color:${a.border}">
+      <div style="height:2px;background:linear-gradient(90deg,transparent,${a.accent},transparent)"></div>
+
+      <!-- header -->
+      <div style="padding:18px 20px 0;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:13px;color:var(--tv-secondary);font-weight:500">${a.name} · ${a.pair}</span>
+        <span class="chip" style="background:${b.bg};color:${b.fg}">${b.label}</span>
+      </div>
+
+      <!-- Big headline -->
+      <div style="padding:10px 20px 0">
+        <div style="font-size:32px;font-weight:700;color:#fff;letter-spacing:-.8px;line-height:1.1">${a.strength}</div>
+        <div style="font-size:13px;color:var(--tv-secondary);margin-top:4px">${a.bias} bias · ${a.confidence}% confidence</div>
+      </div>
+
+      <!-- sparkline -->
+      <div style="margin-top:14px;padding:0 6px">
+        <svg viewBox="0 0 280 90" width="100%" height="70" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="g${i}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${color}" stop-opacity=".22"/>
+              <stop offset="100%" stop-color="${color}" stop-opacity=".02"/>
+            </linearGradient>
+          </defs>
+          <path d="${fill.replace(/100/g,'85')}" fill="url(#g${i})"/>
+          <polyline points="${line.replace(/100/g,'85')}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round"/>
+          <circle cx="280" cy="${(a.timeline[a.timeline.length-1]*0.6+10).toFixed(1)}" r="2.5" fill="${color}"/>
+        </svg>
+      </div>
+
+      <!-- one clean stat row -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px 16px;border-top:1px solid var(--divider);margin-top:4px">
+        <div>
+          <div class="tnum" style="font-size:18px;color:#fff;font-weight:600">${a.signals}</div>
+          <div style="font-size:11px;color:var(--tv-secondary)">signals · 24h</div>
+        </div>
+        <div style="text-align:center">
+          <div class="tnum" style="font-size:18px;color:#fff;font-weight:600">${a.traders}</div>
+          <div style="font-size:11px;color:var(--tv-secondary)">traders</div>
+        </div>
+        <div style="text-align:right">
+          <div class="tnum" style="font-size:18px;color:${a.deltaUp?'#26A69A':'#EF5350'};font-weight:600">${a.deltaUp?'+':''}${a.delta24h.replace(/[+−]/g,'')}</div>
+          <div style="font-size:11px;color:var(--tv-secondary)">vs yesterday</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // wire clicks
+  el.querySelectorAll('[data-asset]').forEach(n => {
+    n.addEventListener('click', () => openModal(n.dataset.asset));
+  });
+}
+renderCards();
+
+// ── STREAKS & MOMENTUM ──────────────────────────────────────────────
+const STREAKS = [
+  { asset:'Gold',   dir:'bearish', count:22, span:'6.5h', meter:95 },
+  { asset:'Oil',    dir:'bullish', count:2,  span:'3.1h', meter:20 },
+  { asset:'Silver', dir:'bearish', count:1,  span:'0.5h', meter:8 },
+];
+const VELOCITY = [
+  { asset:'Gold',   color:'#FFD700', count:12, per:'12/h', trend:'Accelerating', dir:'up' },
+  { asset:'Silver', color:'#D0D5DE', count:10, per:'6/h',  trend:'Accelerating', dir:'up' },
+  { asset:'Oil',    color:'#C9843F', count:4,  per:'2/h',  trend:'Steady',       dir:'flat' },
+];
+function renderStreaks(){
+  document.getElementById('streaks').innerHTML = STREAKS.map((s,i) => {
+    const b = BIAS_STYLE[s.dir];
+    const color = s.dir==='bullish' ? '#26A69A' : '#EF5350';
+    const last = i===STREAKS.length-1;
+    return `
+      <div style="display:flex;align-items:center;gap:16px;padding:14px 0;${last?'':'border-bottom:1px solid var(--divider)'}">
+        <span style="width:3px;height:28px;background:${color};border-radius:2px;box-shadow:0 0 10px ${color}"></span>
+        <div style="min-width:60px">
+          <div style="font-size:14px;color:#fff;font-weight:500">${s.asset}</div>
+          <div style="font-size:11px;color:var(--tv-secondary);margin-top:2px">${b.label.toLowerCase()}</div>
+        </div>
+        <div style="flex:1"></div>
+        <span class="tnum" style="font-size:22px;font-weight:600;color:${color};letter-spacing:-.5px">${s.count}<span style="font-size:14px;opacity:.6">×</span></span>
+        <span class="tnum" style="font-size:12px;color:var(--tv-secondary);min-width:36px;text-align:right">${s.span}</span>
+      </div>`;
+  }).join('');
+}
+function renderVelocity(){
+  document.getElementById('velocity').innerHTML = VELOCITY.map((v,i) => {
+    const tcolor = v.dir==='up'?'#26A69A':v.dir==='down'?'#EF5350':'#787B86';
+    const arrow = v.dir==='up'?'▲':v.dir==='down'?'▼':'—';
+    const last = i===VELOCITY.length-1;
+    return `
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 0;${last?'':'border-bottom:1px solid var(--divider)'}">
+        <span style="width:8px;height:8px;border-radius:50%;background:${v.color};box-shadow:0 0 8px ${v.color}"></span>
+        <span style="font-size:14px;color:#fff;font-weight:500">${v.asset}</span>
+        <div style="flex:1"></div>
+        <span class="tnum" style="font-size:14px;color:#fff;font-weight:500">${v.per}</span>
+        <span style="font-size:11px;color:${tcolor};min-width:90px;text-align:right">${arrow} ${v.trend}</span>
+      </div>`;
+  }).join('');
+}
+renderStreaks();
+renderVelocity();
+
+// ── DAILY RECAP ─────────────────────────────────────────────────────
+const RECAP = [
+  { asset:'Gold',   bias:'bullish', pct:56, signals:19,
+    top:[['sonicthehedgehogxx',5,62],['stoneapes',2,48],['pn3282',1,31]] },
+  { asset:'Oil',    bias:'bullish', pct:66, signals:74,
+    top:[['dbeers_',15,71],['sonicthehedgehogxx',6,58],['pn3282',5,44]] },
+  { asset:'Silver', bias:'bearish', pct:59, signals:7,
+    top:[['sonicthehedgehogxx',5,52],['julientmg',2,40],['boldicus',1,22]] },
+];
+function renderRecap(){
+  document.getElementById('recap').innerHTML = RECAP.map(r => {
+    const b = BIAS_STYLE[r.bias];
+    const color = r.bias==='bullish'?'#26A69A':r.bias==='bearish'?'#EF5350':'#FF9800';
+    return `
+      <div class="card hoverable" data-recap="${r.asset}" style="padding:20px 22px;cursor:pointer">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <span style="font-size:14px;color:#fff;font-weight:500">${r.asset}</span>
+          <span class="chip" style="background:${b.bg};color:${b.fg}">${b.label}</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:18px">
+          <span class="tnum" style="font-size:28px;font-weight:700;color:${color};letter-spacing:-.6px">${r.pct}<span style="font-size:16px;opacity:.6">%</span></span>
+          <span style="font-size:12px;color:var(--tv-secondary)">· ${r.signals} signals</span>
+        </div>
+        <div style="border-top:1px solid var(--divider);padding-top:10px">
+          ${r.top.map(([n,c]) => `
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 0">
+              <span style="color:${color};font-size:9px">●</span>
+              <span style="color:#fff;font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${n}</span>
+              <span class="tnum" style="color:var(--tv-secondary);font-size:11px">${c} signals</span>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+  document.querySelectorAll('[data-recap]').forEach(n => {
+    n.addEventListener('click', () => openRecapModal(n.dataset.recap));
+  });
+}
+renderRecap();
+
+// Wire streaks/velocity modal triggers
+document.querySelectorAll('[data-modal]').forEach(n => {
+  n.addEventListener('click', () => {
+    if (n.dataset.modal === 'streaks') openStreaksModal();
+    if (n.dataset.modal === 'velocity') openVelocityModal();
+  });
+});
+
+// ── MODAL ───────────────────────────────────────────────────────────
+function openModal(assetName){
+  const a = ASSETS.find(x => x.name === assetName);
+  if(!a) return;
+  const b = BIAS_STYLE[a.bias];
+  const color = a.bias==='bullish'?'#26A69A':a.bias==='bearish'?'#EF5350':'#FF9800';
+
+  // big timeline chart
+  const W=860, H=180;
+  const pts = a.timeline.map((v,j) => `${(j/(a.timeline.length-1)*W).toFixed(1)},${(v*(H-20)/120 + 10).toFixed(1)}`);
+  const line = pts.join(' ');
+  const fill = `M${pts[0]} L${line} L${W},${H} L0,${H} Z`;
+
+  const traderRow = (t) => {
+    const dc = DIR_COLOR[t.dir];
+    return `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--divider)">
+        <span style="width:4px;height:20px;background:${dc};border-radius:2px"></span>
+        <span style="font-size:13px;color:#fff;font-weight:500;min-width:60px">@${t.n}</span>
+        <span style="font-size:11px;color:var(--tv-secondary);text-transform:capitalize">${t.dir} bias</span>
+        <div style="flex:1"></div>
+        <span class="chip" style="background:${dc}1a;color:${dc}">${t.strength}</span>
+      </div>`;
+  };
+
+  const recentRow = (s) => {
+    const dc = DIR_COLOR[s.dir];
+    return `
+      <div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--divider)">
+        <span class="tnum" style="font-size:10px;color:var(--tv-muted);min-width:36px;padding-top:2px">${s.t}</span>
+        <span style="width:4px;background:${dc};border-radius:2px"></span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;color:#fff;line-height:1.4">${s.text}</div>
+          <div style="font-size:10px;color:var(--tv-secondary);margin-top:2px">@${s.trader}</div>
+        </div>
+      </div>`;
+  };
+
+  const html = `
+    <div class="backdrop" id="backdrop">
+      <div class="modal" onclick="event.stopPropagation()">
+        <!-- HEADER — mirrors ChartModalHeader exactly -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid rgba(255,255,255,.04)">
+          <div style="display:flex;align-items:baseline;gap:16px">
+            <span style="font-size:13px;color:var(--tv-muted)">${a.name} — ${a.pair}</span>
+            <span style="font-size:24px;font-weight:700;color:#fff">${a.strength}</span>
+            <span style="font-size:13px;font-weight:600;color:${color}">
+              ${a.deltaUp?'▲':'▼'} ${a.delta24h} (24h)
+            </span>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px">
+            <span class="chip" style="background:${b.bg};color:${b.fg}">${b.label}</span>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+          </div>
+        </div>
+
+        <!-- BODY — 2 columns -->
+        <div style="padding:20px 24px;display:grid;grid-template-columns:1fr 280px;gap:24px">
+
+          <!-- LEFT: big bias timeline chart -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+              <span style="font-size:11px;color:var(--tv-secondary);letter-spacing:.5px;text-transform:uppercase;font-weight:600">
+                Bias over time · past 24h
+              </span>
+              <span class="tnum" style="font-size:10px;color:var(--tv-muted)">21 points</span>
+            </div>
+            <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="mg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="${color}" stop-opacity=".20"/>
+                  <stop offset="100%" stop-color="${color}" stop-opacity=".02"/>
+                </linearGradient>
+              </defs>
+              <line x1="0" y1="${H/2}" x2="${W}" y2="${H/2}" stroke="rgba(255,255,255,.15)" stroke-width=".5" stroke-dasharray="4 3"/>
+              <path d="${fill}" fill="url(#mg)"/>
+              <polyline points="${line}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/>
+              <circle cx="${W}" cy="${(a.timeline[a.timeline.length-1]*(H-20)/120+10).toFixed(1)}" r="3" fill="${color}"/>
+              <text x="8" y="14" fill="rgba(255,255,255,.3)" font-size="9">Strong Bull</text>
+              <text x="8" y="${H-5}" fill="rgba(255,255,255,.3)" font-size="9">Strong Bear</text>
+              <text x="${W-60}" y="${H/2-4}" fill="rgba(255,255,255,.3)" font-size="9">Neutral</text>
+            </svg>
+
+            <!-- Stats strip under chart -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid var(--divider)">
+              ${[
+                ['Total Signals',`${a.signals}`, null],
+                ['Active Traders',`${a.traders}`, null],
+                ['Peak Bullish',`${a.peakBull}`, '#26A69A'],
+                ['Peak Bearish',`${a.peakBear}`, '#EF5350'],
+              ].map(([k,v,c]) => `
+                <div>
+                  <div style="font-size:9px;color:var(--tv-secondary);letter-spacing:.5px;text-transform:uppercase;font-weight:700">${k}</div>
+                  <div class="tnum" style="font-size:15px;color:${c||'#fff'};margin-top:3px;font-weight:600">${v}</div>
+                </div>`).join('')}
+            </div>
+
+            <!-- Recent signals -->
+            <div style="margin-top:20px">
+              <div style="font-size:11px;color:var(--tv-secondary);letter-spacing:.5px;text-transform:uppercase;font-weight:600;margin-bottom:6px">
+                Recent signals
+              </div>
+              ${a.recent.map(recentRow).join('')}
+            </div>
+          </div>
+
+          <!-- RIGHT: top traders + breakdown -->
+          <div>
+            <div style="font-size:11px;color:var(--tv-secondary);letter-spacing:.5px;text-transform:uppercase;font-weight:600;margin-bottom:6px">
+              Top Contributors
+            </div>
+            ${a.topTraders.map(traderRow).join('')}
+
+            <div style="margin-top:22px">
+              <div style="font-size:11px;color:var(--tv-secondary);letter-spacing:.5px;text-transform:uppercase;font-weight:600;margin-bottom:10px">
+                Signal Breakdown
+              </div>
+              ${[['Bullish', a.bullCount, '#26A69A'], ['Neutral', a.neutralCount, '#FF9800'], ['Bearish', a.bearCount, '#EF5350']].map(([k,v,c]) => {
+                const pct = (v/(a.bullCount+a.neutralCount+a.bearCount)*100).toFixed(0);
+                return `<div style="margin-bottom:10px">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+                    <span style="font-size:11px;color:#fff">${k}</span>
+                    <span class="tnum" style="font-size:11px;color:var(--tv-secondary)">${v} · ${pct}%</span>
+                  </div>
+                  <div style="height:4px;background:rgba(255,255,255,.03);border-radius:2px;overflow:hidden">
+                    <div style="width:${pct}%;height:100%;background:${c};box-shadow:0 0 6px ${c}"></div>
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div style="border-top:1px solid var(--border);padding:11px 24px;font-size:11px;color:rgba(255,255,255,.3)">
+          ${a.signals} signals (48h) · Click a trader to view their signal history · ESC to close
+        </div>
+      </div>
+    </div>
+  `;
+  const root = document.getElementById('modal-root');
+  root.innerHTML = html;
+  document.getElementById('backdrop').addEventListener('click', closeModal);
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(){
+  document.getElementById('modal-root').innerHTML = '';
+  document.body.style.overflow = '';
+}
+
+// ── STREAKS MODAL ────────────────────────────────────────────────────
+function openStreaksModal(){
+  // per-asset streak history — mini timelines
+  const history = {
+    Gold:   { cur:22, dir:'bearish', span:'6.5h', prev:[8,12,7,3,15,22], best:22, avgLen:11 },
+    Oil:    { cur:2,  dir:'bullish', span:'3.1h', prev:[5,3,9,4,7,2],    best:9,  avgLen:5 },
+    Silver: { cur:1,  dir:'bearish', span:'0.5h', prev:[3,6,2,4,8,1],    best:8,  avgLen:4 },
+  };
+  const rows = Object.entries(history).map(([asset, h]) => {
+    const b = BIAS_STYLE[h.dir];
+    const color = h.dir==='bullish'?'#26A69A':'#EF5350';
+    const max = Math.max(...h.prev);
+    const bars = h.prev.map(v => {
+      const pct = (v/max*100).toFixed(0);
+      const isNow = v === h.prev[h.prev.length-1];
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+        <div style="width:100%;height:40px;display:flex;align-items:flex-end">
+          <div style="width:100%;height:${pct}%;background:${isNow?color:'rgba(255,255,255,.12)'};border-radius:2px;${isNow?`box-shadow:0 0 8px ${color}`:''}"></div>
+        </div>
+        <span class="tnum" style="font-size:9px;color:var(--tv-muted)">${v}</span>
+      </div>`;
+    }).join('');
+    return `
+      <div style="padding:16px 0;border-bottom:1px solid var(--divider)">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+          <span style="width:3px;height:24px;background:${color};border-radius:2px;box-shadow:0 0 8px ${color}"></span>
+          <span style="font-size:14px;color:#fff;font-weight:500;min-width:60px">${asset}</span>
+          <span class="chip" style="background:${b.bg};color:${b.fg}">${b.label}</span>
+          <div style="flex:1"></div>
+          <span class="tnum" style="font-size:22px;font-weight:700;color:${color};letter-spacing:-.5px">${h.cur}<span style="font-size:13px;opacity:.6">×</span></span>
+          <span class="tnum" style="font-size:11px;color:var(--tv-secondary);min-width:38px;text-align:right">${h.span}</span>
+        </div>
+        <div style="display:flex;gap:6px;padding-left:17px">${bars}</div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;padding-left:17px">
+          <span style="font-size:10px;color:var(--tv-secondary)">Last 6 streaks · <span class="tnum" style="color:#fff">best ${h.best}×</span> · <span class="tnum" style="color:#fff">avg ${h.avgLen}×</span></span>
+        </div>
+      </div>`;
+  }).join('');
+
+  const html = `
+    <div class="backdrop" id="backdrop">
+      <div class="modal" style="max-width:720px" onclick="event.stopPropagation()">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid rgba(255,255,255,.04)">
+          <div style="display:flex;align-items:baseline;gap:16px">
+            <span style="font-size:13px;color:var(--tv-muted)">Community</span>
+            <span style="font-size:20px;font-weight:700;color:#fff">Active Streaks</span>
+          </div>
+          <button class="close-btn" onclick="closeModal()">✕</button>
+        </div>
+        <div style="padding:6px 24px 20px">${rows}</div>
+        <div style="border-top:1px solid var(--border);padding:11px 24px;font-size:11px;color:rgba(255,255,255,.3)">
+          Consecutive signals in the same direction · 24h window · ESC to close
+        </div>
+      </div>
+    </div>`;
+  const root = document.getElementById('modal-root');
+  root.innerHTML = html;
+  document.getElementById('backdrop').addEventListener('click', closeModal);
+  document.body.style.overflow = 'hidden';
+}
+
+// ── VELOCITY MODAL ───────────────────────────────────────────────────
+function openVelocityModal(){
+  const data = {
+    Gold:   { color:'#FFD700', per:'12/h', trend:'Accelerating', dir:'up',   total:48,  curve:[2,3,4,6,8,12] },
+    Silver: { color:'#D0D5DE', per:'6/h',  trend:'Accelerating', dir:'up',   total:24,  curve:[3,2,4,3,5,6] },
+    Oil:    { color:'#C9843F', per:'2/h',  trend:'Steady',       dir:'flat', total:12,  curve:[2,3,2,2,3,2] },
+  };
+  const rows = Object.entries(data).map(([asset, v]) => {
+    const tcolor = v.dir==='up'?'#26A69A':v.dir==='down'?'#EF5350':'#787B86';
+    const arrow = v.dir==='up'?'▲':v.dir==='down'?'▼':'—';
+    const max = Math.max(...v.curve);
+    const W=200, H=32;
+    const pts = v.curve.map((val,j) => `${(j/(v.curve.length-1)*W).toFixed(1)},${(H - (val/max*(H-4)) - 2).toFixed(1)}`).join(' ');
+    return `
+      <div style="padding:16px 0;border-bottom:1px solid var(--divider);display:flex;align-items:center;gap:18px">
+        <span style="width:9px;height:9px;border-radius:50%;background:${v.color};box-shadow:0 0 10px ${v.color}"></span>
+        <div style="min-width:70px">
+          <div style="font-size:14px;color:#fff;font-weight:500">${asset}</div>
+          <div class="tnum" style="font-size:11px;color:var(--tv-secondary);margin-top:1px">${v.total} · 4h</div>
+        </div>
+        <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="flex-shrink:0">
+          <polyline points="${pts}" fill="none" stroke="${v.color}" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+        <div style="flex:1;text-align:right">
+          <div class="tnum" style="font-size:18px;color:#fff;font-weight:600">${v.per}</div>
+          <div style="font-size:11px;color:${tcolor};margin-top:1px">${arrow} ${v.trend}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const html = `
+    <div class="backdrop" id="backdrop">
+      <div class="modal" style="max-width:640px" onclick="event.stopPropagation()">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid rgba(255,255,255,.04)">
+          <div style="display:flex;align-items:baseline;gap:16px">
+            <span style="font-size:13px;color:var(--tv-muted)">Community</span>
+            <span style="font-size:20px;font-weight:700;color:#fff">Signal Velocity</span>
+          </div>
+          <button class="close-btn" onclick="closeModal()">✕</button>
+        </div>
+        <div style="padding:6px 24px 20px">${rows}</div>
+        <div style="border-top:1px solid var(--border);padding:11px 24px;font-size:11px;color:rgba(255,255,255,.3)">
+          Signals per hour over past 4h · ESC to close
+        </div>
+      </div>
+    </div>`;
+  const root = document.getElementById('modal-root');
+  root.innerHTML = html;
+  document.getElementById('backdrop').addEventListener('click', closeModal);
+  document.body.style.overflow = 'hidden';
+}
+
+// ── RECAP MODAL ──────────────────────────────────────────────────────
+function openRecapModal(asset){
+  const r = RECAP.find(x => x.asset === asset);
+  if(!r) return;
+  const b = BIAS_STYLE[r.bias];
+  const color = r.bias==='bullish'?'#26A69A':r.bias==='bearish'?'#EF5350':'#FF9800';
+  // hourly bias throughout today
+  const hourly = r.asset==='Gold' ? [52,54,58,60,55,48,42,50,56,60,58,54,56,58,60,52,54,56] :
+                 r.asset==='Oil'  ? [60,62,64,66,68,65,62,68,70,72,70,66,64,66,68,66,64,66] :
+                                    [60,58,55,52,50,52,58,60,55,50,48,45,48,50,52,55,58,59];
+
+  const W=620, H=110;
+  const pts = hourly.map((v,j) => `${(j/(hourly.length-1)*W).toFixed(1)},${(H - (v-30)/70*(H-20) - 10).toFixed(1)}`).join(' ');
+  const fill = `M0,${H} L${pts} L${W},${H} Z`;
+
+  const traderRow = ([n,c]) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--divider)">
+      <span style="width:4px;height:20px;background:${color};border-radius:2px"></span>
+      <span style="font-size:13px;color:#fff;font-weight:500;flex:1">${n}</span>
+      <span class="tnum" style="font-size:12px;color:var(--tv-secondary)">${c} signals</span>
+    </div>`;
+
+  const html = `
+    <div class="backdrop" id="backdrop">
+      <div class="modal" style="max-width:760px" onclick="event.stopPropagation()">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid rgba(255,255,255,.04)">
+          <div style="display:flex;align-items:baseline;gap:16px">
+            <span style="font-size:13px;color:var(--tv-muted)">${r.asset} · Daily Recap</span>
+            <span class="tnum" style="font-size:24px;font-weight:700;color:${color}">${r.pct}%</span>
+            <span style="font-size:13px;color:var(--tv-secondary)">${r.bias} today</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px">
+            <span class="chip" style="background:${b.bg};color:${b.fg}">${b.label}</span>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+          </div>
+        </div>
+        <div style="padding:20px 24px">
+          <div style="font-size:11px;color:var(--tv-secondary);font-weight:500;margin-bottom:8px">Bias through the day</div>
+          <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="${color}" stop-opacity=".22"/>
+                <stop offset="100%" stop-color="${color}" stop-opacity=".02"/>
+              </linearGradient>
+            </defs>
+            <line x1="0" y1="${H/2}" x2="${W}" y2="${H/2}" stroke="rgba(255,255,255,.1)" stroke-dasharray="3 3"/>
+            <path d="${fill}" fill="url(#rg)"/>
+            <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.6"/>
+          </svg>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:18px;padding-top:16px;border-top:1px solid var(--divider)">
+            <div><div style="font-size:11px;color:var(--tv-secondary)">Total signals</div><div class="tnum" style="font-size:20px;color:#fff;font-weight:600;margin-top:3px">${r.signals}</div></div>
+            <div><div style="font-size:11px;color:var(--tv-secondary)">Active traders</div><div class="tnum" style="font-size:20px;color:#fff;font-weight:600;margin-top:3px">${r.top.length}</div></div>
+            <div><div style="font-size:11px;color:var(--tv-secondary)">Consensus</div><div class="tnum" style="font-size:20px;color:${color};font-weight:600;margin-top:3px">${r.pct}%</div></div>
+          </div>
+          <div style="margin-top:20px">
+            <div style="font-size:11px;color:var(--tv-secondary);font-weight:500;margin-bottom:4px">Top contributors</div>
+            ${r.top.map(traderRow).join('')}
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border);padding:11px 24px;font-size:11px;color:rgba(255,255,255,.3)">
+          Today's signal activity · ESC to close
+        </div>
+      </div>
+    </div>`;
+  const root = document.getElementById('modal-root');
+  root.innerHTML = html;
+  document.getElementById('backdrop').addEventListener('click', closeModal);
+  document.body.style.overflow = 'hidden';
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+</script>
+</body></html>
