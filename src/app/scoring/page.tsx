@@ -2,82 +2,99 @@
 
 import { useState } from "react";
 import { useScoringData } from "@/hooks/use-scoring-data";
-import { ScoreboardTable } from "@/components/scoring/scoreboard-table";
-import { RecentScored } from "@/components/scoring/recent-trades";
-import { TradePairs } from "@/components/scoring/trade-pairs";
-import { ScoringStatus } from "@/components/scoring/scoring-status";
-import { BackfillButton } from "@/components/scoring/backfill-button";
-import { ReviewQueue } from "@/components/scoring/review-queue";
-import { ReviewStats } from "@/components/scoring/review-stats";
-import { AssetAccuracy } from "@/components/scoring/asset-accuracy";
-import { BiasAccuracy } from "@/components/scoring/bias-accuracy";
-import { Podium } from "@/components/scoring/podium";
 import { useReviews } from "@/hooks/use-reviews";
+import { ScoringStats } from "@/components/scoring/scoring-stats";
+import { Podium } from "@/components/scoring/podium";
+import { LeaderboardTeaser } from "@/components/scoring/leaderboard-teaser";
+import { LiveFeedTeaser } from "@/components/scoring/live-feed-teaser";
+import { ExploreTiles } from "@/components/scoring/explore-tiles";
+import { BackfillButton } from "@/components/scoring/backfill-button";
 
 const ASSETS = ["all", "gold", "silver", "oil"] as const;
 type AssetFilter = (typeof ASSETS)[number];
 
+type ModalKey = "leaderboard" | "feed" | null;
+
 export default function ScoringPage() {
   const {
-    scoreboard, recentScored, traderSignals,
-    tradePairs, loading, watchlist,
+    scoreboard,
+    recentScored,
+    traderSignals,
+    tradePairs,
+    loading,
+    watchlist,
   } = useScoringData();
-  const { reviews, handleAction: handleReviewAction } = useReviews();
+  const { reviews } = useReviews();
   const [asset, setAsset] = useState<AssetFilter>("all");
+  const [modal, setModal] = useState<ModalKey>(null);
 
-  // Filter by asset
-  const filteredSignals = asset === "all"
-    ? traderSignals
-    : Object.fromEntries(
-        Object.entries(traderSignals).map(([k, v]) => [
-          k, v.filter((s) => s.asset.toLowerCase() === asset),
-        ])
-      );
+  // Filter by asset (same logic as before — scoreboard/signals/recent/pairs)
+  const filteredSignals =
+    asset === "all"
+      ? traderSignals
+      : Object.fromEntries(
+          Object.entries(traderSignals).map(([k, v]) => [
+            k,
+            v.filter((s) => s.asset.toLowerCase() === asset),
+          ]),
+        );
 
-  const filteredScoreboard = asset === "all"
-    ? scoreboard
-    : scoreboard
-        .map((t) => {
-          const sigs = filteredSignals[t.author] ?? [];
-          const wins = sigs.filter((s) => s.weightedScore > 0).length;
-          const total = sigs.reduce((sum, s) => sum + s.weightedScore, 0);
-          const consistent = sigs.filter((s) => s.consistent).length;
-          return {
-            ...t,
-            signals: sigs.length,
-            wins,
-            totalScore: total,
-            avgScore: sigs.length > 0 ? total / sigs.length : 0,
-            winRate: sigs.length > 0 ? wins / sigs.length : 0,
-            consistency: consistent,
-          };
-        })
-        .filter((t) => t.signals >= 1);
+  const filteredScoreboard =
+    asset === "all"
+      ? scoreboard
+      : scoreboard
+          .map((t) => {
+            const sigs = filteredSignals[t.author] ?? [];
+            const wins = sigs.filter((s) => s.weightedScore > 0).length;
+            const total = sigs.reduce((sum, s) => sum + s.weightedScore, 0);
+            const consistent = sigs.filter((s) => s.consistent).length;
+            return {
+              ...t,
+              signals: sigs.length,
+              wins,
+              totalScore: total,
+              avgScore: sigs.length > 0 ? total / sigs.length : 0,
+              winRate: sigs.length > 0 ? wins / sigs.length : 0,
+              consistency: consistent,
+            };
+          })
+          .filter((t) => t.signals >= 1);
 
-  const filteredRecent = asset === "all"
-    ? recentScored
-    : recentScored.filter((s) => s.asset.toLowerCase() === asset);
+  const filteredRecent =
+    asset === "all"
+      ? recentScored
+      : recentScored.filter((s) => s.asset.toLowerCase() === asset);
 
-  const filteredPairs = asset === "all"
-    ? tradePairs
-    : tradePairs.filter((p) => p.asset.toLowerCase() === asset);
+  const filteredPairs =
+    asset === "all" ? tradePairs : tradePairs.filter((p) => p.asset.toLowerCase() === asset);
 
   return (
-    <div className="animate-fade-in space-y-4">
+    <div className="animate-fade-in space-y-5">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">
-          Trader Scoring
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">
+            Trader Scoring
+          </h1>
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#26A69A] opacity-50" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[#26A69A]" />
+          </span>
+          <span className="font-sans text-[11px] text-white/55">
+            Scored over 30m · 1h · 2h · 4h horizons
+          </span>
+        </div>
         <div className="flex items-center gap-3">
           <div className="flex gap-1">
             {ASSETS.map((a) => (
               <button
                 key={a}
+                type="button"
                 onClick={() => setAsset(a)}
-                className={`rounded-md px-3 py-1.5 font-sans text-[12px] font-medium uppercase tracking-wider transition-all ${
+                className={`rounded-md px-3.5 py-1.5 font-sans text-[11px] font-semibold uppercase tracking-[0.04em] transition-all ${
                   asset === a
-                    ? "bg-[#FF9800] text-white shadow-[0_0_12px_-3px_rgba(255,152,0,0.4)]"
-                    : "bg-white/[0.04] text-white/40 hover:text-white/70"
+                    ? "border border-[#FF9800]/25 bg-[#FF9800]/[0.12] text-[#FF9800] shadow-[0_0_16px_-4px_rgba(255,152,0,0.35)]"
+                    : "border border-transparent bg-white/[0.03] text-white/40 hover:text-white/75"
                 }`}
               >
                 {a}
@@ -89,43 +106,61 @@ export default function ScoringPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <span className="animate-pulse font-sans text-[13px] text-white/40">Loading scoring data...</span>
-        </div>
+        <>
+          <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-[92px] animate-skeleton rounded-xl border border-white/[0.06] bg-[#111111]"
+              />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-[180px] animate-skeleton rounded-xl border border-white/[0.06] bg-[#111111]"
+              />
+            ))}
+          </div>
+        </>
       ) : (
         <>
-          {/* Status overview */}
-          <ScoringStatus
-            totalScored={recentScored.length}
-            totalTraders={scoreboard.length}
-            totalEntries={scoreboard.reduce((s, t) => s + t.entries, 0)}
-            totalExits={scoreboard.reduce((s, t) => s + t.exits, 0)}
-            totalPairs={tradePairs.length}
+          {/* Tier 1: 4 stat cards */}
+          <ScoringStats
+            scoreboard={filteredScoreboard}
+            recentScored={filteredRecent}
+            tradePairs={filteredPairs}
           />
 
-          {/* GPT Review Queue */}
-          <ReviewQueue reviews={reviews} onAction={handleReviewAction} />
-
-          {/* GPT improvement stats */}
-          <ReviewStats />
-
-          {/* Top-3 trader podium (hidden if fewer than 3 qualified traders) */}
+          {/* Tier 2: podium (top 3 traders) */}
           <Podium traders={filteredScoreboard} traderSignals={filteredSignals} />
 
-          {/* Scoreboard — main ranking, click trader for drilldown */}
-          <ScoreboardTable traders={filteredScoreboard} traderSignals={filteredSignals} watchlist={watchlist} />
-
-          {/* Recent scored entries/exits with 30m/1h/2h/4h scores */}
-          <RecentScored signals={filteredRecent} />
-
-          {/* Trade pairs: entry → exit matching */}
-          <TradePairs pairs={filteredPairs} />
-
-          {/* Accuracy insights */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <AssetAccuracy traderSignals={filteredSignals} />
-            <BiasAccuracy />
+          {/* Tier 3: 2 summary teaser cards — leaderboard + live feed */}
+          <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+            <LeaderboardTeaser
+              open={modal === "leaderboard"}
+              onOpen={() => setModal("leaderboard")}
+              onClose={() => setModal(null)}
+              traders={filteredScoreboard}
+              traderSignals={filteredSignals}
+              watchlist={watchlist}
+            />
+            <LiveFeedTeaser
+              open={modal === "feed"}
+              onOpen={() => setModal("feed")}
+              onClose={() => setModal(null)}
+              signals={filteredRecent}
+            />
           </div>
+
+          {/* Tier 4: 3 explore tiles — pairs / accuracy / reviews */}
+          <ExploreTiles
+            scoreboard={filteredScoreboard}
+            traderSignals={filteredSignals}
+            tradePairs={filteredPairs}
+            reviewCount={reviews.length}
+          />
         </>
       )}
     </div>
