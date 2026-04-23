@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { MessageFeed } from "@/components/discord/message-list";
 import { AdvancedSearch } from "@/components/discord/advanced-search";
 import { DailyBriefingPanel } from "@/components/discord/daily-briefing";
+import { StatsRow } from "@/components/discord/stats-row";
 import { FetchError } from "@/components/ui/fetch-error";
 import { usePollingFetch } from "@/hooks/use-polling-fetch";
 import { Suspense } from "react";
@@ -41,15 +42,34 @@ function DiscordIntelContent() {
   const messages = data?.messages ?? [];
 
   return (
-    <div className="animate-fade-in space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">
-          Discord Intel
-        </h1>
+    <div className="animate-fade-in space-y-5">
+      <div className="flex items-baseline justify-between">
+        <div className="flex items-center gap-2.5">
+          <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">
+            Discord Intel
+          </h1>
+          {data && (
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#26A69A] opacity-50" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#26A69A]" />
+            </span>
+          )}
+        </div>
         <span className="font-sans text-[12px] text-white/30">
-          {stats.total > 0 ? `${stats.total} messages · ${stats.processed} processed · ${stats.signals} signals` : "Loading..."}
+          {stats.total > 0 ? "Live · 24h window" : "Loading..."}
         </span>
       </div>
+
+      {data && (
+        <StatsRow
+          total={stats.total}
+          processed={stats.processed}
+          signals={stats.signals}
+          bias={data.briefing?.overallDirection}
+          dominantAsset={data.briefing?.dominantAsset ?? undefined}
+          todaySignals={data.briefing?.signalCount}
+        />
+      )}
 
       {data?.briefing && <DailyBriefingPanel data={data.briefing} />}
 
