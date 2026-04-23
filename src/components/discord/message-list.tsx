@@ -45,7 +45,7 @@ export function MessageFeed({ messages, highlight, title, count }: FeedProps) {
             {title}
           </h3>
           <span className="font-mono text-[11px] tabular-nums text-white/20">
-            {count} meddelanden
+            {count} messages
           </span>
         </div>
       </div>
@@ -53,7 +53,7 @@ export function MessageFeed({ messages, highlight, title, count }: FeedProps) {
       <div className="max-h-[700px] space-y-2 overflow-y-auto px-5 pb-5">
         {messages.length === 0 ? (
           <p className="py-6 text-center font-sans text-[12px] italic text-white/30">
-            Inga meddelanden hittades.
+            No messages found.
           </p>
         ) : messages.map((msg) => (
           <MessageCard key={msg.id} msg={msg} highlight={highlight} />

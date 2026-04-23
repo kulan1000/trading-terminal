@@ -28,7 +28,7 @@ export function TraderRecentSignals({ signals }: { signals: Signal[] }) {
       <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
       <div className="px-5 pt-4 pb-4">
         <h4 className="mb-3 font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">
-          Senaste signaler
+          Recent signals
         </h4>
         <div className="space-y-1.5">
           {signals.slice(0, 20).map((s) => (

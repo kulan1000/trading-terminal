@@ -22,7 +22,7 @@ export function TraderDiscordFeed({ messages }: { messages: Message[] }) {
       <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
       <div className="px-5 pt-4 pb-4">
         <h4 className="mb-3 font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">
-          Discord-aktivitet
+          Discord activity
         </h4>
         <div className="space-y-2">
           {messages.slice(0, 10).map((m) => (

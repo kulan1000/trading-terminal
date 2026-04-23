@@ -67,7 +67,7 @@ export function ScoreTimeline({ history }: Props) {
             Scoring Accuracy Timeline
           </h3>
           <p className="mt-2 font-sans text-[12px] text-white/40">
-            Ingen scoring-data ännu. Tidslinjen fylls automatiskt när signaler börjar scornas.
+            No scoring data yet. The timeline fills in automatically once signals start getting scored.
           </p>
         </div>
       </div>

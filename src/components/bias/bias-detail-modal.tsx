@@ -76,7 +76,7 @@ export function BiasDetailModal({ asset, direction, score, count, price, changeP
                   {changePos ? "+" : ""}{changePercent.toFixed(2)}%
                 </span>
               )}
-              <span className="font-sans text-[12px] text-white/30">{count} signaler</span>
+              <span className="font-sans text-[12px] text-white/30">{count} signals</span>
             </div>
           </div>
           <button onClick={onClose} className="rounded-md p-1.5 text-white/40 transition-colors hover:bg-white/[0.04] hover:text-white">
@@ -90,7 +90,7 @@ export function BiasDetailModal({ asset, direction, score, count, price, changeP
         <div className="flex-1 space-y-5 overflow-y-auto p-6">
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <span className="animate-pulse font-sans text-[13px] text-white/30">Laddar detaljerad vy...</span>
+              <span className="animate-pulse font-sans text-[13px] text-white/30">Loading detailed view...</span>
             </div>
           ) : data ? (
             <>
@@ -99,7 +99,7 @@ export function BiasDetailModal({ asset, direction, score, count, price, changeP
                 <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
                 <div className="px-5 pt-4 pb-4">
                   <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">
-                    AI Analys
+                    AI Analysis
                   </h4>
                   <p className="mt-2 font-sans text-[13px] leading-relaxed text-white/70">{data.summary}</p>
                 </div>
@@ -115,7 +115,7 @@ export function BiasDetailModal({ asset, direction, score, count, price, changeP
               <BiasDetailSignals signals={data.signals.filter((s) => !s.signal_type || s.signal_type === "opinion" || s.signal_type === "position")} />
             </>
           ) : (
-            <p className="text-center font-sans text-[13px] text-white/30">Kunde inte ladda data.</p>
+            <p className="text-center font-sans text-[13px] text-white/30">Could not load data.</p>
           )}
         </div>
       </div>

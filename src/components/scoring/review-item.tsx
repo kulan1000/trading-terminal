@@ -128,20 +128,20 @@ export function ReviewItem({ review: r, isExpanded, onToggle, onAction }: Props)
             <div className="flex items-center gap-2 pt-1">
               <button onClick={handleApprove} disabled={submitting}
                 className="rounded-md bg-[#26A69A]/20 px-3 py-1.5 font-sans text-[11px] font-medium text-[#26A69A] transition hover:bg-[#26A69A]/30 disabled:opacity-50">
-                ✓ Godkänn
+                ✓ Approve
               </button>
               <button onClick={() => setCorrecting(true)}
                 className="rounded-md bg-[#FF9800]/20 px-3 py-1.5 font-sans text-[11px] font-medium text-[#FF9800] transition hover:bg-[#FF9800]/30">
-                ✎ Korrigera
+                ✎ Correct
               </button>
               <button onClick={handleReject} disabled={submitting}
                 className="rounded-md bg-[#EF5350]/20 px-3 py-1.5 font-sans text-[11px] font-medium text-[#EF5350] transition hover:bg-[#EF5350]/30 disabled:opacity-50">
-                ✕ Avvisa
+                ✕ Reject
               </button>
               {r.asset_source !== "explicit" && (
                 <button onClick={handleTraderPattern} disabled={submitting}
                   className="rounded-md bg-[#FF9800]/20 px-3 py-1.5 font-sans text-[11px] font-medium text-[#FF9800] transition hover:bg-[#FF9800]/30 disabled:opacity-50"
-                  title={`Spara: ${r.author} pratar alltid om ${r.gpt_asset}`}>
+                  title={`Save: ${r.author} always talks about ${r.gpt_asset}`}>
                   ⚡ {r.author} = {r.gpt_asset}
                 </button>
               )}

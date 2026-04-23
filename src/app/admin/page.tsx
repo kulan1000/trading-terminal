@@ -84,7 +84,7 @@ export default function AdminPage() {
           )}
           {data?.checkedAt && (
             <span className="font-mono text-[10px] text-white/15">
-              {new Date(data.checkedAt).toLocaleTimeString("sv-SE")}
+              {new Date(data.checkedAt).toLocaleTimeString("en-US")}
             </span>
           )}
           <span className="rounded-md bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-white/25">
@@ -101,10 +101,10 @@ export default function AdminPage() {
             <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#EF5350]" />
             <div>
               <p className="font-sans text-[13px] font-medium text-[#EF5350]">
-                Pipeline har inte producerat signaler på {fmtAgo(data.latestSignal)}
+                Pipeline has not produced signals in {fmtAgo(data.latestSignal)}
               </p>
               <p className="mt-0.5 font-sans text-[11px] text-[#EF5350]/50">
-                Kontrollera cron-jobb, OpenAI API-nyckel och Discord-token
+                Check cron jobs, OpenAI API key and Discord token
               </p>
             </div>
           </div>
@@ -121,25 +121,25 @@ export default function AdminPage() {
       ) : (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
           <StatusCard
-            label="Obehandlade"
+            label="Unprocessed"
             value={data.unprocessed}
             color={data.unprocessed > 20 ? "red" : data.unprocessed > 5 ? "orange" : "green"}
-            sub="Discord-meddelanden i kö"
+            sub="Discord messages in queue"
           />
           <StatusCard
-            label="Signaler (1h)"
+            label="Signals (1h)"
             value={data.recentSignals}
             color={data.recentSignals > 0 ? "green" : "muted"}
-            sub="Klassificerade senaste timmen"
+            sub="Classified in the last hour"
           />
           <StatusCard
-            label="Meddelanden (1h)"
+            label="Messages (1h)"
             value={data.recentMessages}
             color={data.recentMessages > 0 ? "green" : "muted"}
-            sub="Nya från Discord"
+            sub="New from Discord"
           />
           <StatusCard
-            label="Senaste signal"
+            label="Latest signal"
             value={fmtAgo(data.latestSignal)}
             color={
               !data.latestSignal ? "muted"
@@ -147,7 +147,7 @@ export default function AdminPage() {
                   : signalAge < 6 * 60 * 60_000 ? "orange"
                     : "red"
             }
-            sub={data.latestSignal ? new Date(data.latestSignal).toLocaleString("sv-SE") : "Ingen data"}
+            sub={data.latestSignal ? new Date(data.latestSignal).toLocaleString("en-US") : "No data"}
           />
           <CostCard todayOpenAICalls={data.todayOpenAICalls} todayCostUsd={data.todayCostUsd} />
         </div>

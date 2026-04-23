@@ -15,10 +15,10 @@ interface Activity {
 
 export function TraderActivitySummary({ activity }: { activity: Activity }) {
   const items = [
-    { label: "Signaler", value: `${activity.totalSignals}`, sub: `${activity.entryCount}E ${activity.exitCount}X ${activity.positionCount}P` },
-    { label: "Snitt-confidence", value: `${activity.avgConfidence}%`, sub: null },
-    { label: "Senaste signal", value: activity.lastSignal ? fmtAgo(activity.lastSignal) : "—", sub: null },
-    { label: "Senaste meddelande", value: activity.lastMessage ? fmtAgo(activity.lastMessage) : "—", sub: null },
+    { label: "Signals", value: `${activity.totalSignals}`, sub: `${activity.entryCount}E ${activity.exitCount}X ${activity.positionCount}P` },
+    { label: "Avg confidence", value: `${activity.avgConfidence}%`, sub: null },
+    { label: "Latest signal", value: activity.lastSignal ? fmtAgo(activity.lastSignal) : "—", sub: null },
+    { label: "Latest message", value: activity.lastMessage ? fmtAgo(activity.lastMessage) : "—", sub: null },
   ];
 
   const accuracyEntries = Object.entries(activity.assetAccuracy);
@@ -28,7 +28,7 @@ export function TraderActivitySummary({ activity }: { activity: Activity }) {
       <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
       <div className="px-5 pt-4 pb-4">
         <h4 className="mb-3 font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">
-          Aktivitetsöversikt
+          Activity overview
         </h4>
         <div className="grid grid-cols-4 gap-3 mb-3">
           {items.map((item) => (
@@ -42,7 +42,7 @@ export function TraderActivitySummary({ activity }: { activity: Activity }) {
         {accuracyEntries.length > 0 && (
           <>
             <h5 className="mt-3 mb-2 font-sans text-[10px] font-medium uppercase tracking-[0.06em] text-white/25">
-              Träffsäkerhet per asset
+              Accuracy per asset
             </h5>
             <div className="grid grid-cols-3 gap-2">
               {accuracyEntries.map(([asset, acc]) => (
@@ -51,7 +51,7 @@ export function TraderActivitySummary({ activity }: { activity: Activity }) {
                   <p className={`font-mono text-[14px] font-bold tabular-nums ${acc.avgScore > 0 ? "text-[#26A69A]" : acc.avgScore < 0 ? "text-[#EF5350]" : "text-white/40"}`}>
                     {acc.positive}/{acc.scored}
                   </p>
-                  <p className="font-mono text-[9px] text-white/20">snitt {acc.avgScore > 0 ? "+" : ""}{acc.avgScore}</p>
+                  <p className="font-mono text-[9px] text-white/20">avg {acc.avgScore > 0 ? "+" : ""}{acc.avgScore}</p>
                 </div>
               ))}
             </div>

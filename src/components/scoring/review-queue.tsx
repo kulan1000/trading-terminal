@@ -22,7 +22,7 @@ export function ReviewQueue({ reviews, onAction }: Props) {
             GPT Review Queue
           </h3>
           <p className="mt-2 font-sans text-[12px] text-white/40">
-            Inga osäkra klassificeringar att granska just nu. Nya flaggas automatiskt när GPT är osäker på vilken råvara ett meddelande handlar om.
+            No uncertain classifications to review right now. New ones are flagged automatically whenever GPT is unsure which commodity a message is about.
           </p>
         </div>
       </div>
@@ -37,7 +37,7 @@ export function ReviewQueue({ reviews, onAction }: Props) {
           <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">
             GPT Review Queue
             <span className="ml-2 rounded-md bg-[#FF9800]/15 px-2 py-0.5 font-sans text-[10px] font-bold text-[#FF9800]">
-              {reviews.length} att granska
+              {reviews.length} to review
             </span>
           </h3>
         </div>

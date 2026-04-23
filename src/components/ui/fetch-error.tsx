@@ -8,7 +8,7 @@ interface Props {
   autoRetryMs?: number;
 }
 
-export function FetchError({ message = "Kunde inte ladda data.", onRetry, autoRetryMs = 5000 }: Props) {
+export function FetchError({ message = "Could not load data.", onRetry, autoRetryMs = 5000 }: Props) {
   const [countdown, setCountdown] = useState(Math.ceil(autoRetryMs / 1000));
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export function FetchError({ message = "Kunde inte ladda data.", onRetry, autoRe
             onClick={onRetry}
             className="rounded-md border border-white/10 bg-white/5 px-4 py-1.5 font-sans text-[12px] text-white/60 transition-colors hover:bg-white/10 hover:text-white/80"
           >
-            Försök igen
+            Try again
           </button>
           {countdown > 0 && (
             <span className="font-sans tabular-nums text-[11px] text-white/25">

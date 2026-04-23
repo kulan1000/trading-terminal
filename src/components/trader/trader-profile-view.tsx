@@ -46,13 +46,13 @@ export function TraderProfileView({ author }: { author: string }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <span className="animate-pulse font-sans text-[13px] text-white/30">Laddar traderprofil...</span>
+        <span className="animate-pulse font-sans text-[13px] text-white/30">Loading trader profile...</span>
       </div>
     );
   }
 
   if (!data) {
-    return <p className="py-20 text-center font-sans text-[13px] text-white/30">Kunde inte ladda data.</p>;
+    return <p className="py-20 text-center font-sans text-[13px] text-white/30">Could not load data.</p>;
   }
 
   return (
@@ -71,7 +71,7 @@ export function TraderProfileView({ author }: { author: string }) {
           <h1 className="font-sans text-[20px] font-bold text-white">{author}</h1>
           {data.profile && (
             <p className="font-sans text-[12px] text-white/40">
-              Primär: {data.profile.primary_asset} · {data.profile.primary_direction} · {data.profile.assets_traded.join(", ")}
+              Primary: {data.profile.primary_asset} · {data.profile.primary_direction} · {data.profile.assets_traded.join(", ")}
             </p>
           )}
         </div>

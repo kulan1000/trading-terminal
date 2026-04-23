@@ -31,7 +31,7 @@ export function RecentScored({ signals }: { signals: ScoredSignal[] }) {
         <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
         <div className="px-5 pt-4 pb-4">
           <h3 className="font-sans text-[15px] font-semibold tracking-wide text-white">Recent Scored Signals</h3>
-          <p className="mt-2 font-sans text-[13px] text-white/40">Inga scorade signaler ännu.</p>
+          <p className="mt-2 font-sans text-[13px] text-white/40">No scored signals yet.</p>
         </div>
       </div>
     );

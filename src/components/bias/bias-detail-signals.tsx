@@ -13,9 +13,9 @@ const TYPE_LABELS: Record<string, { label: string; cls: string }> = {
 function groupByTime(signals: DetailSignal[]) {
   const now = Date.now();
   const groups: { label: string; signals: DetailSignal[] }[] = [
-    { label: "Senaste timmen", signals: [] },
-    { label: "1–3 timmar sedan", signals: [] },
-    { label: "3–6 timmar sedan", signals: [] },
+    { label: "Last hour", signals: [] },
+    { label: "1–3 hours ago", signals: [] },
+    { label: "3–6 hours ago", signals: [] },
   ];
 
   for (const s of signals) {
@@ -57,7 +57,7 @@ function SignalCard({ s }: { s: DetailSignal }) {
         )}
         {isStrong && (
           <span className="rounded-md bg-[#2962FF]/10 px-2 py-0.5 font-sans text-[10px] font-bold text-[#2962FF]">
-            STARK
+            STRONG
           </span>
         )}
         <span className="ml-auto font-mono text-[11px] text-white/20">
@@ -84,8 +84,8 @@ export function BiasDetailSignals({ signals }: { signals: DetailSignal[] }) {
       <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
         <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
         <div className="px-5 pt-4 pb-4">
-          <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">Signaler</h4>
-          <p className="mt-2 font-sans text-[12px] italic text-white/30">Inga signaler senaste 6h.</p>
+          <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">Signals</h4>
+          <p className="mt-2 font-sans text-[12px] italic text-white/30">No signals in the last 6h.</p>
         </div>
       </div>
     );
@@ -98,7 +98,7 @@ export function BiasDetailSignals({ signals }: { signals: DetailSignal[] }) {
       <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
       <div className="px-5 pt-4 pb-5">
         <h4 className="mb-3 font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">
-          Signaler senaste 6h ({signals.length})
+          Signals in the last 6h ({signals.length})
         </h4>
         <div className="max-h-[350px] space-y-4 overflow-y-auto pr-1">
           {groups.map((g) => (

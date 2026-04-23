@@ -30,8 +30,8 @@ export function PipelineLog({ runs }: { runs: PipelineRun[] }) {
       <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
         <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
         <div className="px-5 pt-4 pb-4">
-          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Pipeline-logg</h2>
-          <p className="mt-3 font-sans text-[12px] text-white/25">Inga körningar loggade ännu.</p>
+          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Pipeline log</h2>
+          <p className="mt-3 font-sans text-[12px] text-white/25">No runs logged yet.</p>
         </div>
       </div>
     );
@@ -46,7 +46,7 @@ export function PipelineLog({ runs }: { runs: PipelineRun[] }) {
       <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
       <div className="px-5 pt-4 pb-3">
         <div className="flex items-center justify-between">
-          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Pipeline-logg</h2>
+          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Pipeline log</h2>
           <div className="flex items-center gap-3">
             {/* Mini success-rate dots */}
             <div className="flex items-center gap-0.5">

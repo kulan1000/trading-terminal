@@ -42,23 +42,23 @@ export function BiasAccuracy() {
         </div>
 
         <p className="mb-4 font-sans text-[11px] leading-relaxed text-white/30">
-          Hur ofta stämde vår bias-riktning med faktisk prisrörelse 4 timmar senare?
-          Mäter systemets prediktiva förmåga.
+          How often did our bias direction match actual price movement 4 hours later?
+          Measures the system&apos;s predictive power.
         </p>
 
         {loading ? (
           <div className="flex justify-center py-4">
-            <span className="animate-pulse font-sans text-[11px] text-white/20">Laddar...</span>
+            <span className="animate-pulse font-sans text-[11px] text-white/20">Loading...</span>
           </div>
         ) : !hasData ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-white/[0.06] py-8">
             <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.02]">
               <span className="text-[16px] text-white/20">📊</span>
             </div>
-            <p className="font-sans text-[12px] font-medium text-white/30">Samlar data...</p>
+            <p className="font-sans text-[12px] font-medium text-white/30">Collecting data...</p>
             <p className="mt-1 max-w-[240px] text-center font-sans text-[10px] leading-relaxed text-white/15">
-              Kräver prisdata (price_snapshots) med 4h historik per bias-snapshot.
-              Fylls automatiskt när pipeline körs under marknadstid.
+              Requires price data (price_snapshots) with 4h history per bias snapshot.
+              Fills in automatically while the pipeline runs during market hours.
             </p>
           </div>
         ) : (

@@ -39,7 +39,7 @@ export function ScoringStatus({ totalScored, totalTraders, totalEntries, totalEx
         {!hasScores && (
           <div className="mt-3 rounded-lg border border-[#FF9800]/20 bg-[#FF9800]/5 px-4 py-2.5">
             <p className="font-sans text-[12px] text-[#FF9800]/80">
-              Scoring aktiveras vid marknadsöppning (sön 18:00 ET). Bara entries och exits scornas — 30m, 1h, 2h och 4h efter signal.
+              Scoring activates at market open (Sun 18:00 ET). Only entries and exits are scored — 30m, 1h, 2h and 4h after signal.
             </p>
           </div>
         )}

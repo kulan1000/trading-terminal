@@ -36,7 +36,7 @@ export function useReviewBadge() {
           if (n > prevCount.current && prevCount.current >= 0 && hasPermission.current) {
             const diff = n - prevCount.current;
             new Notification("Trading Terminal — GPT Review", {
-              body: `${diff} ny${diff > 1 ? "a" : ""} osäker${diff > 1 ? "a" : ""} klassificering${diff > 1 ? "ar" : ""} att granska`,
+              body: `${diff} new uncertain classification${diff > 1 ? "s" : ""} to review`,
               icon: "/favicon.ico",
               tag: "gpt-review", // replaces previous notification
             });

@@ -44,7 +44,7 @@ export function CorrectionForm({ defaultAsset, defaultDirection, defaultSignalTy
       </div>
       <input
         type="text"
-        placeholder="Feedback till GPT (valfritt)..."
+        placeholder="Feedback to GPT (optional)..."
         value={form.note}
         onChange={(e) => setForm({ ...form, note: e.target.value })}
         className="w-full rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 font-sans text-[11px] text-white placeholder:text-white/20 transition-colors focus:border-[#2962FF]/40 focus:outline-none"
@@ -53,11 +53,11 @@ export function CorrectionForm({ defaultAsset, defaultDirection, defaultSignalTy
         <button onClick={() => onSubmit({ asset: form.asset || undefined, direction: form.direction || undefined, signalType: form.signalType || undefined, note: form.note || undefined })}
           disabled={submitting}
           className="rounded-md bg-[#FF9800]/20 px-3 py-1.5 font-sans text-[11px] font-medium text-[#FF9800] transition hover:bg-[#FF9800]/30 disabled:opacity-50">
-          Spara korrigering
+          Save correction
         </button>
         <button onClick={onCancel}
           className="rounded-md bg-white/[0.06] px-3 py-1.5 font-sans text-[11px] text-white/40 transition hover:text-white/60">
-          Avbryt
+          Cancel
         </button>
       </div>
     </div>

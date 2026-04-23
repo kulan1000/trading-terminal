@@ -22,7 +22,7 @@ export function usePollingFetch<T>({ url, intervalMs = 30_000, toastOnRefresh = 
         setData(d);
         setError(false);
         if (hasFetched.current && toastOnRefresh) {
-          toast("Data uppdaterad", "success");
+          toast("Data updated", "success");
         }
         hasFetched.current = true;
       })

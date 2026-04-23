@@ -23,8 +23,8 @@ export function AssetBreakdown({ data }: { data: Record<string, AssetStats> }) {
       <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
         <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
         <div className="px-5 pt-4 pb-4">
-          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Signal-fördelning (24h)</h2>
-          <p className="mt-3 font-sans text-[12px] text-white/25">Inga signaler senaste 24h</p>
+          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Signal breakdown (24h)</h2>
+          <p className="mt-3 font-sans text-[12px] text-white/25">No signals in the last 24h</p>
         </div>
       </div>
     );
@@ -34,7 +34,7 @@ export function AssetBreakdown({ data }: { data: Record<string, AssetStats> }) {
     <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
       <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
       <div className="px-5 pt-4 pb-5">
-        <h2 className="mb-4 font-sans text-[15px] font-semibold tracking-wide text-white">Signal-fördelning (24h)</h2>
+        <h2 className="mb-4 font-sans text-[15px] font-semibold tracking-wide text-white">Signal breakdown (24h)</h2>
         <div className="space-y-5">
           {assets.map((asset) => {
             const s = data[asset];

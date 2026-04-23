@@ -13,10 +13,10 @@ export interface TradePairRow {
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60_000);
-  if (mins < 60) return `${mins}m sedan`;
+  if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h sedan`;
-  return `${Math.floor(hrs / 24)}d sedan`;
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 export function TradePairs({ pairs }: { pairs: TradePairRow[] }) {
@@ -31,7 +31,7 @@ export function TradePairs({ pairs }: { pairs: TradePairRow[] }) {
         </div>
         <div className="px-5 pb-4">
           <p className="font-sans text-[13px] text-white/40">
-            Inga matchade trades annu. Pairing sker automatiskt nar en trader postar bade entry och exit pa samma asset.
+            No matched trades yet. Pairing happens automatically when a trader posts both entry and exit on the same asset.
           </p>
         </div>
       </div>

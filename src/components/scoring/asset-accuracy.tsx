@@ -51,9 +51,9 @@ export function AssetAccuracy({ traderSignals }: Props) {
             <div className="mb-2 h-8 w-8 rounded-full border border-white/[0.06] bg-white/[0.02] flex items-center justify-center">
               <span className="text-[14px] text-white/20">⏳</span>
             </div>
-            <p className="font-sans text-[12px] text-white/30">Samlar data...</p>
+            <p className="font-sans text-[12px] text-white/30">Collecting data...</p>
             <p className="mt-1 font-sans text-[10px] text-white/15">
-              Visas när tillräckligt med signaler har poängbedömts
+              Shown once enough signals have been scored
             </p>
           </div>
         ) : (

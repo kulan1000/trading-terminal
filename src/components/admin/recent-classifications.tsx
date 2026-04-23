@@ -38,13 +38,13 @@ export function RecentClassifications({ data }: { data: Classification[] }) {
       <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
       <div className="px-5 pt-4 pb-3">
         <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">
-          Senaste klassificeringar
+          Recent classifications
         </h2>
       </div>
 
       {!data.length ? (
         <div className="px-5 pb-4">
-          <p className="font-sans text-[12px] text-white/25">Inga klassificeringar ännu</p>
+          <p className="font-sans text-[12px] text-white/25">No classifications yet</p>
         </div>
       ) : (
         <>

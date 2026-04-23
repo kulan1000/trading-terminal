@@ -45,32 +45,32 @@ export function SystemHealth({ runs, latestSignal, latestMessage }: Props) {
     // Pipeline running: green if runs exist, red if none
     check(
       recentRuns.length > 0 ? "ok" : "error",
-      "Pipeline kör",
-      recentRuns.length > 0 ? `${recentRuns.length} körningar senaste timmen` : "Inga körningar senaste timmen"
+      "Pipeline running",
+      recentRuns.length > 0 ? `${recentRuns.length} runs in the last hour` : "No runs in the last hour"
     ),
     // Errors: green if none, yellow if 1, red if 2+
     check(
       errorRuns.length === 0 ? "ok" : errorRuns.length === 1 ? "warn" : "error",
-      "Inga fel",
-      errorRuns.length === 0 ? "Alla senaste körningar lyckades" : `${errorRuns.length} fel senaste timmen`
+      "No errors",
+      errorRuns.length === 0 ? "All recent runs succeeded" : `${errorRuns.length} errors in the last hour`
     ),
     // Speed: green <60s, yellow <90s, red >90s (pipeline does Discord+GPT+scoring+snapshots)
     check(
       avgDuration === 0 ? "ok" : avgDuration < 60_000 ? "ok" : avgDuration < 90_000 ? "warn" : "error",
-      "Snabb pipeline",
-      avgDuration > 0 ? `Snitt ${(avgDuration / 1000).toFixed(1)}s` : "Ingen data"
+      "Fast pipeline",
+      avgDuration > 0 ? `Avg ${(avgDuration / 1000).toFixed(1)}s` : "No data"
     ),
     // Signals: green <2h, yellow <6h, red >6h (people don't post at night)
     check(
       signalAge < 2 * 60 * 60_000 ? "ok" : signalAge < 6 * 60 * 60_000 ? "warn" : "error",
-      "Signaler flödar",
-      signalAge < Infinity ? `Senaste: ${Math.round(signalAge / 60_000)}m sedan` : "Inga signaler"
+      "Signals flowing",
+      signalAge < Infinity ? `Latest: ${Math.round(signalAge / 60_000)}m ago` : "No signals"
     ),
     // Discord: green <1h, yellow <3h, red >3h
     check(
       messageAge < 60 * 60_000 ? "ok" : messageAge < 3 * 60 * 60_000 ? "warn" : "error",
-      "Discord-koppling",
-      messageAge < Infinity ? `Senaste: ${Math.round(messageAge / 60_000)}m sedan` : "Inga meddelanden"
+      "Discord connection",
+      messageAge < Infinity ? `Latest: ${Math.round(messageAge / 60_000)}m ago` : "No messages"
     ),
   ];
 
@@ -85,7 +85,7 @@ export function SystemHealth({ runs, latestSignal, latestMessage }: Props) {
       <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
       <div className="px-5 pt-4 pb-4">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Systemhälsa</h2>
+          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">System Health</h2>
           <span className={`rounded-md px-2.5 py-0.5 font-sans text-[10px] font-bold ${badge.cls}`}>
             {badge.text}
           </span>

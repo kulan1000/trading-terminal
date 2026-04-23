@@ -40,15 +40,15 @@ export function fmtPrice(asset: string, price: number): string {
   return `$${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-/** "5m sedan" / "2h sedan" / "1d sedan" — relative time in Swedish */
+/** "5m ago" / "2h ago" / "1d ago" — relative time in English */
 export function fmtAgo(iso: string | null): string {
   if (!iso) return "—";
   const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-  if (mins < 1) return "Just nu";
-  if (mins < 60) return `${mins}m sedan`;
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ${mins % 60}m sedan`;
-  return `${Math.round(hours / 24)}d sedan`;
+  if (hours < 24) return `${hours}h ${mins % 60}m ago`;
+  return `${Math.round(hours / 24)}d ago`;
 }
 
 /** "5m" / "2h" — compact relative time, no suffix */

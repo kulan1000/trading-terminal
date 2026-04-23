@@ -19,7 +19,7 @@ export function TraderAssetBreakdown({ breakdown }: { breakdown: AssetBreakdown 
               <div key={asset} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-sans text-[13px] font-medium text-white/70">{asset}</span>
-                  <span className="font-mono text-[11px] text-white/30">{d.total} signaler</span>
+                  <span className="font-mono text-[11px] text-white/30">{d.total} signals</span>
                 </div>
                 <div className="flex h-1.5 w-full overflow-hidden rounded-full">
                   <div className="bg-[#26A69A]/60" style={{ width: `${bullPct}%` }} />

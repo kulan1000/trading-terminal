@@ -8,7 +8,7 @@ export function BackfillButton() {
 
   async function runBackfill() {
     setLoading(true);
-    setStatus("Kor backfill...");
+    setStatus("Running backfill...");
     try {
       const res = await fetch("/api/scoring/backfill", {
         method: "POST",
@@ -16,12 +16,12 @@ export function BackfillButton() {
       });
       const data = await res.json();
       if (data.error) {
-        setStatus(`Fel: ${data.error}`);
+        setStatus(`Error: ${data.error}`);
       } else {
-        setStatus(`Klart! ${data.backfilled} scorade, ${data.skipped} saknar prisdata`);
+        setStatus(`Done! ${data.backfilled} scored, ${data.skipped} missing price data`);
       }
     } catch (err) {
-      setStatus(`Fel: ${err instanceof Error ? err.message : "Unknown"}`);
+      setStatus(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
     } finally {
       setLoading(false);
     }
@@ -34,7 +34,7 @@ export function BackfillButton() {
         disabled={loading}
         className="bg-[#FF9800] text-white rounded-md px-3 py-1 font-sans text-[12px] font-medium shadow-[0_0_12px_-3px_rgba(255,152,0,0.4)] hover:shadow-[0_0_16px_-3px_rgba(255,152,0,0.5)] transition-all disabled:opacity-50"
       >
-        {loading ? "Scorar..." : "⟳ Backfill Scoring"}
+        {loading ? "Scoring..." : "⟳ Backfill Scoring"}
       </button>
       {status && (
         <span className="font-sans text-[11px] text-white/40">{status}</span>

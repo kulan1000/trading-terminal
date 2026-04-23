@@ -28,7 +28,7 @@ function bucketByDay(signals: SignalRow[]): DayBucket[] {
     const d = new Date(s.created_at);
     const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     if (!map.has(date)) {
-      const label = d.toLocaleDateString("sv-SE", { weekday: "short", day: "numeric", month: "short" });
+      const label = d.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" });
       map.set(date, { date, label, gold: 0, silver: 0, oil: 0, total: 0 });
     }
     const b = map.get(date)!;
@@ -48,8 +48,8 @@ export function SignalHistory({ signals }: { signals: SignalRow[] }) {
       <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
         <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
         <div className="px-5 pt-4 pb-4">
-          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Signaler per dag (7d)</h2>
-          <p className="mt-3 font-sans text-[12px] text-white/25">Inga signaler tillgängliga.</p>
+          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Signals per day (7d)</h2>
+          <p className="mt-3 font-sans text-[12px] text-white/25">No signals available.</p>
         </div>
       </div>
     );
@@ -66,10 +66,10 @@ export function SignalHistory({ signals }: { signals: SignalRow[] }) {
       <div className="px-5 pt-4 pb-4">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Signaler per dag (7d)</h2>
+          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Signals per day (7d)</h2>
           <div className="flex items-center gap-3">
             <span className="font-mono text-[10px] tabular-nums text-white/25">
-              {totalSignals} totalt · ~{avgPerDay}/dag
+              {totalSignals} total · ~{avgPerDay}/day
             </span>
           </div>
         </div>

@@ -1,12 +1,12 @@
 "use client";
 
 const TABLE_LABELS: Record<string, string> = {
-  discord_messages: "Discord-meddelanden",
-  signals: "Signaler",
-  bias_snapshots: "Bias-snapshots",
-  sentiment_snapshots: "Sentiment-snapshots",
-  price_snapshots: "Pris-snapshots",
-  pipeline_runs: "Pipeline-körningar",
+  discord_messages: "Discord messages",
+  signals: "Signals",
+  bias_snapshots: "Bias snapshots",
+  sentiment_snapshots: "Sentiment snapshots",
+  price_snapshots: "Price snapshots",
+  pipeline_runs: "Pipeline runs",
 };
 
 interface Props {
@@ -22,9 +22,9 @@ export function DatabaseInfo({ tableCounts }: Props) {
       <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
       <div className="px-5 pt-4 pb-4">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Databas</h2>
+          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Database</h2>
           <span className="font-mono text-[10px] tabular-nums text-white/20">
-            {totalRows.toLocaleString()} rader
+            {totalRows.toLocaleString()} rows
           </span>
         </div>
         <div className="space-y-2.5">

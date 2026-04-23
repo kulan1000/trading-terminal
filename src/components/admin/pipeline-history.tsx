@@ -32,7 +32,7 @@ function bucketRuns(runs: HistoryRun[]): Bucket[] {
   for (const [key, group] of map) {
     const d = new Date(key + ":00:00");
     const block = d.getHours();
-    const dayLabel = d.toLocaleDateString("sv-SE", { weekday: "short", day: "numeric" });
+    const dayLabel = d.toLocaleDateString("en-US", { weekday: "short", day: "numeric" });
     const label = `${dayLabel} ${String(block).padStart(2, "0")}–${String(block + 5).padStart(2, "0")}`;
 
     const success = group.filter((r) => r.status === "success").length;
@@ -59,8 +59,8 @@ export function PipelineHistory({ runs }: { runs: HistoryRun[] }) {
       <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
         <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
         <div className="px-5 pt-4 pb-4">
-          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Pipeline-historik (7d)</h2>
-          <p className="mt-3 font-sans text-[12px] text-white/25">Ingen historik tillgänglig.</p>
+          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Pipeline history (7d)</h2>
+          <p className="mt-3 font-sans text-[12px] text-white/25">No history available.</p>
         </div>
       </div>
     );
@@ -79,10 +79,10 @@ export function PipelineHistory({ runs }: { runs: HistoryRun[] }) {
       <div className="px-5 pt-4 pb-4">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Pipeline-historik (7d)</h2>
+          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Pipeline history (7d)</h2>
           <div className="flex items-center gap-3">
             <span className="font-mono text-[10px] tabular-nums text-white/25">
-              {totalRuns} körningar · {totalSignals} signaler
+              {totalRuns} runs · {totalSignals} signals
             </span>
             <span className={`rounded-md px-2.5 py-0.5 font-mono text-[10px] font-bold tabular-nums ${overallRate >= 95 ? "bg-[#26A69A]/15 text-[#26A69A]" : overallRate >= 80 ? "bg-[#FF9800]/15 text-[#FF9800]" : "bg-[#EF5350]/15 text-[#EF5350]"}`}>
               {overallRate}% OK
@@ -140,7 +140,7 @@ export function PipelineHistory({ runs }: { runs: HistoryRun[] }) {
             <span className="h-2 w-2 rounded-sm bg-[#EF5350]/50" />
             <span className="font-sans text-[10px] text-white/25">Error</span>
           </div>
-          <span className="ml-auto font-mono text-[9px] text-white/15">6-timmarsblock</span>
+          <span className="ml-auto font-mono text-[9px] text-white/15">6-hour blocks</span>
         </div>
       </div>
     </div>

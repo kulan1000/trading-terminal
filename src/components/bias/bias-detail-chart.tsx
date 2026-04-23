@@ -35,7 +35,7 @@ export function BiasDetailChart({ history, signals, intradayPrices, asset }: Pro
   if (history.length < 2) {
     return (
       <div className="flex h-[200px] items-center justify-center overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
-        <span className="font-sans text-[12px] text-white/30">Samlar data för graf...</span>
+        <span className="font-sans text-[12px] text-white/30">Collecting chart data...</span>
       </div>
     );
   }
@@ -175,8 +175,8 @@ function ChartHeader({ lineColor, hasPriceData, showClosedNote }: { lineColor: s
   return (
     <div className="mb-3 flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">Bias-trend 6h</h4>
-        {showClosedNote && <span className="font-sans text-[9px] text-white/20">· Börsen stängd</span>}
+        <h4 className="font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40">Bias trend 6h</h4>
+        {showClosedNote && <span className="font-sans text-[9px] text-white/20">· Market closed</span>}
       </div>
       <div className="flex items-center gap-3">
         <span className="flex items-center gap-1.5 font-sans text-[10px] text-white/30">

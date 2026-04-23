@@ -22,17 +22,17 @@ export function PipelineTrigger({ onComplete }: Props) {
       });
       const body = await res.json();
       if (res.ok) {
-        setResult(`OK — ${body.processed ?? 0} klassificerade, ${body.signals ?? 0} signaler, ${body.ingest?.ingested ?? 0} nya meddelanden`);
+        setResult(`OK — ${body.processed ?? 0} classified, ${body.signals ?? 0} signals, ${body.ingest?.ingested ?? 0} new messages`);
       } else if (res.status === 429) {
-        setResult(`Rate limited — vänta ${Math.ceil((body.retryAfterMs ?? 60000) / 1000)}s`);
+        setResult(`Rate limited — wait ${Math.ceil((body.retryAfterMs ?? 60000) / 1000)}s`);
       } else if (res.status === 401) {
-        setResult("Fel nyckel — kontrollera CLASSIFY_SECRET");
+        setResult("Wrong key — check CLASSIFY_SECRET");
       } else {
-        setResult(`Fel: ${body.error ?? body.message ?? "Okänt"}`);
+        setResult(`Error: ${body.error ?? body.message ?? "Unknown"}`);
       }
       onComplete();
     } catch {
-      setResult("Anslutningsfel — kunde inte nå servern");
+      setResult("Connection error — could not reach the server");
     } finally {
       setRunning(false);
     }
@@ -45,7 +45,7 @@ export function PipelineTrigger({ onComplete }: Props) {
       <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
       <div className="px-5 pt-4 pb-5">
         <div className="mb-1">
-          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Manuell pipeline-trigger</h2>
+          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Manual pipeline trigger</h2>
           <p className="mt-1 font-sans text-[11px] text-white/25">
             Ingest → Classify → Prices → Score → Sentiment → Bias
           </p>
@@ -64,7 +64,7 @@ export function PipelineTrigger({ onComplete }: Props) {
             disabled={running || !secret.trim()}
             className="h-9 shrink-0 rounded-lg bg-[#FF9800] px-5 font-sans text-[12px] font-medium text-white shadow-[0_0_12px_-3px_rgba(255,152,0,0.4)] transition-all hover:shadow-[0_0_16px_-3px_rgba(255,152,0,0.5)] disabled:opacity-30 disabled:shadow-none"
           >
-            {running ? "Kör..." : "Kör pipeline"}
+            {running ? "Running..." : "Run pipeline"}
           </button>
         </div>
         {result && (

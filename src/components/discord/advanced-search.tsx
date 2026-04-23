@@ -50,14 +50,14 @@ export function AdvancedSearch() {
       <form onSubmit={search} className="px-5 py-4">
         <div className="flex gap-2">
           <input type="text" value={q} onChange={(e) => setQ(e.target.value)}
-            placeholder="Sök meddelanden..." className={`flex-1 ${INPUT}`} />
+            placeholder="Search messages..." className={`flex-1 ${INPUT}`} />
           <button type="submit"
             className="rounded-lg bg-[#2962FF] px-4 py-2 font-sans text-[12px] font-semibold text-white transition-all hover:bg-[#1E53E5]">
-            Sök
+            Search
           </button>
           <button type="button" onClick={() => setOpen(!open)}
             className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 font-sans text-[11px] text-white/40 transition-colors hover:bg-white/[0.04] hover:text-white/60">
-            {open ? "Stäng" : "Filter"}
+            {open ? "Close" : "Filter"}
           </button>
         </div>
 
@@ -65,37 +65,37 @@ export function AdvancedSearch() {
           <div className="mt-3 grid grid-cols-2 gap-3 border-t border-white/[0.04] pt-3 md:grid-cols-4">
             <Field label="Trader">
               <input type="text" value={author} onChange={(e) => setAuthor(e.target.value)}
-                placeholder="Namn..." className={INPUT} />
+                placeholder="Name..." className={INPUT} />
             </Field>
-            <Field label="Kanal">
+            <Field label="Channel">
               <select value={channel} onChange={(e) => setChannel(e.target.value)} className={SELECT}>
-                {CHANNELS.map((c) => <option key={c} value={c}>{c === "all" ? "Alla kanaler" : `#${c}`}</option>)}
+                {CHANNELS.map((c) => <option key={c} value={c}>{c === "all" ? "All channels" : `#${c}`}</option>)}
               </select>
             </Field>
             <Field label="Asset">
               <select value={asset} onChange={(e) => setAsset(e.target.value)} className={SELECT}>
-                {ASSETS.map((a) => <option key={a} value={a}>{a === "all" ? "Alla" : a}</option>)}
+                {ASSETS.map((a) => <option key={a} value={a}>{a === "all" ? "All" : a}</option>)}
               </select>
             </Field>
-            <Field label="Signal-typ">
+            <Field label="Signal type">
               <select value={signalType} onChange={(e) => setSignalType(e.target.value)} className={SELECT}>
-                {SIGNAL_TYPES.map((t) => <option key={t} value={t}>{t === "all" ? "Alla typer" : t.toUpperCase()}</option>)}
+                {SIGNAL_TYPES.map((t) => <option key={t} value={t}>{t === "all" ? "All types" : t.toUpperCase()}</option>)}
               </select>
             </Field>
-            <Field label="Från">
+            <Field label="From">
               <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={INPUT} />
             </Field>
-            <Field label="Till">
+            <Field label="To">
               <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={INPUT} />
             </Field>
             <div className="col-span-2 flex items-end gap-2">
               <button type="submit"
                 className="rounded-lg bg-[#2962FF] px-4 py-2 font-sans text-[12px] font-semibold text-white transition-all hover:bg-[#1E53E5]">
-                Filtrera
+                Filter
               </button>
               <button type="button" onClick={reset}
                 className="rounded-lg border border-white/[0.06] px-3 py-2 font-sans text-[12px] text-white/40 transition-colors hover:text-white/60 hover:bg-white/[0.04]">
-                Rensa
+                Clear
               </button>
             </div>
           </div>
