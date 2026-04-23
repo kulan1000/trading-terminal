@@ -27,125 +27,170 @@ interface StreakData {
 
 const ASSET_COLOR: Record<string, string> = {
   Gold: "#FFD700",
-  Silver: "#C0C5CE",
-  Oil: "#E8833A",
+  Silver: "#D0D5DE",
+  Oil: "#C9843F",
 };
 
-const DIR_STYLE: Record<string, { label: string; bg: string; text: string; glow: string }> = {
-  bullish: { label: "BULLISH", bg: "bg-[#26A69A]/10", text: "text-[#26A69A]", glow: "shadow-[0_0_12px_-3px_rgba(38,166,154,0.3)]" },
-  bearish: { label: "BEARISH", bg: "bg-[#EF5350]/10", text: "text-[#EF5350]", glow: "shadow-[0_0_12px_-3px_rgba(239,83,80,0.3)]" },
-  neutral: { label: "NEUTRAL", bg: "bg-[#FF9800]/10", text: "text-[#FF9800]", glow: "" },
+const DIR_COLOR: Record<string, string> = {
+  bullish: "#26A69A",
+  bearish: "#EF5350",
+  neutral: "#FF9800",
 };
 
-function timeAgo(iso: string): string {
-  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
+function timeSpan(earliest: string): string {
+  const mins = Math.round((Date.now() - new Date(earliest).getTime()) / 60_000);
   if (mins < 60) return `${mins}m`;
-  const hours = Math.round(mins / 60);
-  return `${hours}h`;
+  const hours = mins / 60;
+  return hours < 10 ? `${hours.toFixed(1)}h` : `${Math.round(hours)}h`;
 }
 
-function AccelIndicator({ value }: { value: number }) {
-  if (value >= 1.5) return <span className="text-[10px] text-[#26A69A]">▲ Accelerating</span>;
-  if (value >= 0.8) return <span className="text-[10px] text-white/30">→ Steady</span>;
-  if (value > 0) return <span className="text-[10px] text-[#FF9800]">▽ Slowing</span>;
-  return <span className="text-[10px] text-white/20">— Quiet</span>;
+function trendLabel(accel: number): { label: string; dir: "up" | "down" | "flat" } {
+  if (accel >= 1.5) return { label: "Accelerating", dir: "up" };
+  if (accel >= 0.8) return { label: "Steady", dir: "flat" };
+  if (accel > 0) return { label: "Slowing", dir: "down" };
+  return { label: "Quiet", dir: "flat" };
 }
 
+function perHour(recent: number): string {
+  // recentCount is "signals in last hour" so per/h is just the count
+  return `${recent}/h`;
+}
+
+/**
+ * Sentiment v2 split: Active streaks (1.4fr) + Signal velocity (1fr).
+ * Both cards have hover lift matching the hero cards above.
+ */
 export function SignalStreaks() {
-  const { data } = usePollingFetch<StreakData>({ url: "/api/streaks", intervalMs: 30_000, toastOnRefresh: false });
+  const { data } = usePollingFetch<StreakData>({
+    url: "/api/streaks",
+    intervalMs: 30_000,
+    toastOnRefresh: false,
+  });
 
   if (!data) return null;
 
-  const { streaks, momentum } = data;
-  const hasStreaks = streaks.length > 0;
-  const hasMomentum = momentum.some((m) => m.recentCount > 0);
+  const streaks = data.streaks ?? [];
+  const momentum = (data.momentum ?? []).filter((m) => m.recentCount > 0 || m.previousCount > 0);
 
-  if (!hasStreaks && !hasMomentum) return null;
+  if (streaks.length === 0 && momentum.length === 0) return null;
 
   return (
-    <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-      <div className="px-5 pt-4 pb-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">
-            Streaks & Momentum
-          </h2>
-          <span className="font-mono text-[10px] text-white/20">24h window</span>
+    <section className="animate-fade-in space-y-2.5">
+      <div className="flex items-baseline justify-between px-0.5">
+        <h2 className="font-sans text-[11px] font-bold uppercase tracking-[0.08em] text-white/65">
+          Streaks &amp; Momentum
+        </h2>
+        <span className="font-sans text-[10px] text-white/40">24h window</span>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1fr]">
+        {/* Active streaks */}
+        <div className="group overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111] transition-all duration-200 hover:-translate-y-px hover:border-white/[0.14] hover:bg-[#141414]">
+          <div className="flex items-center justify-between px-5 pt-4 pb-2">
+            <span className="font-sans text-[11px] font-medium text-white/60">
+              Active streaks
+            </span>
+          </div>
+          <div className="px-5 pb-2">
+            {streaks.length === 0 ? (
+              <div className="py-6 text-center font-sans text-[12px] text-white/30">
+                No active streaks
+              </div>
+            ) : (
+              streaks.map((s, i) => {
+                const color = DIR_COLOR[s.direction] ?? "#FF9800";
+                const span = timeSpan(s.earliest);
+                const last = i === streaks.length - 1;
+                return (
+                  <div
+                    key={s.asset + i}
+                    className={`flex items-center gap-4 py-3.5 ${last ? "" : "border-b border-white/[0.05]"}`}
+                  >
+                    <span
+                      className="block h-7 w-[3px] rounded-sm"
+                      style={{
+                        background: color,
+                        boxShadow: `0 0 10px ${color}`,
+                      }}
+                    />
+                    <div className="min-w-[60px]">
+                      <div className="font-sans text-[14px] font-medium text-white">
+                        {s.asset}
+                      </div>
+                      <div className="mt-0.5 font-sans text-[11px] text-white/50">
+                        {s.direction}
+                      </div>
+                    </div>
+                    <div className="flex-1" />
+                    <span
+                      className="font-mono text-[22px] font-semibold leading-none tracking-tight tabular-nums"
+                      style={{ color }}
+                    >
+                      {s.count}
+                      <span className="text-[14px] opacity-60">×</span>
+                    </span>
+                    <span className="min-w-[36px] text-right font-mono text-[12px] tabular-nums text-white/50">
+                      {span}
+                    </span>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
 
-        {/* Active streaks */}
-        {hasStreaks && (
-          <div className="mb-4 space-y-2">
-            {streaks.map((s) => {
-              const style = DIR_STYLE[s.direction] ?? DIR_STYLE.neutral;
-              const color = ASSET_COLOR[s.asset] ?? "#fff";
-              const duration = timeAgo(s.earliest);
-              return (
-                <div
-                  key={s.asset}
-                  className={`flex items-center justify-between rounded-lg border border-white/[0.04] px-4 py-3 ${style.bg} ${style.glow}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-1 rounded-full" style={{ backgroundColor: color }} />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-sans text-[13px] font-medium text-white">{s.asset}</span>
-                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${style.bg} ${style.text}`}>
-                          {style.label}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 font-mono text-[10px] text-white/30">
-                        {s.count} signals in a row · {duration} span
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`font-mono text-[20px] font-bold tabular-nums ${style.text}`}>
-                      {s.count}×
+        {/* Signal velocity */}
+        <div className="group overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111] transition-all duration-200 hover:-translate-y-px hover:border-white/[0.14] hover:bg-[#141414]">
+          <div className="flex items-center justify-between px-5 pt-4 pb-2">
+            <span className="font-sans text-[11px] font-medium text-white/60">
+              Signal velocity
+            </span>
+          </div>
+          <div className="px-5 pb-2">
+            {momentum.length === 0 ? (
+              <div className="py-6 text-center font-sans text-[12px] text-white/30">
+                No recent signals
+              </div>
+            ) : (
+              momentum.map((m, i) => {
+                const color = ASSET_COLOR[m.asset] ?? "#ffffff";
+                const t = trendLabel(m.acceleration);
+                const tColor =
+                  t.dir === "up"
+                    ? "text-[#26A69A]"
+                    : t.dir === "down"
+                      ? "text-[#EF5350]"
+                      : "text-white/50";
+                const arrow = t.dir === "up" ? "▲" : t.dir === "down" ? "▼" : "—";
+                const last = i === momentum.length - 1;
+                return (
+                  <div
+                    key={m.asset + i}
+                    className={`flex items-center gap-3 py-3.5 ${last ? "" : "border-b border-white/[0.05]"}`}
+                  >
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{ background: color, boxShadow: `0 0 8px ${color}` }}
+                    />
+                    <span className="font-sans text-[14px] font-medium text-white">
+                      {m.asset}
+                    </span>
+                    <div className="flex-1" />
+                    <span className="font-mono text-[14px] font-medium tabular-nums text-white">
+                      {perHour(m.recentCount)}
+                    </span>
+                    <span
+                      className={`min-w-[90px] text-right font-sans text-[11px] ${tColor}`}
+                    >
+                      {arrow} {t.label}
                     </span>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
-        )}
-
-        {/* Momentum grid */}
-        {hasMomentum && (
-          <div className="grid grid-cols-3 gap-3">
-            {momentum.map((m) => {
-              const color = ASSET_COLOR[m.asset] ?? "#fff";
-              const dir = DIR_STYLE[m.dominantDirection] ?? DIR_STYLE.neutral;
-              return (
-                <div
-                  key={m.asset}
-                  className="rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-2.5"
-                >
-                  <div className="mb-1.5 flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-                    <span className="font-sans text-[11px] font-medium text-white/60">{m.asset}</span>
-                  </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className={`font-mono text-[16px] font-bold tabular-nums ${dir.text}`}>
-                      {m.recentCount}
-                    </span>
-                    <span className="font-mono text-[10px] text-white/20">signals/1h</span>
-                  </div>
-                  <div className="mt-1 flex items-center justify-between">
-                    {m.recentCount > 0 && (
-                      <div className="flex gap-1.5">
-                        {m.bullish > 0 && <span className="font-mono text-[10px] text-[#26A69A]">{m.bullish}↑</span>}
-                        {m.bearish > 0 && <span className="font-mono text-[10px] text-[#EF5350]">{m.bearish}↓</span>}
-                      </div>
-                    )}
-                    <AccelIndicator value={m.acceleration} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
