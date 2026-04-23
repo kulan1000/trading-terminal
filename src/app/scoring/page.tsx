@@ -11,6 +11,7 @@ import { ReviewQueue } from "@/components/scoring/review-queue";
 import { ReviewStats } from "@/components/scoring/review-stats";
 import { AssetAccuracy } from "@/components/scoring/asset-accuracy";
 import { BiasAccuracy } from "@/components/scoring/bias-accuracy";
+import { Podium } from "@/components/scoring/podium";
 import { useReviews } from "@/hooks/use-reviews";
 
 const ASSETS = ["all", "gold", "silver", "oil"] as const;
@@ -107,6 +108,9 @@ export default function ScoringPage() {
 
           {/* GPT improvement stats */}
           <ReviewStats />
+
+          {/* Top-3 trader podium (hidden if fewer than 3 qualified traders) */}
+          <Podium traders={filteredScoreboard} traderSignals={filteredSignals} />
 
           {/* Scoreboard — main ranking, click trader for drilldown */}
           <ScoreboardTable traders={filteredScoreboard} traderSignals={filteredSignals} watchlist={watchlist} />
