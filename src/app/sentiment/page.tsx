@@ -10,13 +10,21 @@ export default function SentimentPage() {
   const { data: biases, error, retry } = usePollingFetch<unknown[]>({ url: "/api/bias-page-data" });
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in space-y-5">
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="font-sans text-sm font-bold uppercase tracking-wider text-tv-heading">
-            Community Sentiment
-          </h1>
-          <span className="font-sans text-xs text-tv-secondary">
+        <div className="flex items-baseline justify-between">
+          <div className="flex items-center gap-2.5">
+            <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">
+              Sentiment — Community Bias
+            </h1>
+            {biases && (
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#26A69A] opacity-50" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#26A69A]" />
+              </span>
+            )}
+          </div>
+          <span className="font-sans text-[12px] text-white/40">
             Gold &middot; Silver &middot; Oil
           </span>
         </div>
