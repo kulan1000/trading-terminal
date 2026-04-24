@@ -45,15 +45,37 @@ const COMMODITY_KEYWORDS = new RegExp(
 const COMMODITY_CHANNELS = new Set([
   "gold-commodities",
   "traders-lounge",
+  "main-discussion",
 ]);
+
+// Pure-noise phrases (greetings, reactions, acknowledgements) — skip even in
+// commodity channels since they have no signal content on their own.
+const NOISE_PHRASES = new Set([
+  "gm", "gn", "hi", "hey", "hello", "yo", "sup", "wb", "wbu",
+  "ty", "thx", "thanks", "tysm", "np", "yw",
+  "lol", "lmao", "rofl", "lmfao", "kek", "kekw",
+  "ok", "okay", "k", "kk", "sure", "yep", "yes", "yeah", "no", "nope", "nah",
+  "wow", "damn", "bruh", "bro", "lfg", "gg", "ez", "nice", "cool", "sick", "fire",
+  "🔥", "🚀", "🐂", "🐻", "💎", "🙌", "😂", "😭", "💀", "👀", "🫡",
+]);
+
+const EMOJI_ONLY = /^[\p{Extended_Pictographic}\p{Emoji_Presentation}\s\u200d]+$/u;
+const MENTION_ONLY = /^(@\w+\s*|@user\s*|@role\s*|#channel\s*)+$/i;
 
 /** Returns true if message MIGHT contain a commodity signal (fast, cheap) */
 export function maybeCommodityRelevant(content: string, channel?: string): boolean {
-  // Too short to contain useful signal (e.g. "lol", "ok", emoji-only)
-  if (content.trim().length < 8) return false;
+  const trimmed = content.trim();
+  const normalized = trimmed.toLowerCase();
 
-  // Commodity channels: still pass most messages, but skip obvious noise
+  // Universal noise floor — applies to ALL channels including commodity ones
+  if (trimmed.length < 8) return false;
+  if (NOISE_PHRASES.has(normalized)) return false;
+  if (EMOJI_ONLY.test(trimmed)) return false;
+  if (MENTION_ONLY.test(trimmed)) return false;
+
+  // Commodity channels: pass anything that survived the noise floor
   if (channel && COMMODITY_CHANNELS.has(channel)) return true;
 
+  // Other channels: require a commodity keyword
   return COMMODITY_KEYWORDS.test(content);
 }

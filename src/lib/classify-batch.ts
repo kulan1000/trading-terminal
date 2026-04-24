@@ -7,6 +7,7 @@ import { getTraderHint, refreshTraderProfile } from "@/lib/trader-profiles";
 import { getAssetPrice } from "@/lib/price-snapshot";
 import { isMarketOpen } from "@/lib/market-hours";
 import { detectAssetSource, flagForReview, getLearnedFeedback } from "@/lib/classify-review";
+import { CLASSIFIER_MODEL } from "@/lib/constants";
 
 export async function processUnclassified(limit = 50) {
   const supabase = getSupabaseAdmin();
@@ -124,7 +125,7 @@ export async function processUnclassified(limit = 50) {
             signal_type: sigType,
             position: result.position,
             interpretation: result.interpretation,
-            model_used: "gpt-4o-mini",
+            model_used: CLASSIFIER_MODEL,
             author: msg.author,
             price_at_signal: price,
             target_price: result.target_price ?? null,
@@ -169,5 +170,11 @@ export async function processUnclassified(limit = 50) {
     await refreshTraderProfile(supabase, author);
   }
 
-  return { processed: messages.length, signals: signalCount, skipped, flagged };
+  return {
+    processed: messages.length,
+    signals: signalCount,
+    skipped,
+    flagged,
+    openai_calls: openaiCalls,
+  };
 }

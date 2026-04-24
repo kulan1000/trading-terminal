@@ -128,3 +128,94 @@ body {
   border-color: var(--color-tv-blue);
   box-shadow: 0 0 0 2px rgba(41, 98, 255, 0.12);
 }
+
+/* === Admin drill-down utilities (shared with /market + /sentiment vocabulary) === */
+@keyframes ping-slow {
+  75%, 100% { transform: scale(2); opacity: 0; }
+}
+@keyframes expand-down {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-expand { animation: expand-down 0.22s ease both; }
+.animate-ping-slow { animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+.shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+}
+
+/* Clickable card that reveals content on open — core drill-down pattern */
+.card-btn {
+  background: var(--color-tv-surface);
+  border: 1px solid var(--color-tv-border);
+  border-radius: 12px;
+  text-align: left;
+  transition: border-color 120ms ease, background 120ms ease;
+  overflow: hidden;
+  width: 100%;
+}
+.card-btn:hover {
+  border-color: var(--color-tv-border-hover);
+  background: var(--color-tv-elevated);
+}
+.card-btn[data-open="true"] {
+  border-color: rgba(41, 98, 255, 0.35);
+  box-shadow: 0 0 0 1px rgba(41, 98, 255, 0.25), 0 0 30px -12px rgba(41, 98, 255, 0.35);
+}
+
+/* Tiny uppercase label (10px / tracked) — matches /market labels */
+.lbl {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-tv-secondary);
+}
+/* Tabular-mono number style */
+.tick {
+  font-variant-numeric: tabular-nums;
+}
+/* Chevron that rotates when parent details is open */
+.chev { transition: transform 0.15s ease; }
+[data-open="true"] .chev { transform: rotate(90deg); }
+
+/* Segmented control — matches the tf switcher in market/detail-panel */
+.seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 6px;
+  border: 1px solid var(--color-tv-border);
+  background: #0a0a0a;
+}
+.seg button {
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.40);
+  transition: color 120ms, background 120ms;
+}
+.seg button:hover { color: rgba(255, 255, 255, 0.70); }
+.seg button[data-active="true"] {
+  background: rgba(41, 98, 255, 0.18);
+  color: #fff;
+}
+
+/* Tiny pill used everywhere — flag badges, state chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 4px;
+}

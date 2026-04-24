@@ -25,3 +25,9 @@ export const ASSET_TAG_COLORS: Record<string, string> = {
   Silver: "bg-white/[0.08] text-white/70",
   Oil: "bg-[#FF9800]/15 text-[#FF9800]",
 };
+
+// Classifier model — change in one place, propagates to classify.ts + admin cost display.
+// gpt-4o-mini: $0.15/M input + $0.60/M output. At ~1.5k input + ~300 output
+// tokens per call that's ~$0.0004/call on average.
+export const CLASSIFIER_MODEL = "gpt-4o-mini";
+export const CLASSIFIER_COST_PER_CALL = 0.0004;

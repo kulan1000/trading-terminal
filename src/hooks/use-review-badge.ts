@@ -26,9 +26,15 @@ export function useReviewBadge() {
 
     const poll = () => {
       fetch("/api/reviews?status=pending")
-        .then((r) => r.json())
+        .then((r) => {
+          if (!r.ok) return null;
+          // Defend against non-JSON error bodies — a 500 with empty body will
+          // crash r.json() with SyntaxError, which used to surface as the dev
+          // error overlay on every page.
+          return r.json().catch(() => null);
+        })
         .then((d) => {
-          if (!mounted) return;
+          if (!mounted || !d) return;
           const n = d.reviews?.length ?? 0;
           setCount(n);
 

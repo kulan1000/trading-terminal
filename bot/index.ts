@@ -52,15 +52,20 @@ client.on("messageCreate", async (message: Message) => {
   // Skip very short messages (emojis-only, "lol", etc.)
   if (message.content.trim().length < 3) return;
 
-  const { error } = await supabase.from("discord_messages").insert({
-    author: message.author.username,
-    content: message.content,
-    channel: channelName,
-    timestamp: message.createdAt.toISOString(),
-    processed: false,
-  });
+  const { error } = await supabase.from("discord_messages").upsert(
+    {
+      discord_message_id: message.id,
+      author: message.author.username,
+      content: message.content,
+      channel: channelName,
+      timestamp: message.createdAt.toISOString(),
+      processed: false,
+    },
+    { onConflict: "discord_message_id", ignoreDuplicates: true }
+  );
 
   if (error) {
+    if (error.code === "23505" || error.message.includes("duplicate")) return;
     console.error(`[BOT] Insert error:`, error.message);
   } else {
     console.log(

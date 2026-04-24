@@ -4,6 +4,7 @@ import { FEW_SHOT_EXAMPLES } from "@/lib/few-shot";
 import { sanitizeResult } from "@/lib/classify-sanitize";
 import type { ClassifyResult } from "@/lib/classify-sanitize";
 import { cleanDiscordContent } from "@/lib/pre-filter";
+import { CLASSIFIER_MODEL } from "@/lib/constants";
 
 function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -53,7 +54,7 @@ export async function classifyMessage(
 
   const response = await withRetry(() =>
     getOpenAI().chat.completions.create({
-      model: "gpt-4o-mini",
+      model: CLASSIFIER_MODEL,
       messages,
       temperature: 0.1,
       max_tokens: 900,

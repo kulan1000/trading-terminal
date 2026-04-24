@@ -1,6 +1,9 @@
 "use client";
 
-import { fmtTimeFull } from "@/lib/format-utils";
+import { useState } from "react";
+import { Chip } from "./primitives";
+import { fmtAgoShort, fmtMs, fmtCost } from "@/lib/format-utils";
+import { CLASSIFIER_COST_PER_CALL } from "@/lib/constants";
 
 interface PipelineRun {
   id: number;
@@ -18,95 +21,92 @@ interface PipelineRun {
   error_message: string | null;
 }
 
-const STATUS_STYLE: Record<string, { dot: string; text: string }> = {
-  success: { dot: "bg-[#26A69A]", text: "text-[#26A69A]" },
-  error: { dot: "bg-[#EF5350]", text: "text-[#EF5350]" },
-  running: { dot: "bg-[#FF9800] animate-pulse", text: "text-[#FF9800]" },
-};
-
 export function PipelineLog({ runs }: { runs: PipelineRun[] }) {
+  const [expandId, setExpandId] = useState<number | null>(null);
+
   if (!runs.length) {
     return (
-      <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-        <div className="px-5 pt-4 pb-4">
-          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Pipeline log</h2>
-          <p className="mt-3 font-sans text-[12px] text-white/25">No runs logged yet.</p>
-        </div>
-      </div>
+      <div className="px-4 py-6 text-center text-[12px] text-white/30">No runs logged yet.</div>
     );
   }
 
-  const successRate = runs.length > 0
-    ? Math.round((runs.filter((r) => r.status === "success").length / runs.length) * 100)
-    : 0;
-
   return (
-    <div className="animate-fade-in overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111]">
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-      <div className="px-5 pt-4 pb-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-sans text-[15px] font-semibold tracking-wide text-white">Pipeline log</h2>
-          <div className="flex items-center gap-3">
-            {/* Mini success-rate dots */}
-            <div className="flex items-center gap-0.5">
-              {runs.slice(0, 20).reverse().map((r, i) => (
-                <div
-                  key={i}
-                  className={`h-1.5 w-1.5 rounded-full ${r.status === "success" ? "bg-[#26A69A]/60" : r.status === "error" ? "bg-[#EF5350]/60" : "bg-[#FF9800]/40"}`}
-                  title={`${fmtTimeFull(r.started_at)} — ${r.status}`}
-                />
-              ))}
-            </div>
-            <span className={`rounded-md px-2 py-0.5 font-mono text-[10px] font-bold tabular-nums ${successRate >= 90 ? "bg-[#26A69A]/15 text-[#26A69A]" : successRate >= 70 ? "bg-[#FF9800]/15 text-[#FF9800]" : "bg-[#EF5350]/15 text-[#EF5350]"}`}>
-              {successRate}% OK
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Table header */}
-      <div className="flex items-center border-y border-white/[0.04] bg-white/[0.015] px-5 py-2">
-        <span className="w-5" />
-        <span className="w-16 font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/30">Time</span>
-        <span className="w-16 font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/30">Status</span>
-        <span className="w-14 text-right font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/30">Dur</span>
-        <span className="ml-3 flex-1 font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/30">Details</span>
-      </div>
-
-      <div>
-        {runs.map((run) => {
-          const s = STATUS_STYLE[run.status] ?? STATUS_STYLE.error;
-          return (
-            <div key={run.id} className="flex items-center border-b border-white/[0.03] px-5 py-2.5 transition-colors hover:bg-white/[0.02]">
-              <span className={`mr-3 h-2 w-2 shrink-0 rounded-full ${s.dot}`} />
-              <span className="w-16 shrink-0 font-mono text-[10px] text-white/40">
-                {fmtTimeFull(run.started_at)}
-              </span>
-              <span className={`w-16 shrink-0 font-sans text-[10px] font-bold ${s.text}`}>
-                {run.status.toUpperCase()}
-              </span>
-              <span className="w-14 shrink-0 text-right font-mono text-[10px] tabular-nums text-white/25">
-                {run.duration_ms != null
-                  ? run.duration_ms < 1000 ? `${run.duration_ms}ms` : `${(run.duration_ms / 1000).toFixed(1)}s`
-                  : "—"}
-              </span>
-              <span className="ml-3 flex flex-1 gap-2 font-mono text-[9px] text-white/20">
-                {run.processed > 0 && <span>{run.processed} classified</span>}
-                {run.signals > 0 && <span className="text-[#26A69A]/60">{run.signals} sig</span>}
-                {run.scored > 0 && <span>{run.scored} scored</span>}
-                {run.skipped > 0 && <span>{run.skipped} skip</span>}
-                {run.market_open === false && <span className="text-[#FF9800]/50">CLOSED</span>}
-              </span>
-              {run.error_message && (
-                <span className="ml-auto max-w-[200px] truncate font-mono text-[9px] text-[#EF5350]/50">
-                  {run.error_message}
+    <div>
+      {runs.slice(0, 10).map((r) => {
+        const failed = r.status !== "success";
+        const open = expandId === r.id;
+        const cost = (r.openai_calls ?? 0) * CLASSIFIER_COST_PER_CALL;
+        return (
+          <div key={r.id} className="border-b" style={{ borderColor: "var(--color-tv-border)" }}>
+            <button
+              type="button"
+              className="block w-full px-4 py-2.5 text-left hover:bg-white/[0.02]"
+              onClick={() => setExpandId(open ? null : r.id)}
+            >
+              <div className="grid grid-cols-12 items-center gap-2 text-[12px]">
+                <span className="tick col-span-2 text-[10px] text-white/30">#{r.id}</span>
+                <span className="tick col-span-3 text-[11px] text-white/50">
+                  {fmtAgoShort(r.finished_at ?? r.started_at)} ago
                 </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                <span className="col-span-1">
+                  <Chip tone={failed ? "bear" : "bull"}>{failed ? "ERROR" : "OK"}</Chip>
+                </span>
+                <span className="tick col-span-2 text-white">{fmtMs(r.duration_ms)}</span>
+                <span className="tick col-span-2 text-white/50">
+                  {r.ingested}→{r.signals} sig
+                </span>
+                <span className="tick col-span-2 text-right text-white">{fmtCost(cost)}</span>
+              </div>
+            </button>
+            {open && (
+              <div className="animate-expand px-4 pb-3">
+                <div className="lbl mb-1.5">stats</div>
+                <div className="tick grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] text-white/50 md:grid-cols-4">
+                  <span>
+                    ingested <span className="ml-1 text-white">{r.ingested}</span>
+                  </span>
+                  <span>
+                    processed <span className="ml-1 text-white">{r.processed}</span>
+                  </span>
+                  <span>
+                    openai <span className="ml-1 text-white">{r.openai_calls}</span>
+                  </span>
+                  <span>
+                    signals <span className="ml-1 text-white">{r.signals}</span>
+                  </span>
+                  <span>
+                    skipped <span className="ml-1 text-white">{r.skipped}</span>
+                  </span>
+                  <span>
+                    scored <span className="ml-1 text-white">{r.scored}</span>
+                  </span>
+                  <span>
+                    cost <span className="ml-1 text-white">{fmtCost(cost)}</span>
+                  </span>
+                  <span>
+                    market{" "}
+                    <span className="ml-1 text-white">
+                      {r.market_open === false ? "closed" : "open"}
+                    </span>
+                  </span>
+                </div>
+                {r.error_message && (
+                  <pre
+                    className="mt-3 overflow-x-auto whitespace-pre-wrap rounded p-3 text-[10px]"
+                    style={{
+                      background: "rgba(239,83,80,0.06)",
+                      border: "1px solid rgba(239,83,80,0.3)",
+                      color: "#FCA5A5",
+                    }}
+                  >
+                    {r.error_message}
+                  </pre>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -16,12 +16,15 @@ interface DiscordMsg {
 }
 
 async function fetchDiscordMessages(channelId: string, limit = 50): Promise<DiscordMsg[]> {
-  const token = process.env.DISCORD_USER_TOKEN;
-  if (!token) throw new Error("DISCORD_USER_TOKEN not set");
+  // Uses the bot token (not a user token) to stay within Discord ToS.
+  // The realtime discord.js bot is the primary source; this REST poll is a
+  // backup for when the WebSocket connection has been down.
+  const token = process.env.DISCORD_BOT_TOKEN;
+  if (!token) throw new Error("DISCORD_BOT_TOKEN not set");
 
   const res = await fetch(
     `${DISCORD_API}/channels/${channelId}/messages?limit=${limit}`,
-    { headers: { Authorization: token } }
+    { headers: { Authorization: `Bot ${token}` } }
   );
 
   if (!res.ok) {

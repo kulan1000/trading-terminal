@@ -1,39 +1,31 @@
 import { NextResponse } from "next/server";
-import { processUnclassified } from "@/lib/classify-batch";
-import { pairTrades } from "@/lib/trade-pairing";
-import { savePriceSnapshots } from "@/lib/price-snapshots";
-import { scoreSignals } from "@/lib/score-signals";
-import { saveSentimentSnapshots } from "@/lib/sentiment-snapshots";
-import { saveBiasSnapshots } from "@/lib/bias-snapshots";
-import { isMarketOpen } from "@/lib/market-hours";
+import { runPipeline } from "@/lib/run-pipeline";
 
-// Vercel Cron — backup trigger (pg_cron is primary at 15min interval)
+// Vercel Cron — scheduled trigger, uses the same runPipeline() as manual ingest
+// so every run (manual or cron) shows up in pipeline_runs and the admin UI.
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const marketOpen = isMarketOpen();
-
-  // 1) Always classify new messages
-  const classify = await processUnclassified();
-
-  // 2) Price-dependent steps only when market is open
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  let snapshots: any = { saved: 0, skipped: "market closed" };
-  let scoring: any = { scored: 0, skipped: "market closed" };
-  let pairing: any = { paired: 0, skipped: "market closed" };
-
-  if (marketOpen) {
-    snapshots = await savePriceSnapshots();
-    scoring = await scoreSignals();
-    pairing = await pairTrades();
+  try {
+    const result = await runPipeline("cron");
+    return NextResponse.json({
+      marketOpen: result.marketOpen,
+      ingest: result.ingest,
+      ...result.classify,
+      prices: result.prices,
+      scoring: result.scoring,
+      pairing: result.pairing,
+      sentiment: result.sentiment,
+      bias: result.bias,
+      dailySummary: result.dailySummary,
+    });
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Pipeline failed", message: err instanceof Error ? err.message : "Unknown" },
+      { status: 500 }
+    );
   }
-
-  // 3) Sentiment + bias snapshots always (opinions valid 24/7)
-  const sentiment = await saveSentimentSnapshots();
-  const bias = await saveBiasSnapshots();
-
-  return NextResponse.json({ marketOpen, snapshots, ...classify, pairing, scoring, sentiment, bias });
 }

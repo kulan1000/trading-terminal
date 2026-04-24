@@ -5,10 +5,8 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useReviewBadge } from "@/hooks/use-review-badge";
 import {
-  BarChart3,
   TrendingUp,
   Trophy,
-  MessageSquare,
   Search,
   ClipboardList,
   LineChart,
@@ -18,13 +16,13 @@ import {
   Settings,
 } from "lucide-react";
 
+// /community, /data and /bias are WIP placeholders — hide until they ship
+// so the sidebar only shows the pages that actually work.
 const navItems = [
   { name: "Market", href: "/market", icon: LineChart },
   { name: "Sentiment", href: "/sentiment", icon: TrendingUp },
   { name: "Scoring", href: "/scoring", icon: Trophy },
-  { name: "Community", href: "/community", icon: MessageSquare },
   { name: "Discord Intel", href: "/discord-intel", icon: Search },
-  { name: "Data", href: "/data", icon: BarChart3 },
   { name: "Stocks", href: "/stocks", icon: Briefcase },
   { name: "Trades", href: "/trades", icon: ClipboardList },
   { name: "Admin", href: "/admin", icon: Settings },

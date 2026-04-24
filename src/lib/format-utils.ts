@@ -70,3 +70,18 @@ export function fmtVol(v: number): string {
   if (v >= 1e3) return `${(v / 1e3).toFixed(0)}K`;
   return v > 0 ? v.toString() : "—";
 }
+
+/** "340ms" / "4.2s" — duration in whichever unit keeps the number readable */
+export function fmtMs(ms: number | null | undefined): string {
+  if (ms == null) return "—";
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+/** "$0.1872" for <1, "$12.40" for >=1 — cost, auto precision */
+export function fmtCost(n: number | null | undefined): string {
+  if (n == null || !isFinite(n)) return "—";
+  if (n < 0.01) return `$${n.toFixed(4)}`;
+  if (n < 1) return `$${n.toFixed(3)}`;
+  return `$${n.toFixed(2)}`;
+}

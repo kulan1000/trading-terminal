@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { CLASSIFIER_COST_PER_CALL } from "@/lib/constants";
 
 export const revalidate = 15;
 
@@ -134,13 +135,31 @@ export async function GET() {
     ),
   ]);
 
-  // Aggregate signals by asset (24h only for breakdown panel)
+  // Aggregate signals by asset (24h only for breakdown panel). Also bucket
+  // confidence into 10 slots (0.0-0.1 .. 0.9-1.0) for the per-asset histogram.
   const cutoff24h = new Date(now - 24 * 60 * 60_000).toISOString();
-  const assetBreakdown: Record<string, { total: number; bullish: number; bearish: number; entries: number; exits: number }> = {};
+  const assetBreakdown: Record<
+    string,
+    {
+      total: number;
+      bullish: number;
+      bearish: number;
+      entries: number;
+      exits: number;
+      confBuckets: number[];
+    }
+  > = {};
   for (const s of signalsByAsset) {
     if (s.created_at < cutoff24h) continue;
     if (!assetBreakdown[s.asset]) {
-      assetBreakdown[s.asset] = { total: 0, bullish: 0, bearish: 0, entries: 0, exits: 0 };
+      assetBreakdown[s.asset] = {
+        total: 0,
+        bullish: 0,
+        bearish: 0,
+        entries: 0,
+        exits: 0,
+        confBuckets: Array(10).fill(0),
+      };
     }
     const a = assetBreakdown[s.asset];
     a.total++;
@@ -148,6 +167,9 @@ export async function GET() {
     if (s.direction === "bearish") a.bearish++;
     if (s.signal_type === "entry") a.entries++;
     if (s.signal_type === "exited") a.exits++;
+    const conf = typeof s.confidence === "number" ? s.confidence : 0;
+    const bucket = Math.min(9, Math.max(0, Math.floor(conf * 10)));
+    a.confBuckets[bucket]++;
   }
 
   // Signal history for 7d chart (minimal: date, asset, direction)
@@ -157,15 +179,41 @@ export async function GET() {
     created_at: s.created_at,
   }));
 
-  // Estimate OpenAI cost from pipeline runs (gpt-4o-mini: ~$0.00015 per call)
-  const COST_PER_CALL = 0.00015;
+  // Estimate OpenAI cost from pipeline runs using the shared constant
+  // (so classify.ts and pipeline-status can never drift apart).
   const todayRuns = pipelineRuns.filter((r: any) => {
     const d = new Date(r.started_at);
     const today = new Date();
     return d.toDateString() === today.toDateString();
   });
   const todayOpenAICalls = todayRuns.reduce((sum: number, r: any) => sum + (r.openai_calls ?? 0), 0);
-  const todayCostUsd = Math.round(todayOpenAICalls * COST_PER_CALL * 10000) / 10000;
+  const todayCostUsd = Math.round(todayOpenAICalls * CLASSIFIER_COST_PER_CALL * 10000) / 10000;
+
+  // Pre-filter + classification cascade over last 24h, derived from pipeline_runs.
+  // `processed` counts messages seen; `openai_calls` counts the ones that
+  // survived the local regex pre-filter and reached the classifier model.
+  // `signals` counts the ones that produced structured output.
+  const cutoff24hMs = now - 24 * 60 * 60_000;
+  const runs24h = pipelineRuns.filter((r: any) => {
+    const t = r.started_at ? new Date(r.started_at).getTime() : 0;
+    return t >= cutoff24hMs;
+  });
+  const processed24h = runs24h.reduce((s: number, r: any) => s + (r.processed ?? 0), 0);
+  const openai24h = runs24h.reduce((s: number, r: any) => s + (r.openai_calls ?? 0), 0);
+  const signals24h = runs24h.reduce((s: number, r: any) => s + (r.signals ?? 0), 0);
+  const ingested24h = runs24h.reduce((s: number, r: any) => s + (r.ingested ?? 0), 0);
+  const cascade = {
+    messagesIn: processed24h || ingested24h,
+    preFilterPassed: openai24h,
+    classified: openai24h,
+    signalsExtracted: signals24h,
+  };
+  const filterRatio = processed24h > 0 ? openai24h / processed24h : 0;
+
+  // Cost split — today the regex pre-filter is free and all spend is classifier.
+  // Kept as two fields so the UI can show the split once a paid filter model ships.
+  const todayFilterCostUsd = 0;
+  const todayClassifierCostUsd = todayCostUsd;
 
   return NextResponse.json({
     unprocessed, recentSignals, recentMessages,
@@ -177,6 +225,10 @@ export async function GET() {
     signalHistory,
     todayOpenAICalls,
     todayCostUsd,
+    todayFilterCostUsd,
+    todayClassifierCostUsd,
+    cascade,
+    filterRatio,
     tableCounts,
     checkedAt: new Date().toISOString(),
   });
