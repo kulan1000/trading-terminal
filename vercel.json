@@ -1,5 +1,4 @@
 {
-  "$comment": "Hobby plan: max once per day. pg_cron in Supabase drives the 15-min schedule; this is a daily backup trigger.",
   "crons": [
     {
       "path": "/api/cron/classify",
