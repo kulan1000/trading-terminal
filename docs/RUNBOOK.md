@@ -12,12 +12,37 @@ Discord FoFtyTrades (#traders-lounge, #gold-commodities)
 Supabase (kdbanpgpubkhxaeqsjei) ← discord_messages
                        ↓
 runPipeline() on Vercel every 5 min:
-  ingest → pre-filter (regex, free) → GPT-5.5 classify (strict JSON schema)
-  → signals (timestamped at message time) → price snapshots (market hours)
-  → time-horizon scoring (30m/1h/2h/4h) → trade pairing → sentiment/bias snapshots
+  ingest → price snapshots (market hours) → time-horizon scoring (30m/1h/2h/4h)
+  → trade pairing → sentiment/bias snapshots   (classification NOT here — see below)
+                       ↓
+classify-worker (local LaunchAgent, 24/7):
+  pre-filter (regex, free) → GPT-5.5 classify via ChatGPT SUBSCRIPTION (Codex
+  transport, zero API billing) → signals (timestamped at message time)
                        ↓
 Next.js frontend (Vercel) — market / sentiment / scoring / discord-intel / admin
 ```
+
+## The classification worker (subscription-billed GPT)
+
+- **What:** `scripts/classify-worker.ts` — drains `discord_messages.processed=false`
+  in batches 24/7. ALL classification runs here, routed through the ChatGPT
+  subscription via `src/lib/codex-transport.ts` (`CLASSIFY_TRANSPORT=codex` in
+  `.env.local`). The Vercel pipeline skips classification unless
+  `CLASSIFY_IN_PIPELINE=1` is explicitly set (emergency API fallback).
+- **Runner:** LaunchAgent `com.trading-terminal.classifier` (KeepAlive + RunAtLoad).
+- Status:   `launchctl print gui/$(id -u)/com.trading-terminal.classifier | grep -E "state|pid"`
+- Restart:  `launchctl kickstart -k gui/$(id -u)/com.trading-terminal.classifier`
+- Logs:     `tail -30 ~/Library/Logs/trading-terminal-classifier.log`
+- **Auth:** dedicated Codex OAuth token family in `~/.codex-trading` (override with
+  `CODEX_TRADING_HOME`). ONE family per runner — never copy/symlink `auth.json`
+  between machines or processes; OpenAI rotates refresh tokens and revokes the whole
+  family on reuse. The worker auto-refreshes and is the single writer.
+- **Re-auth** (log shows `FATAL AUTH` / token refresh failed):
+  `CODEX_HOME=~/.codex-trading codex login` — completes silently if the default
+  browser has an active chatgpt.com session. Worker picks the new family up on
+  its next call (launchd respawn).
+- **Rate limits:** whole-batch failures back off 10 min automatically; the
+  subscription window resets on its own.
 
 ## The Discord bot (realtime ingestion)
 
@@ -32,12 +57,16 @@ Next.js frontend (Vercel) — market / sentiment / scoring / discord-intel / adm
 - Restart:  `launchctl kickstart -k gui/$(id -u)/com.trading-terminal.discord-bot`
 - Logs:     `tail -30 ~/Library/Logs/trading-terminal-bot.log`
 
-### Moving the bot to the Mac Mini (permanent home)
+### Moving the bot + classifier to the Mac Mini (permanent home)
 1. Clone/copy the repo to the Mini, `npm install`.
-2. Copy `bot/run.sh` (secrets) — not in git.
-3. Copy the plist, fix `WorkingDirectory` + log path for the Mini's paths.
-4. `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.trading-terminal.discord-bot.plist`
-5. Unload on the old machine: `launchctl bootout gui/$(id -u)/com.trading-terminal.discord-bot`
+2. Copy `bot/run.sh` (secrets) + `.env.local` — not in git.
+3. Copy BOTH plists (`com.trading-terminal.discord-bot`, `com.trading-terminal.classifier`),
+   fix `WorkingDirectory` + script/log paths for the Mini's paths.
+4. Fresh Codex login on the Mini: `CODEX_HOME=~/.codex-trading codex login`
+   (do NOT copy `~/.codex-trading` from the old machine — one token family per runner).
+5. `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/<plist>` for both.
+6. Unload on the old machine: `launchctl bootout gui/$(id -u)/com.trading-terminal.discord-bot`
+   and `launchctl bootout gui/$(id -u)/com.trading-terminal.classifier`.
 
 Even with the bot down, the REST poll keeps ingestion alive with ≤5 min latency —
 there is no single point of failure.
@@ -52,10 +81,10 @@ there is no single point of failure.
 
 ## Models
 
-| Task | Model | Params |
-|---|---|---|
-| Signal classification | `gpt-5.5` | `reasoning_effort=low`, `max_completion_tokens=2500`, strict `json_schema` |
-| AI summaries | `gpt-5-mini` | `reasoning_effort=low` |
+| Task | Model | Billing | Params |
+|---|---|---|---|
+| Signal classification | `gpt-5.5` | ChatGPT subscription (Codex transport) | `reasoning_effort=low`, strict `json_schema` |
+| AI summaries (daily + bias detail) | `gpt-5-mini` | API (pennies/day) | `reasoning_effort=low` |
 
 - Model + cost constants: `src/lib/constants.ts`. Param compatibility: `src/lib/openai-params.ts`
   (gpt-5.x rejects `max_tokens`/`temperature`; uses `max_completion_tokens` + `reasoning_effort`).

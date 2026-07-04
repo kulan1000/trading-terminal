@@ -27,9 +27,10 @@ export const ASSET_TAG_COLORS: Record<string, string> = {
 };
 
 // Classifier model — change in one place, propagates to classify.ts + admin cost display.
-// gpt-5.5: $5/M input ($0.50/M cached) + $30/M output. The ~6k-token static prompt
-// prefix (system + few-shots) is prompt-cached across batch calls, so a typical call
-// is ~6k cached + ~0.5k fresh input + ~500 output (incl. reasoning) ≈ $0.02.
+// Primary transport is the ChatGPT subscription (CLASSIFY_TRANSPORT=codex via
+// src/lib/codex-transport.ts) → marginal cost per call is ZERO.
+// COST_PER_CALL below applies only to the emergency API fallback path
+// (gpt-5.5 API: $5/M input, $0.50/M cached, $30/M output ≈ $0.02/call).
 // Upgraded from gpt-4o-mini 2026-07-04 after A/B eval (scripts/eval-classifier.ts):
 // zero asset hallucinations, correct inverse-ETF + macro-narrative reads.
 export const CLASSIFIER_MODEL = "gpt-5.5";
