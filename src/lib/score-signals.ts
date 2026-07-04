@@ -35,10 +35,14 @@ interface UnscoredSignal {
   created_at: string;
 }
 
-/** Resolve effective position from position field or direction fallback */
+/** Resolve effective position from position field or direction fallback.
+ *  For 'exited' there is NO fallback: direction on exits describes the
+ *  trader's OUTLOOK, not the position they held ("sold my gold, we're
+ *  topping" = exited long + bearish outlook). Deriving "short" from that
+ *  outlook inverted the score — a perfect exit graded as a bad one. */
 function resolvePosition(signal: UnscoredSignal): string | null {
   if (signal.position) return signal.position;
-  // Fallback: derive from direction
+  if (signal.signal_type === "exited") return null; // unknowable — never guess
   if (signal.direction === "bearish") return "short";
   if (signal.direction === "bullish") return "long";
   return null;
@@ -90,6 +94,14 @@ export async function scoreSignals() {
   for (const signal of signals as UnscoredSignal[]) {
     const signalTime = new Date(signal.created_at);
     const effectivePosition = resolvePosition(signal);
+
+    // Exit with unknowable side can never be scored meaningfully
+    if (signal.signal_type === "exited" && !effectivePosition) {
+      await supabase.from("signals").update({ scoring_status: "unscorable" }).eq("id", signal.id);
+      markedUnscorable++;
+      continue;
+    }
+
     const prices: Record<string, number | null> = {};
     const scores: Record<string, number | null> = {};
 
@@ -137,8 +149,8 @@ export async function scoreSignals() {
     const consistent = directions.every((d) => d === directions[0]) && directions[0] !== 0;
     const finalScore = consistent ? weighted * 1.2 : weighted;
 
-    // Upsert on signal_id: idempotent even if two runs overlap (TOCTOU-safe
-    // thanks to the unique index uq_signal_scores_signal_id)
+    // Upsert on signal_id (unique index): idempotent under overlapping runs,
+    // and DO UPDATE means a later, more complete recalculation always wins.
     const { error } = await supabase.from("signal_scores").upsert({
       signal_id: signal.id,
       signal_type: signal.signal_type,
@@ -156,7 +168,7 @@ export async function scoreSignals() {
       score_4h: scores["4h"],
       weighted_score: Math.round(finalScore * 100) / 100,
       consistency_bonus: consistent,
-    }, { onConflict: "signal_id", ignoreDuplicates: true });
+    }, { onConflict: "signal_id" });
 
     if (!error) {
       await supabase

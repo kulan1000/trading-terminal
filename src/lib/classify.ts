@@ -103,9 +103,11 @@ export async function classifyMessage(
 
   // Model-aware params: gpt-5.x gets max_completion_tokens (must cover
   // reasoning tokens too) + reasoning_effort; gpt-4x gets legacy params.
+  // 4000 gives generous headroom — a truncated response would otherwise
+  // half-parse into silent signal loss.
   const params = {
     ...buildChatParams(model, {
-      maxOutput: 2500,
+      maxOutput: 4000,
       temperature: 0.1,
       reasoningEffort: CLASSIFIER_REASONING_EFFORT as "low",
       responseFormat: SIGNAL_SCHEMA,
@@ -117,7 +119,9 @@ export async function classifyMessage(
 
   const choice = response.choices[0];
   if (choice?.finish_reason === "length") {
-    console.warn("[classify] Response truncated (hit max output tokens). Message:", content.slice(0, 80));
+    // Never trust half a JSON payload — fail loudly instead of emitting
+    // whatever signals happened to fit before the cutoff.
+    throw new Error(`classification truncated at max output tokens for: ${content.slice(0, 80)}`);
   }
   const text = choice?.message?.content ?? "";
   try {
@@ -125,13 +129,17 @@ export async function classifyMessage(
     const parsed = raw.signals ?? (Array.isArray(raw) ? raw : [raw]);
     const results: ClassifyResult[] = Array.isArray(parsed) ? parsed : [parsed];
 
-    // Sanitize, deduplicate by asset+direction+signal_type
+    // Sanitize, then dedupe on asset+signal_type — the DB constraint is
+    // (message_id, asset, signal_type), so a contradictory duplicate
+    // (Gold-bullish-entry + Gold-bearish-entry) would silently last-write-win
+    // on upsert. Sorting by confidence first means the strongest one wins.
     const seen = new Set<string>();
     return results
       .map(sanitizeResult)
-      .filter((r): r is ClassifyResult => {
-        if (!r) return false;
-        const key = `${r.asset}-${r.direction}-${r.signal_type}`;
+      .filter((r): r is ClassifyResult => r != null)
+      .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))
+      .filter((r) => {
+        const key = `${r.asset}-${r.signal_type}`;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;

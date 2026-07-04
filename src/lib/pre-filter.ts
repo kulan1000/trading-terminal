@@ -106,17 +106,25 @@ function isNonCommodityOnly(content: string): boolean {
   return !COMMODITY_KEYWORDS.test(masked);
 }
 
+// Explicit commodity references (no generic trade verbs) — used to rescue
+// short messages like "long gc", "buy oil", "si long" from the length floor.
+const COMMODITY_CORE =
+  /\b(gold|silver|oil|crude|wti|brent|xau|xag|guld|olja|gld|slv|gdx|gdxj|uso|uco|bno|sco|nugt|dust|jnug|zsl|\bgc\b|\bsi\b|\bcl\b)\b/i;
+
 /** Returns true if message MIGHT contain a commodity signal (fast, cheap) */
 export function maybeCommodityRelevant(content: string, channel?: string): boolean {
   const trimmed = content.trim();
   const normalized = trimmed.toLowerCase();
 
-  // Universal noise floor — applies to ALL channels including commodity ones
-  if (trimmed.length < 8) return false;
+  // Hard noise first — these are noise no matter what they mention
   if (NOISE_PHRASES.has(normalized)) return false;
   if (EMOJI_ONLY.test(trimmed)) return false;
   if (MENTION_ONLY.test(trimmed)) return false;
   if (GREETING_ONLY.test(trimmed)) return false;
+
+  // Length floor — but an explicit commodity reference rescues shorthand
+  // like "long gc" / "buy oil" (7 chars) that the floor used to kill
+  if (trimmed.length < 8 && !COMMODITY_CORE.test(trimmed)) return false;
 
   // Pure non-commodity instrument talk (ES/NQ/semis/vol/crypto) — skip,
   // even in commodity channels

@@ -90,7 +90,7 @@ export async function POST(request: Request) {
       score_2h: scores["2h"], score_4h: scores["4h"],
       weighted_score: Math.round(finalScore * 100) / 100,
       consistency_bonus: consistent,
-    }, { onConflict: "signal_id", ignoreDuplicates: true });
+    }, { onConflict: "signal_id" });
     await supabase.from("signals").update({ scoring_status: "scored" }).eq("id", signal.id);
     backfilled++;
   }

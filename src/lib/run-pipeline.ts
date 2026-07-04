@@ -41,6 +41,14 @@ export async function runPipeline(_trigger: "manual" | "cron"): Promise<Pipeline
   const marketOpen = isMarketOpen();
   const startedAt = new Date();
 
+  // Self-heal zombie rows: a run hard-killed at the serverless deadline
+  // never reaches its catch/update, leaving status='running' forever.
+  await supabase
+    .from("pipeline_runs")
+    .update({ status: "error", error_message: "timed out (marked by next run)", finished_at: startedAt.toISOString() })
+    .eq("status", "running")
+    .lt("started_at", new Date(startedAt.getTime() - 15 * 60_000).toISOString());
+
   const { data: runRow } = await supabase
     .from("pipeline_runs")
     .insert({
