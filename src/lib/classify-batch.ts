@@ -62,7 +62,11 @@ export async function processUnclassified(limit = 120) {
     .from("discord_messages")
     .select("id, content, channel, timestamp, author")
     .eq("processed", false)
-    .order("timestamp", { ascending: true })
+    // Newest first: live messages classify within minutes of arrival, so the
+    // terminal's feed/bias stay current even while a historical backlog drains
+    // behind them. (Oldest-first left the newest messages signal-less for
+    // hours, which blanked the Discord Intel feed.)
+    .order("timestamp", { ascending: false })
     .limit(limit);
 
   if (!messages?.length) return { processed: 0, signals: 0 };
