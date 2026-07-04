@@ -6,7 +6,10 @@ interface FeedMessage {
   id?: number | string;
   author: string;
   content: string;
-  created_at: string;
+  /** Discord message time — the API serves `timestamp`; `created_at` kept for
+   *  older callers. */
+  timestamp?: string;
+  created_at?: string;
   confidence?: number | null;
   tags?: string[];
   asset?: string;
@@ -127,7 +130,7 @@ export function LiveFeedTeaser({ messages, totalCount, onBrowse }: Props) {
                   </span>
                 )}
                 <span className="min-w-[40px] text-right font-mono text-[10px] tabular-nums text-white/40">
-                  {fmtTime(m.created_at)}
+                  {fmtTime(m.timestamp ?? m.created_at ?? "")}
                 </span>
               </div>
             );
