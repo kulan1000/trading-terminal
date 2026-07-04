@@ -62,7 +62,15 @@ export async function runPipeline(_trigger: "manual" | "cron"): Promise<Pipeline
 
   try {
     const ingest = await ingestDiscord();
-    const classify = await processUnclassified();
+    // Classification is owned by the local classify-worker (ChatGPT
+    // subscription transport, LaunchAgent com.trading-terminal.classifier) —
+    // the serverless pipeline must NOT double-process the queue on
+    // pay-per-token API billing. Emergency serverless fallback: set
+    // CLASSIFY_IN_PIPELINE=1 on Vercel.
+    const classify =
+      process.env.CLASSIFY_IN_PIPELINE === "1"
+        ? await processUnclassified()
+        : { processed: 0, signals: 0, skipped: 0, flagged: 0, openai_calls: 0 };
 
     const prices = marketOpen
       ? await savePriceSnapshots()
