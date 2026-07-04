@@ -7,3 +7,5 @@ node_modules/
 next-env.d.ts
 .vercel
 bot/run.sh
+scripts/eval-result.json
+bot.log

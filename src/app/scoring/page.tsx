@@ -22,7 +22,6 @@ export default function ScoringPage() {
     traderSignals,
     tradePairs,
     loading,
-    watchlist,
   } = useScoringData();
   const { reviews } = useReviews();
   const [asset, setAsset] = useState<AssetFilter>("all");
@@ -144,7 +143,6 @@ export default function ScoringPage() {
               onClose={() => setModal(null)}
               traders={filteredScoreboard}
               traderSignals={filteredSignals}
-              watchlist={watchlist}
             />
             <LiveFeedTeaser
               open={modal === "feed"}

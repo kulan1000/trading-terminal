@@ -27,7 +27,15 @@ export const ASSET_TAG_COLORS: Record<string, string> = {
 };
 
 // Classifier model — change in one place, propagates to classify.ts + admin cost display.
-// gpt-4o-mini: $0.15/M input + $0.60/M output. At ~1.5k input + ~300 output
-// tokens per call that's ~$0.0004/call on average.
-export const CLASSIFIER_MODEL = "gpt-4o-mini";
-export const CLASSIFIER_COST_PER_CALL = 0.0004;
+// gpt-5.5: $5/M input ($0.50/M cached) + $30/M output. The ~6k-token static prompt
+// prefix (system + few-shots) is prompt-cached across batch calls, so a typical call
+// is ~6k cached + ~0.5k fresh input + ~500 output (incl. reasoning) ≈ $0.02.
+// Upgraded from gpt-4o-mini 2026-07-04 after A/B eval (scripts/eval-classifier.ts):
+// zero asset hallucinations, correct inverse-ETF + macro-narrative reads.
+export const CLASSIFIER_MODEL = "gpt-5.5";
+export const CLASSIFIER_REASONING_EFFORT = "low";
+export const CLASSIFIER_COST_PER_CALL = 0.02;
+
+// Cheap model for low-stakes AI summaries (bias-detail blurbs etc.) —
+// no effect on signal quality, so no need for the flagship here.
+export const SUMMARY_MODEL = "gpt-5-mini";

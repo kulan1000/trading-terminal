@@ -115,7 +115,7 @@ export function ReviewItem({ review: r, isExpanded, onToggle, onAction }: Props)
 
           {r.context_messages?.length > 0 && (
             <div className="rounded bg-white/[0.02] p-2">
-              <p className="mb-1 font-sans text-[10px] uppercase text-white/30">Context GPT såg:</p>
+              <p className="mb-1 font-sans text-[10px] uppercase text-white/30">Context GPT saw:</p>
               {r.context_messages.slice(0, 5).map((m, i) => (
                 <p key={i} className="font-sans text-[11px] text-white/40">
                   {m.slice(0, 100)}{m.length > 100 ? "..." : ""}

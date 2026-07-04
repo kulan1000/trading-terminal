@@ -14,7 +14,10 @@ export async function getTraderHint(
     .eq("author", author)
     .single();
   if (!data || data.total_signals < 3) return null;
-  return `[Trader profile: ${author} primarily trades ${data.assets_traded?.join("/")} with ${data.primary_direction} bias on ${data.primary_asset}, ${data.total_signals} signals total]`;
+  // NOTE: phrased as disambiguation-only. The old wording ("primarily trades
+  // Gold") pushed the model to hallucinate commodity signals out of ES/NQ/
+  // equity trades — the single largest source of bad data in the eval.
+  return `[Trader profile (disambiguation only): ${author} usually discusses ${data.assets_traded?.join("/")} (${data.primary_direction} lean on ${data.primary_asset}, ${data.total_signals} signals). Use ONLY to resolve ambiguous references like "it"/"this" — never to convert a non-commodity trade into a commodity signal.]`;
 }
 
 /** Refresh a single trader's profile after new signals */

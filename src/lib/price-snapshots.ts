@@ -26,7 +26,10 @@ export async function savePriceSnapshots() {
   return { saved: rows.length, error: error?.message };
 }
 
-/** Look up the closest price snapshot to a given timestamp */
+/** Look up the closest price snapshot to a given timestamp.
+ *  THROWS on query failure — callers must be able to distinguish
+ *  "no snapshot exists" (null) from "could not check" (throw), otherwise a
+ *  transient DB error would permanently mark signals unscorable. */
 export async function getPriceAtTime(
   asset: string,
   targetTime: Date
@@ -35,22 +38,24 @@ export async function getPriceAtTime(
   const ts = targetTime.toISOString();
 
   // Get closest snapshot before target
-  const { data: before } = await supabase
+  const { data: before, error: errBefore } = await supabase
     .from("price_snapshots")
     .select("price, created_at")
     .eq("asset", asset)
     .lte("created_at", ts)
     .order("created_at", { ascending: false })
     .limit(1);
+  if (errBefore) throw new Error(`price_snapshots query failed: ${errBefore.message}`);
 
   // Get closest snapshot after target
-  const { data: after } = await supabase
+  const { data: after, error: errAfter } = await supabase
     .from("price_snapshots")
     .select("price, created_at")
     .eq("asset", asset)
     .gte("created_at", ts)
     .order("created_at", { ascending: true })
     .limit(1);
+  if (errAfter) throw new Error(`price_snapshots query failed: ${errAfter.message}`);
 
   const b = (before as Array<{ price: number; created_at: string }> | null)?.[0];
   const a = (after as Array<{ price: number; created_at: string }> | null)?.[0];

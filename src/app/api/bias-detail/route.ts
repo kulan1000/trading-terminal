@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { supabase } from "@/lib/supabase";
-import { ASSETS, YAHOO_SYMBOLS } from "@/lib/constants";
+import { ASSETS, YAHOO_SYMBOLS, SUMMARY_MODEL } from "@/lib/constants";
 import { getAssetPrice } from "@/lib/price-snapshot";
 import { fetchYahoo } from "@/lib/data-yahoo";
 import { STRENGTH, timeDecay } from "@/lib/decay-utils";
 import { isWeekendDeadZone } from "@/lib/market-hours";
+import { buildChatParams } from "@/lib/openai-params";
 import type { Asset } from "@/lib/types";
 
 export const revalidate = 60;
@@ -27,13 +28,16 @@ export async function GET(req: NextRequest) {
   const around7hAgo = new Date(now - 7 * 60 * 60 * 1000).toISOString();
 
   const [signalsRes, historyRes, price, oldBiasRes, yahooData, credibilityRes] = await Promise.all([
-    // Only opinions & positions — entries/exits belong in Market tab
+    // Opinions, holdings, entries and price targets count toward bias.
+    // 'exited' is excluded from BIAS (stance) — closing a trade is not a
+    // directional stance. NOTE: the Sentiment page intentionally differs —
+    // it measures FLOW, where an exit is opposite-direction pressure.
     supabase
       .from("signals")
       .select("id, direction, confidence, strength, signal_type, position, interpretation, author, created_at, discord_messages(content)")
       .eq("asset", asset)
       .gte("created_at", since6h)
-      .in("signal_type", ["opinion", "position"])
+      .in("signal_type", ["opinion", "position", "entry", "target"])
       .order("created_at", { ascending: false })
       .limit(50),
     // Chart history 6h to match decay window
@@ -83,12 +87,11 @@ Key interpretations: ${signals.slice(0, 8).map((s) => `${s.author}: "${s.interpr
 Write a brief, factual summary. No fluff.`;
 
     try {
-      const resp = await getOpenAI().chat.completions.create({
-        model: "gpt-4o-mini",
+      const params = {
+        ...buildChatParams(SUMMARY_MODEL, { maxOutput: 600, temperature: 0.3, reasoningEffort: "low" }),
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.3,
-        max_tokens: 150,
-      });
+      } as unknown as OpenAI.ChatCompletionCreateParamsNonStreaming;
+      const resp = await getOpenAI().chat.completions.create(params);
       summary = resp.choices[0]?.message?.content?.trim() ?? summary;
     } catch (err) {
       console.error(`[BIAS-DETAIL] OpenAI summary failed for ${asset}:`, err);
@@ -102,9 +105,11 @@ Write a brief, factual summary. No fluff.`;
   const uniqueTraders = new Set(signals.map((s) => s.author)).size;
 
   // Decay-weighted bull/bear for accurate representation
+  // (same conviction ladder as getAssetBias: entry 2.0 > position 1.5 > opinion 1.0)
   let wBull = 0, wBear = 0;
   for (const s of signals) {
-    const w = timeDecay(s.created_at, now) * (STRENGTH[s.strength] ?? 2) * s.confidence * (s.signal_type === "position" ? 1.5 : 1);
+    const boost = s.signal_type === "entry" ? 2.0 : s.signal_type === "position" ? 1.5 : 1;
+    const w = timeDecay(s.created_at, now) * (STRENGTH[s.strength] ?? 2) * s.confidence * boost;
     if (s.direction === "bullish") wBull += w;
     else if (s.direction === "bearish") wBear += w;
   }

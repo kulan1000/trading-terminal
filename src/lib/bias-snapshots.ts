@@ -19,6 +19,7 @@ export async function saveBiasSnapshots() {
         .from("signals")
         .select("direction, confidence, strength, signal_type, created_at")
         .eq("asset", asset)
+        .in("signal_type", ["opinion", "position", "entry", "target"])
         .gte("created_at", since6h)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -36,7 +37,8 @@ export async function saveBiasSnapshots() {
       for (const s of signals) {
         const strength = STRENGTH[s.strength] ?? 2;
         const decay = timeDecay(s.created_at, now);
-        const convictionBoost = s.signal_type === "position" ? 1.5 : 1;
+        // Same conviction ladder as getAssetBias: entry 2.0 > position 1.5 > opinion 1.0
+        const convictionBoost = s.signal_type === "entry" ? 2.0 : s.signal_type === "position" ? 1.5 : 1;
         const weight = decay * strength * s.confidence * convictionBoost;
 
         if (s.direction === "bullish") bullW += weight;

@@ -61,6 +61,50 @@ const NOISE_PHRASES = new Set([
 
 const EMOJI_ONLY = /^[\p{Extended_Pictographic}\p{Emoji_Presentation}\s\u200d]+$/u;
 const MENTION_ONLY = /^(@\w+\s*|@user\s*|@role\s*|#channel\s*)+$/i;
+// Greeting + optional audience ("gm everyone", "good morning traders") \u2014 the
+// tail is a closed word list so "gm gold looking hot" still passes through.
+const GREETING_ONLY =
+  /^(gm|gn|good\s*(morning|night|evening|day)|morning|evening|hello|hey|yo|sup)[\s,!.]*(everyone|all|guys|folks|fam|chat|team|traders|gents|lads)?[\s,!.\u{1F300}-\u{1FAFF}]*$/iu;
+
+// ──────────────────────────────────────────────────────
+// Non-commodity instrument guard
+// The lounge trades index futures, semis, vol and crypto too. A message that
+// mentions ONLY those instruments (no commodity reference) is not worth a GPT
+// call — and historically caused the worst misclassifications (ES/NQ/SOXS
+// trades landing as Gold/Oil entries). The prompt has a matching rule
+// (MISTAKE 12) as the second layer for anything this regex misses.
+// ──────────────────────────────────────────────────────
+// Uppercase-only for ambiguous 2-3 letter tickers (ES, NQ, YM...)
+const NON_COMMODITY_UPPER = /\b(ES|NQ|MES|MNQ|RTY|YM|SPX|NDX|VIX)\b/;
+// Case-insensitive for unambiguous tickers/names
+const NON_COMMODITY_ANY = new RegExp(
+  [
+    "\\b(spy|qqq|iwm|dia|uvix|svix|svxy|vxx|soxs|soxl|smh|tqqq|sqqq)\\b",
+    "\\b(tsla|nvda|aapl|msft|amzn|meta|googl|amd|pltr|coin|mstr|hood)\\b",
+    "\\b(btc|eth|bitcoin|ethereum|crypto|solana|doge)\\b",
+    // lowercase index-futures phrasing: "long nq fill 27150", "es filled 7163"
+    "\\b(es|nq|mes|mnq)\\s+(fill(ed)?|long|short|futures?|\\d{3,5})\\b",
+    "\\b(long|short|filled?)\\s+(es|nq|mes|mnq)\\b",
+  ].join("|"),
+  "i"
+);
+
+// Generic trade-action words that appear in ANY trade message ("long NQ",
+// "stop 21450"). They live in COMMODITY_KEYWORDS for other channels' recall,
+// but must not rescue a non-commodity trade from the guard — so we mask them
+// before checking for a genuine commodity reference.
+const GENERIC_TRADE_WORDS =
+  /\b(long|short|bought|sold|buying|selling|position|trades?|trading|entry|exits?|exited|profits?|loss|stop|targets?|calls|puts|options?|bulls?|bullish|bears?|bearish)\b/gi;
+
+/** True if the message is about non-commodity instruments only */
+function isNonCommodityOnly(content: string): boolean {
+  const mentionsOther =
+    NON_COMMODITY_UPPER.test(content) || NON_COMMODITY_ANY.test(content);
+  if (!mentionsOther) return false;
+  // Require an EXPLICIT commodity reference (not just action words) to pass
+  const masked = content.replace(GENERIC_TRADE_WORDS, " ");
+  return !COMMODITY_KEYWORDS.test(masked);
+}
 
 /** Returns true if message MIGHT contain a commodity signal (fast, cheap) */
 export function maybeCommodityRelevant(content: string, channel?: string): boolean {
@@ -72,6 +116,11 @@ export function maybeCommodityRelevant(content: string, channel?: string): boole
   if (NOISE_PHRASES.has(normalized)) return false;
   if (EMOJI_ONLY.test(trimmed)) return false;
   if (MENTION_ONLY.test(trimmed)) return false;
+  if (GREETING_ONLY.test(trimmed)) return false;
+
+  // Pure non-commodity instrument talk (ES/NQ/semis/vol/crypto) — skip,
+  // even in commodity channels
+  if (isNonCommodityOnly(trimmed)) return false;
 
   // Commodity channels: pass anything that survived the noise floor
   if (channel && COMMODITY_CHANNELS.has(channel)) return true;

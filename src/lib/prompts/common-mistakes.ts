@@ -58,4 +58,10 @@ RULE: When a message discusses moving FROM one commodity TO another, ALWAYS crea
 MISTAKE 11: Central bank commentary classified as neutral instead of directional
 ❌ WRONG: "Central banks are buying gold" → neutral opinion (just information)
 ✅ CORRECT: Central banks are the largest institutional buyers. Their buying = massive demand = BULLISH signal. This is fundamental analysis, not just chatter.
-RULE: Mentions of central banks buying, accumulating, or hoarding gold/silver/commodities = bullish opinion (strength depends on specificity). Central banks selling or divesting = bearish.`;
+RULE: Mentions of central banks buying, accumulating, or hoarding gold/silver/commodities = bullish opinion (strength depends on specificity). Central banks selling or divesting = bearish.
+
+MISTAKE 12: Classifying non-commodity instruments as Gold/Silver/Oil
+❌ WRONG: "got filled long ES 7163" → Gold entry (trader usually trades gold, channel is commodity-focused)
+❌ WRONG: "opened a new SOXS position" → Gold/Oil signal
+✅ CORRECT: ES/NQ/MES/MNQ = index futures. SPY/QQQ/IWM = index ETFs. SOXS/SOXL/SMH/NVDA/AMD = semiconductors. UVIX/VXX = volatility. TSLA/AAPL/single stocks, BTC/ETH/crypto = none of these are commodities. has_signal: false.
+RULE: A trade in a NON-commodity instrument is NEVER a Gold/Silver/Oil signal — no matter the channel, the conversation context, or what the trader usually trades. Trader profiles and channel context may only disambiguate WHICH commodity ("it", "this") — they must never convert an explicit non-commodity trade into a commodity signal. Commodity-linked instruments still count normally: USO/UCO/BNO/SCO = Oil, GLD/GDX/NUGT/DUST/miners = Gold, SLV/AG/PAAS/ZSL = Silver (note: SCO, DUST, ZSL are INVERSE — long inverse = short the commodity). Mixed baskets ("took profits on USO and SOXS") → extract only the commodity legs.`;

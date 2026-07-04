@@ -10,7 +10,6 @@ interface Props {
   onClose: () => void;
   traders: TraderScore[];
   traderSignals: Record<string, ScoredSignal[]>;
-  watchlist?: Set<string>;
 }
 
 function scoreColor(n: number): string {
@@ -57,7 +56,6 @@ export function LeaderboardTeaser({
   onClose,
   traders,
   traderSignals,
-  watchlist,
 }: Props) {
   const ranked = [...traders].sort(
     (a, b) => b.winRate - a.winRate || b.totalScore - a.totalScore,
@@ -150,7 +148,6 @@ export function LeaderboardTeaser({
           <ScoreboardTable
             traders={ranked}
             traderSignals={traderSignals}
-            watchlist={watchlist}
           />
         </Modal>
       )}

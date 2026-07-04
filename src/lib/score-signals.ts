@@ -1,6 +1,14 @@
 // Time-horizon scoring: evaluate entries and exits at 30m, 1h, 2h, 4h
 // Entry: did price move in the trader's predicted direction?
 // Exit: did the trader exit at a good time (price reversed after)?
+//
+// Signals track scoring via signals.scoring_status:
+//   null         → pending (not yet attempted, or retrying)
+//   'scored'     → row exists in signal_scores
+//   'unscorable' → permanently lacks price coverage (e.g. weekend tail,
+//                  pre-snapshot era) — excluded so it can never clog the queue.
+// This replaces the old oldest-50 query that deadlocked forever on a batch
+// of unscorable signals and never reached newer ones.
 
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getPriceAtTime } from "@/lib/price-snapshots";
@@ -11,6 +19,10 @@ const CHECKPOINTS = [
   { key: "2h", minutes: 120, weight: 0.30 },
   { key: "4h", minutes: 240, weight: 0.30 },
 ] as const;
+
+// A signal younger than this with missing checkpoints may still get data
+// (pipeline lag); older than this, missing checkpoints are permanent.
+const UNSCORABLE_AFTER_MS = 6 * 60 * 60_000; // 6h
 
 interface UnscoredSignal {
   id: number;
@@ -52,11 +64,10 @@ function checkpointScore(
   }
 }
 
-/** Score all unscored signals that are old enough (4h+) */
+/** Score all pending signals that are old enough (4h+) */
 export async function scoreSignals() {
   const supabase = getSupabaseAdmin();
 
-  // Find entry/exit signals not yet scored, older than 4h
   const cutoff = new Date(Date.now() - 4 * 60 * 60_000).toISOString();
 
   const { data: signals } = await supabase
@@ -65,53 +76,55 @@ export async function scoreSignals() {
     .in("signal_type", ["entry", "exited", "position"])
     .not("price_at_signal", "is", null)
     .not("author", "is", null)
+    .is("scoring_status", null)
     .lt("created_at", cutoff)
     .order("created_at", { ascending: true })
-    .limit(50);
+    .limit(100);
 
   if (!signals?.length) return { scored: 0 };
 
-  // Filter out already scored
-  const signalIds = (signals as UnscoredSignal[]).map((s) => s.id);
-  const { data: existing } = await supabase
-    .from("signal_scores")
-    .select("signal_id")
-    .in("signal_id", signalIds);
-
-  const scoredSet = new Set(
-    ((existing ?? []) as Array<{ signal_id: number }>).map((e) => e.signal_id)
-  );
-  const unscored = (signals as UnscoredSignal[]).filter((s) => !scoredSet.has(s.id));
-  if (!unscored.length) return { scored: 0 };
-
   let scored = 0;
+  let markedUnscorable = 0;
+  const scoredAuthors = new Set<string>();
 
-  for (const signal of unscored) {
+  for (const signal of signals as UnscoredSignal[]) {
     const signalTime = new Date(signal.created_at);
     const effectivePosition = resolvePosition(signal);
     const prices: Record<string, number | null> = {};
     const scores: Record<string, number | null> = {};
 
-    // Fetch price at each checkpoint
-    let allFetched = true;
-    for (const cp of CHECKPOINTS) {
-      const targetTime = new Date(signalTime.getTime() + cp.minutes * 60_000);
-      const price = await getPriceAtTime(signal.asset, targetTime);
-      prices[cp.key] = price;
-
-      if (price != null) {
-        scores[cp.key] = checkpointScore(
-          signal.signal_type, effectivePosition, signal.price_at_signal, price
-        );
-      } else {
-        scores[cp.key] = null;
-        allFetched = false;
+    // If ANY checkpoint lookup fails (transient DB error), skip this signal
+    // entirely this run — "could not check" must never become 'unscorable'.
+    try {
+      for (const cp of CHECKPOINTS) {
+        const targetTime = new Date(signalTime.getTime() + cp.minutes * 60_000);
+        const price = await getPriceAtTime(signal.asset, targetTime);
+        prices[cp.key] = price;
+        scores[cp.key] = price != null
+          ? checkpointScore(signal.signal_type, effectivePosition, signal.price_at_signal, price)
+          : null;
       }
+    } catch (err) {
+      console.warn(`[SCORING] Checkpoint lookup failed for signal ${signal.id} — retrying next run:`, String(err).slice(0, 120));
+      continue;
     }
 
-    // Need at least 2 checkpoints with data to score
     const validScores = CHECKPOINTS.filter((cp) => scores[cp.key] != null);
-    if (validScores.length < 2) continue;
+
+    // Need at least 2 checkpoints with data to score
+    if (validScores.length < 2) {
+      const ageMs = Date.now() - signalTime.getTime();
+      if (ageMs > UNSCORABLE_AFTER_MS) {
+        // Missing checkpoints are permanent (market closed / no snapshot
+        // coverage) — mark so this signal never blocks the queue again
+        await supabase
+          .from("signals")
+          .update({ scoring_status: "unscorable" })
+          .eq("id", signal.id);
+        markedUnscorable++;
+      }
+      continue;
+    }
 
     // Weighted score (normalize weights for available checkpoints)
     const totalWeight = validScores.reduce((sum, cp) => sum + cp.weight, 0);
@@ -124,7 +137,9 @@ export async function scoreSignals() {
     const consistent = directions.every((d) => d === directions[0]) && directions[0] !== 0;
     const finalScore = consistent ? weighted * 1.2 : weighted;
 
-    await supabase.from("signal_scores").insert({
+    // Upsert on signal_id: idempotent even if two runs overlap (TOCTOU-safe
+    // thanks to the unique index uq_signal_scores_signal_id)
+    const { error } = await supabase.from("signal_scores").upsert({
       signal_id: signal.id,
       signal_type: signal.signal_type,
       position: effectivePosition ?? signal.position,
@@ -141,30 +156,38 @@ export async function scoreSignals() {
       score_4h: scores["4h"],
       weighted_score: Math.round(finalScore * 100) / 100,
       consistency_bonus: consistent,
-    });
+    }, { onConflict: "signal_id", ignoreDuplicates: true });
 
-    scored++;
-  }
-
-  // Refresh credibility for scored authors
-  if (scored > 0) {
-    const authors = [...new Set(unscored.map((s) => s.author))];
-    for (const author of authors) {
-      await refreshTimeScoring(supabase, author);
+    if (!error) {
+      await supabase
+        .from("signals")
+        .update({ scoring_status: "scored" })
+        .eq("id", signal.id);
+      scored++;
+      scoredAuthors.add(signal.author);
+    } else {
+      console.error(`[SCORING] Insert failed for signal ${signal.id}:`, error.message);
     }
   }
 
-  return { scored };
+  // Refresh credibility for scored authors
+  for (const author of scoredAuthors) {
+    await refreshTimeScoring(supabase, author);
+  }
+
+  return { scored, markedUnscorable };
 }
 
-/** Recalculate credibility based on time-horizon scores */
+/** Recalculate signal-accuracy credibility from time-horizon scores.
+ *  Owns: score, win_rate, total_signals, correct_signals.
+ *  (PnL fields are owned by trade-pairing's refreshCredibility.) */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function refreshTimeScoring(supabase: any, author: string) {
   const { data } = await supabase
     .from("signal_scores")
     .select("weighted_score, signal_type")
     .eq("author", author)
-    .order("created_at", { ascending: false })
+    .order("scored_at", { ascending: false })
     .limit(200);
 
   const rows = (data ?? []) as Array<{ weighted_score: number; signal_type: string }>;
@@ -172,7 +195,6 @@ async function refreshTimeScoring(supabase: any, author: string) {
 
   const totalSignals = rows.length;
   const wins = rows.filter((r) => r.weighted_score > 0).length;
-  const totalScore = rows.reduce((sum, r) => sum + r.weighted_score, 0);
   const winRate = wins / totalSignals;
 
   // Reliability factor: max at 10+ scored signals
@@ -182,9 +204,6 @@ async function refreshTimeScoring(supabase: any, author: string) {
   await supabase.from("user_credibility").upsert(
     {
       discord_user: author,
-      total_trades: totalSignals,
-      winning_trades: wins,
-      total_pnl: Math.round(totalScore * 100) / 100,
       win_rate: Math.round(winRate * 1000) / 1000,
       score,
       total_signals: totalSignals,

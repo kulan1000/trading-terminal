@@ -6,7 +6,7 @@ export function fmtNum(n: number, d = 2): string {
 
 /** "28 mar 14:35" — short datetime for message lists, signal feeds, etc. */
 export function fmtDateTime(iso: string): string {
-  return new Date(iso).toLocaleString("sv-SE", {
+  return new Date(iso).toLocaleString("en-GB", {
     month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
     timeZone: "Europe/Stockholm",
   });
@@ -14,21 +14,21 @@ export function fmtDateTime(iso: string): string {
 
 /** "14:35" — time only, Stockholm timezone */
 export function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("sv-SE", {
+  return new Date(iso).toLocaleTimeString("en-GB", {
     hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm",
   });
 }
 
 /** "14:35:22" — time with seconds, for pipeline logs */
 export function fmtTimeFull(iso: string): string {
-  return new Date(iso).toLocaleTimeString("sv-SE", {
+  return new Date(iso).toLocaleTimeString("en-GB", {
     hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Europe/Stockholm",
   });
 }
 
 /** "14:35" — from epoch seconds (for chart timestamps) */
 export function fmtTimeEpoch(epoch: number): string {
-  return new Date(epoch * 1000).toLocaleTimeString("sv-SE", {
+  return new Date(epoch * 1000).toLocaleTimeString("en-GB", {
     hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm",
   });
 }

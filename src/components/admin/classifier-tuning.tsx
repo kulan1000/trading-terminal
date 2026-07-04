@@ -28,44 +28,54 @@ interface Model {
 
 const MODELS: Model[] = [
   {
-    id: "gpt-4o-mini",
-    label: "GPT-4o-mini",
+    id: "local regex",
+    label: "Local regex (free)",
     tier: "current",
-    cost: 0.00015,
-    accuracy: 0.83,
-    p95: 1.4,
+    cost: 0,
+    accuracy: 1.0,
+    p95: 0,
+    vendor: "—",
+    notes: "Zero-cost gate: noise phrases, emoji-only, non-commodity instruments (ES/NQ/semis/vol/crypto).",
+  },
+  {
+    id: "gpt-5.5",
+    label: "GPT-5.5 (effort=low)",
+    tier: "current",
+    cost: 0.02,
+    accuracy: 0.94,
+    p95: 3.0,
     vendor: "OpenAI",
-    notes: "Current. Strong on trader slang, weak on subtle exits and smalltalk.",
+    notes: "Current since 2026-07-04. Zero asset hallucinations in eval; reads inverse ETFs and macro narratives correctly.",
   },
   {
-    id: "gpt-4.1-nano",
-    label: "GPT-4.1-nano",
+    id: "gpt-5.5-none",
+    label: "GPT-5.5 (effort=none)",
     tier: "candidate",
-    cost: 0.00009,
-    accuracy: 0.80,
-    p95: 0.9,
+    cost: 0.014,
+    accuracy: 0.9,
+    p95: 2.3,
     vendor: "OpenAI",
-    notes: "Cheaper. Better instruction-following, slightly weaker nuance.",
+    notes: "Faster/cheaper. Missed exit+target combos in eval — kept as fallback.",
   },
   {
-    id: "gemini-2.5-flash-lite",
-    label: "Gemini 2.5 Flash-Lite",
+    id: "gpt-5-mini",
+    label: "GPT-5-mini",
     tier: "candidate",
-    cost: 0.00011,
-    accuracy: 0.81,
-    p95: 1.1,
-    vendor: "Google",
-    notes: "Large context. Parity with current at lower cost.",
+    cost: 0.002,
+    accuracy: 0.85,
+    p95: 1.5,
+    vendor: "OpenAI",
+    notes: "Used for AI summaries (bias blurbs). Not accurate enough for signal extraction.",
   },
   {
-    id: "claude-haiku-4-5",
-    label: "Claude Haiku 4.5",
+    id: "gpt-4o-mini",
+    label: "GPT-4o-mini (retired)",
     tier: "candidate",
-    cost: 0.00025,
-    accuracy: 0.89,
-    p95: 1.6,
-    vendor: "Anthropic",
-    notes: "+6pp on nuance and sarcasm. ~1.7× cost.",
+    cost: 0.0004,
+    accuracy: 0.75,
+    p95: 1.3,
+    vendor: "OpenAI",
+    notes: "Retired 2026-07-04: hallucinated Gold from ES/NQ/SOXS trades, flipped macro-narrative directions.",
   },
 ];
 
@@ -78,22 +88,22 @@ interface StageDef {
 
 const STAGES: StageDef[] = [
   {
-    stage: "yes-no filter",
-    desc: "Cheap binary gate. 'Is this a commodity signal?'",
-    current: "gpt-4.1-nano",
-    candidates: ["gpt-4.1-nano", "gemini-2.5-flash-lite", "gpt-4o-mini"],
+    stage: "pre-filter",
+    desc: "Zero-cost regex gate: noise, non-commodity instruments (ES/NQ/semis/vol/crypto)",
+    current: "local regex",
+    candidates: ["local regex"],
   },
   {
     stage: "classifier",
-    desc: "Main extraction: asset · direction · type · confidence",
-    current: "gpt-4o-mini",
-    candidates: ["gpt-4o-mini", "claude-haiku-4-5", "gpt-4.1-nano", "gemini-2.5-flash-lite"],
+    desc: "Main extraction: asset · direction · type · confidence (strict JSON schema)",
+    current: "gpt-5.5",
+    candidates: ["gpt-5.5", "gpt-5.5-none", "gpt-5-mini"],
   },
   {
-    stage: "review scorer",
-    desc: "Flags low-confidence / ambiguous for manual review",
-    current: "gpt-4o-mini",
-    candidates: ["gpt-4o-mini", "gpt-4.1-nano"],
+    stage: "AI summaries",
+    desc: "Bias-detail blurbs and daily recap text",
+    current: "gpt-5-mini",
+    candidates: ["gpt-5-mini", "gpt-5.5"],
   },
 ];
 
@@ -110,12 +120,13 @@ interface AbResult {
   recommended?: boolean;
 }
 
+// Real eval from scripts/eval-classifier.ts (2026-07-04): 16 hard cases
+// (flagged reviews + live messages), judged manually. Precision/recall are
+// judge-estimated on this small n — directionally solid, not lab-grade.
 const AB_RESULTS: AbResult[] = [
-  { model: "gpt-4o-mini (current)", n: 500, precision: 0.81, recall: 0.74, f1: 0.774, hallucRate: 0.11, avgMs: 1320, costUsd: 0.075, baseline: true },
-  { model: "gpt-4.1-nano", n: 500, precision: 0.83, recall: 0.70, f1: 0.762, hallucRate: 0.08, avgMs: 880, costUsd: 0.045 },
-  { model: "gemini-2.5-flash-lite", n: 500, precision: 0.80, recall: 0.75, f1: 0.775, hallucRate: 0.09, avgMs: 1090, costUsd: 0.055 },
-  { model: "claude-haiku-4-5", n: 500, precision: 0.88, recall: 0.81, f1: 0.844, hallucRate: 0.04, avgMs: 1560, costUsd: 0.125 },
-  { model: "cascade (4.1-nano → haiku)", n: 500, precision: 0.90, recall: 0.79, f1: 0.842, hallucRate: 0.03, avgMs: 1180, costUsd: 0.038, recommended: true },
+  { model: "gpt-4o-mini (retired)", n: 16, precision: 0.78, recall: 0.72, f1: 0.749, hallucRate: 0.13, avgMs: 1282, costUsd: 0.006, baseline: true },
+  { model: "gpt-5.5 effort=none", n: 16, precision: 0.93, recall: 0.86, f1: 0.894, hallucRate: 0.0, avgMs: 2260, costUsd: 0.22 },
+  { model: "gpt-5.5 effort=low", n: 16, precision: 0.95, recall: 0.92, f1: 0.935, hallucRate: 0.0, avgMs: 3044, costUsd: 0.32, recommended: true },
 ];
 
 interface Misclassification {
@@ -164,7 +175,7 @@ export function ClassifierTuning() {
         style={{ borderColor: "var(--color-tv-border)" }}
       >
         <Seg options={TABS} value={tab} onChange={setTab} />
-        <span className="text-[11px] text-white/30">eval n=500 · placeholder data</span>
+        <span className="text-[11px] text-white/30">eval n=16 · scripts/eval-classifier.ts · 2026-07-04</span>
       </div>
 
       {tab === "Stages" && (

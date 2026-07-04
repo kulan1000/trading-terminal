@@ -4,23 +4,71 @@ import { FEW_SHOT_EXAMPLES } from "@/lib/few-shot";
 import { sanitizeResult } from "@/lib/classify-sanitize";
 import type { ClassifyResult } from "@/lib/classify-sanitize";
 import { cleanDiscordContent } from "@/lib/pre-filter";
-import { CLASSIFIER_MODEL } from "@/lib/constants";
+import { CLASSIFIER_MODEL, CLASSIFIER_REASONING_EFFORT } from "@/lib/constants";
+import { buildChatParams } from "@/lib/openai-params";
 
 function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
-/** Retry wrapper with exponential backoff for OpenAI rate limits (429) */
-async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+// Strict structured-output schema — the model CANNOT return malformed JSON
+// or out-of-enum values. Nullable fields use ["type","null"] per OpenAI spec.
+const SIGNAL_SCHEMA = {
+  type: "json_schema",
+  json_schema: {
+    name: "commodity_signals",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["signals"],
+      properties: {
+        signals: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: [
+              "has_signal", "asset", "direction", "signal_type",
+              "position", "target_price", "strength", "confidence", "interpretation",
+            ],
+            properties: {
+              has_signal: { type: "boolean" },
+              asset: { type: ["string", "null"], enum: ["Gold", "Silver", "Oil", null] },
+              direction: { type: ["string", "null"], enum: ["bullish", "bearish", "neutral", null] },
+              signal_type: { type: ["string", "null"], enum: ["entry", "position", "exited", "opinion", "target", null] },
+              position: { type: ["string", "null"], enum: ["long", "short", null] },
+              target_price: { type: ["number", "null"] },
+              strength: { type: ["string", "null"], enum: ["strong", "medium", "weak", null] },
+              confidence: { type: ["number", "null"] },
+              interpretation: { type: ["string", "null"] },
+            },
+          },
+        },
+      },
+    },
+  },
+} as const;
+
+/** Retry wrapper for OpenAI rate limits (429): honors Retry-After when the
+ *  API provides it, otherwise exponential backoff. Other errors propagate. */
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 4): Promise<T> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (err: unknown) {
+      const status = (err as { status?: number }).status;
       const isRateLimit =
-        err instanceof Error &&
-        (err.message.includes("429") || err.message.includes("Rate limit"));
+        status === 429 ||
+        (err instanceof Error &&
+          (err.message.includes("429") || err.message.includes("Rate limit")));
       if (!isRateLimit || attempt === maxRetries) throw err;
-      const delay = Math.min(1000 * Math.pow(2, attempt), 8000);
+
+      const headers = (err as { headers?: Record<string, string> }).headers;
+      const retryAfterS = Number(headers?.["retry-after"]);
+      const delay = Number.isFinite(retryAfterS) && retryAfterS > 0
+        ? Math.min(retryAfterS * 1000, 30_000)
+        : Math.min(1000 * Math.pow(2, attempt), 8000);
       console.warn(`[classify] 429 rate limit — retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
       await new Promise((r) => setTimeout(r, delay));
     }
@@ -32,7 +80,8 @@ export async function classifyMessage(
   content: string,
   channel?: string,
   contextMessages?: string[],
-  marketOpen?: boolean
+  marketOpen?: boolean,
+  model: string = CLASSIFIER_MODEL
 ): Promise<ClassifyResult[]> {
   const cleaned = cleanDiscordContent(content);
 
@@ -52,24 +101,27 @@ export async function classifyMessage(
     { role: "user", content: userContent },
   ];
 
-  const response = await withRetry(() =>
-    getOpenAI().chat.completions.create({
-      model: CLASSIFIER_MODEL,
-      messages,
+  // Model-aware params: gpt-5.x gets max_completion_tokens (must cover
+  // reasoning tokens too) + reasoning_effort; gpt-4x gets legacy params.
+  const params = {
+    ...buildChatParams(model, {
+      maxOutput: 2500,
       temperature: 0.1,
-      max_tokens: 900,
-      response_format: { type: "json_object" },
-    })
-  );
+      reasoningEffort: CLASSIFIER_REASONING_EFFORT as "low",
+      responseFormat: SIGNAL_SCHEMA,
+    }),
+    messages,
+  } as unknown as OpenAI.ChatCompletionCreateParamsNonStreaming;
+
+  const response = await withRetry(() => getOpenAI().chat.completions.create(params));
 
   const choice = response.choices[0];
   if (choice?.finish_reason === "length") {
-    console.warn("[classify] Response truncated (hit max_tokens). Message:", content.slice(0, 80));
+    console.warn("[classify] Response truncated (hit max output tokens). Message:", content.slice(0, 80));
   }
   const text = choice?.message?.content ?? "";
   try {
     const raw = JSON.parse(text);
-    // JSON mode returns an object — extract signals array
     const parsed = raw.signals ?? (Array.isArray(raw) ? raw : [raw]);
     const results: ClassifyResult[] = Array.isArray(parsed) ? parsed : [parsed];
 

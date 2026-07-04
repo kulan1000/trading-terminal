@@ -5,11 +5,57 @@ import { deriveStrength } from "@/lib/classify-sanitize";
 import { maybeCommodityRelevant } from "@/lib/pre-filter";
 import { getTraderHint, refreshTraderProfile } from "@/lib/trader-profiles";
 import { getAssetPrice } from "@/lib/price-snapshot";
+import { getPriceAtTime } from "@/lib/price-snapshots";
 import { isMarketOpen } from "@/lib/market-hours";
 import { detectAssetSource, flagForReview, getLearnedFeedback } from "@/lib/classify-review";
 import { CLASSIFIER_MODEL } from "@/lib/constants";
 
-export async function processUnclassified(limit = 50) {
+// GPT calls run concurrently (each message is independent) — rate-limit
+// retries are handled inside classifyMessage. Kept at 3: gpt-5.5 calls are
+// ~7k tokens each, so 5 workers can burst past TPM tiers during backfills.
+const GPT_CONCURRENCY = 3;
+
+/** Transient failures (rate limits, network, 5xx) must NOT consume the
+ *  message — leave it unprocessed and the next run retries it. */
+function isRetryableError(err: unknown): boolean {
+  const status = (err as { status?: number }).status;
+  if (status === 429 || (status != null && status >= 500)) return true;
+  return /timeout|timed out|ECONNRESET|ENOTFOUND|fetch failed|network/i.test(String(err));
+}
+
+/** Price at the moment the trader WROTE the message — not when we classified it.
+ *  Snapshots cover the 15-min grid while the market is open; falls back to the
+ *  live quote for just-arrived messages where the surrounding snapshot is missing. */
+async function priceAtMessageTime(asset: string, msgTime: Date): Promise<number | null> {
+  const snap = await getPriceAtTime(asset, msgTime);
+  if (snap != null) return snap;
+  // Fallback: live quote (only reasonable for recent messages)
+  const ageMs = Date.now() - msgTime.getTime();
+  if (ageMs < 30 * 60_000) return getAssetPrice(asset);
+  return null;
+}
+
+async function pool<T>(items: T[], n: number, fn: (item: T) => Promise<void>): Promise<void> {
+  let i = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(n, items.length) }, async () => {
+      while (i < items.length) {
+        const idx = i++;
+        await fn(items[idx]);
+      }
+    })
+  );
+}
+
+interface PendingMessage {
+  id: number;
+  content: string;
+  channel: string;
+  timestamp: string;
+  author: string;
+}
+
+export async function processUnclassified(limit = 120) {
   const supabase = getSupabaseAdmin();
 
   const { data: messages } = await supabase
@@ -24,23 +70,27 @@ export async function processUnclassified(limit = 50) {
   let skipped = 0;
   let flagged = 0;
   let openaiCalls = 0;
+  let failures = 0;
   const touchedAuthors = new Set<string>();
 
-  // Load learned feedback rules (from Caspar's corrections) once per batch
+  // Load learned feedback rules (from human corrections) once per batch
   const learnedFeedback = await getLearnedFeedback();
 
-  for (const msg of messages) {
-    // STEP 1: Fast local pre-filter
-    if (!maybeCommodityRelevant(msg.content, msg.channel)) {
-      await supabase
-        .from("discord_messages")
-        .update({ processed: true })
-        .eq("id", msg.id);
-      skipped++;
-      continue;
-    }
+  // STEP 1: Fast local pre-filter — mark irrelevant messages processed in one update
+  const relevant: PendingMessage[] = [];
+  const skipIds: number[] = [];
+  for (const msg of messages as PendingMessage[]) {
+    if (maybeCommodityRelevant(msg.content, msg.channel)) relevant.push(msg);
+    else skipIds.push(msg.id);
+  }
+  if (skipIds.length) {
+    await supabase.from("discord_messages").update({ processed: true }).in("id", skipIds);
+    skipped = skipIds.length;
+  }
 
-    // STEP 2: Fetch EXTENDED context (10 msgs) + same-author recent messages
+  // STEP 2: Classify relevant messages concurrently
+  await pool(relevant, GPT_CONCURRENCY, async (msg) => {
+    // Fetch EXTENDED context (10 msgs) + same-author recent messages
     let contextMessages: string[] = [];
     if (msg.channel && msg.timestamp) {
       const { data: ctx } = await supabase
@@ -57,7 +107,7 @@ export async function processUnclassified(limit = 50) {
       }
     }
 
-    // Fetch same author's recent messages across channels (for asset disambiguation)
+    // Same author's recent messages across channels (for asset disambiguation)
     if (msg.author && msg.author !== "unknown") {
       const { data: authorCtx } = await supabase
         .from("discord_messages")
@@ -79,15 +129,10 @@ export async function processUnclassified(limit = 50) {
       contextMessages = [traderHint, ...contextMessages];
     }
 
-    // Check market status at MESSAGE time, not current time
-    // This ensures re-classification of old messages uses correct market state
+    // Market status at MESSAGE time, not current time — re-classification of
+    // old/backfilled messages must use the correct market state
     const msgTime = msg.timestamp ? new Date(msg.timestamp) : new Date();
     const marketOpen = isMarketOpen(msgTime);
-
-    // Delay between OpenAI calls to stay under rate limits (applies to ALL calls, not just signal-producing ones)
-    if (openaiCalls > 0) {
-      await new Promise((r) => setTimeout(r, 200));
-    }
 
     // Inject learned feedback into context if available
     const enrichedContext = learnedFeedback
@@ -98,11 +143,19 @@ export async function processUnclassified(limit = 50) {
     try {
       results = await classifyMessage(msg.content, msg.channel, enrichedContext, marketOpen);
     } catch (err) {
-      console.error(`[CLASSIFY] GPT error for msg ${msg.id}:`, err);
+      if (isRetryableError(err)) {
+        // Rate limit / network — leave unprocessed, next run picks it up
+        console.warn(`[CLASSIFY] Transient error for msg ${msg.id} — will retry next run:`, String(err).slice(0, 120));
+        failures++;
+        return;
+      }
+      console.error(`[CLASSIFY] Permanent GPT error for msg ${msg.id}:`, err);
       await supabase.from("discord_messages").update({ processed: true }).eq("id", msg.id);
-      continue;
+      return;
     }
     openaiCalls++;
+
+    let producedSignal = false;
     for (const result of results) {
       if (result.asset && result.direction && result.confidence != null) {
         // Hard safety net: block entry/exited when market is closed
@@ -111,11 +164,12 @@ export async function processUnclassified(limit = 50) {
           sigType = sigType === "entry" ? "position" : "opinion";
           result.position = sigType === "position" ? result.position : null;
         }
-        const price = (sigType !== "opinion")
-          ? await getAssetPrice(result.asset)
+        // Price at the message's own timestamp (works for live AND backfilled)
+        const price = sigType !== "opinion"
+          ? await priceAtMessageTime(result.asset, msgTime)
           : null;
 
-        const { data: inserted } = await supabase.from("signals").upsert(
+        const { data: inserted, error: upsertErr } = await supabase.from("signals").upsert(
           {
             message_id: msg.id,
             asset: result.asset,
@@ -129,9 +183,19 @@ export async function processUnclassified(limit = 50) {
             author: msg.author,
             price_at_signal: price,
             target_price: result.target_price ?? null,
+            // Signal is timestamped at the moment the trader WROTE it —
+            // scoring windows and sentiment decay measure from real time
+            ...(msg.timestamp ? { created_at: msg.timestamp } : {}),
           },
           { onConflict: "message_id,asset,signal_type" }
         ).select("id").single();
+
+        if (upsertErr) {
+          // DB failure — leave the message unprocessed so it retries
+          console.error(`[CLASSIFY] Signal upsert failed for msg ${msg.id}:`, upsertErr.message);
+          failures++;
+          return;
+        }
 
         // Flag uncertain asset classifications for human review
         const assetSource = detectAssetSource(
@@ -152,10 +216,11 @@ export async function processUnclassified(limit = 50) {
         }
 
         signalCount++;
+        producedSignal = true;
       }
     }
 
-    if (signalCount > 0 && msg.author) {
+    if (producedSignal && msg.author) {
       touchedAuthors.add(msg.author);
     }
 
@@ -163,7 +228,7 @@ export async function processUnclassified(limit = 50) {
       .from("discord_messages")
       .update({ processed: true })
       .eq("id", msg.id);
-  }
+  });
 
   // Batch refresh trader profiles (once per author, not per message)
   for (const author of touchedAuthors) {
@@ -171,10 +236,11 @@ export async function processUnclassified(limit = 50) {
   }
 
   return {
-    processed: messages.length,
+    processed: messages.length - failures,
     signals: signalCount,
     skipped,
     flagged,
+    failures,
     openai_calls: openaiCalls,
   };
 }

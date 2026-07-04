@@ -12,7 +12,7 @@ interface Props {
 /** Shared trade-signal tooltip used by both sparkline overlay and chart modal */
 export function MarkerTooltip({ marker: p, size = "small", expanded = false }: Props) {
   const time = fmtTime(p.msg_timestamp);
-  const date = new Date(p.msg_timestamp).toLocaleDateString("sv-SE", {
+  const date = new Date(p.msg_timestamp).toLocaleDateString("en-GB", {
     weekday: "short", day: "numeric", month: "short", timeZone: "Europe/Stockholm",
   });
 

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { runPipeline } from "@/lib/run-pipeline";
 
+// Full pipeline can exceed the default serverless window — allow 300s.
+export const maxDuration = 300;
+
 // Vercel Cron — scheduled trigger, uses the same runPipeline() as manual ingest
 // so every run (manual or cron) shows up in pipeline_runs and the admin UI.
 export async function GET(request: Request) {

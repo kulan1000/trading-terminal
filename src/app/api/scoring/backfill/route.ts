@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     const consistent = dirs.every((d) => d === dirs[0]) && dirs[0] !== 0;
     const finalScore = consistent ? weighted * 1.2 : weighted;
 
-    await supabase.from("signal_scores").insert({
+    await supabase.from("signal_scores").upsert({
       signal_id: signal.id, signal_type: signal.signal_type,
       position: signal.position, asset: signal.asset, author: signal.author,
       price_at_signal: signal.price_at_signal,
@@ -90,7 +90,8 @@ export async function POST(request: Request) {
       score_2h: scores["2h"], score_4h: scores["4h"],
       weighted_score: Math.round(finalScore * 100) / 100,
       consistency_bonus: consistent,
-    });
+    }, { onConflict: "signal_id", ignoreDuplicates: true });
+    await supabase.from("signals").update({ scoring_status: "scored" }).eq("id", signal.id);
     backfilled++;
   }
 

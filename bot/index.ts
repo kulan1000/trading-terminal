@@ -8,7 +8,6 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 // FoftyTrades Discord — only these channels
 const WATCHED_CHANNELS = [
-  "main-discussion",
   "traders-lounge",
   "gold-commodities",
 ];

@@ -1,4 +1,4 @@
-// Few-shot examples for GPT-4o-mini classification — split by category
+// Few-shot examples for signal classification — split by category
 // Core: entries, exits, positions, opinions, no-signal
 // Closed: market-hours edge cases
 // Advanced: supply constraints, multi-signal, macro commentary

@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { runPipeline } from "@/lib/run-pipeline";
 import { checkRateLimit } from "@/lib/rate-limit";
 
+// Full pipeline (ingest + GPT classify batch) can exceed the default
+// serverless window during busy periods — give it the full 300s.
+export const maxDuration = 300;
+
 // POST /api/ingest — manual trigger of the full pipeline
 export async function POST(request: Request) {
   const authHeader = request.headers.get("authorization");

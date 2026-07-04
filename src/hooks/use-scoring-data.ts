@@ -60,8 +60,6 @@ export function useScoringData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const [watchlist, setWatchlist] = useState<Set<string>>(new Set());
-
   useEffect(() => {
     let mounted = true;
     const fetchData = () => {
@@ -71,20 +69,10 @@ export function useScoringData() {
         .catch(() => { if (mounted) setError(true); })
         .finally(() => { if (mounted) setLoading(false); });
     };
-    // Fetch watchlist once
-    fetch("/api/watchlist")
-      .then((r) => r.json())
-      .then((d) => {
-        if (mounted && d.watchlist) {
-          setWatchlist(new Set(d.watchlist.map((w: { author: string }) => w.author)));
-        }
-      })
-      .catch((err) => console.error("[useScoringData] watchlist:", err));
-
     fetchData();
     const id = setInterval(fetchData, 60_000);
     return () => { mounted = false; clearInterval(id); };
   }, []);
 
-  return { ...data, loading, error, watchlist };
+  return { ...data, loading, error };
 }

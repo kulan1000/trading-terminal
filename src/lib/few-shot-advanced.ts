@@ -148,4 +148,55 @@ export const ADVANCED_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
       ],
     }),
   },
+
+  // Example 18: Non-commodity instrument (index futures) — NOT a signal,
+  // even in a commodity channel, even if the trader usually trades gold
+  {
+    role: "user",
+    content:
+      "MARKET: OPEN\n[Channel: #traders-lounge]\ngot filled long ES 7163 willing to dca 7160",
+  },
+  {
+    role: "assistant",
+    content: JSON.stringify({
+      signals: [
+        {
+          has_signal: false,
+          asset: null,
+          direction: null,
+          signal_type: null,
+          position: null,
+          strength: null,
+          confidence: null,
+          interpretation:
+            "ES is S&P 500 futures — an equity index trade, not Gold/Silver/Oil. No commodity signal regardless of channel or the trader's usual assets.",
+        },
+      ],
+    }),
+  },
+
+  // Example 19: Mixed basket exit — extract ONLY the commodity instruments
+  {
+    role: "user",
+    content:
+      "MARKET: OPEN\n[Channel: #traders-lounge]\nBeautiful pop, took profits on USO and SOXS today",
+  },
+  {
+    role: "assistant",
+    content: JSON.stringify({
+      signals: [
+        {
+          has_signal: true,
+          asset: "Oil",
+          direction: "bullish",
+          signal_type: "exited",
+          position: "long",
+          strength: "medium",
+          confidence: 0.7,
+          interpretation:
+            "Taking profits on USO (long oil ETF) = exiting a bullish oil trade. SOXS is a semiconductor ETF — ignored, not a commodity.",
+        },
+      ],
+    }),
+  },
 ];

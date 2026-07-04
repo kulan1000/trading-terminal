@@ -16,7 +16,7 @@ export function BiasSignalTooltip({ author, direction, content, interpretation, 
   const color = isBull ? "#26A69A" : "#EF5350";
   const label = isBull ? "BULLISH" : "BEARISH";
   const time = fmtTime(created_at);
-  const date = new Date(created_at).toLocaleDateString("sv-SE", {
+  const date = new Date(created_at).toLocaleDateString("en-GB", {
     weekday: "short", day: "numeric", month: "short", timeZone: "Europe/Stockholm",
   });
 

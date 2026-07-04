@@ -58,11 +58,14 @@ export async function pairTrades() {
   let paired = 0;
 
   for (const entry of unmatched) {
-    // Find first matching exit: same author + asset, after entry time
+    // Find first matching exit: same author + asset, after entry time,
+    // and same side — a long entry must not pair with a short-cover exit.
+    // Exits with unknown side (position null) may match either.
     const matchIdx = availableExits.findIndex(
       (ex) =>
         ex.author === entry.author &&
         ex.asset === entry.asset &&
+        (ex.position == null || ex.position === entry.position) &&
         new Date(ex.created_at) > new Date(entry.created_at)
     );
 
@@ -105,7 +108,13 @@ export async function pairTrades() {
   return { paired };
 }
 
-/** Recalculate credibility stats for an author */
+/** Recalculate completed-trade PnL stats for an author.
+ *  Owns: total_trades, winning_trades, total_pnl.
+ *  (Signal-accuracy fields — score/win_rate/total_signals/correct_signals —
+ *  are owned by score-signals' refreshTimeScoring, which has far more data.
+ *  Previously both functions overwrote ALL fields with different semantics,
+ *  so the leaderboard mixed "share of profitable trade pairs" with "share of
+ *  positive time-horizon scores" depending on which ran last.) */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function refreshCredibility(supabase: any, author: string) {
   const { data } = await supabase
@@ -121,22 +130,13 @@ async function refreshCredibility(supabase: any, author: string) {
   const totalTrades = trades.length;
   const winningTrades = trades.filter((t) => t.pnl > 0).length;
   const totalPnl = trades.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
-  const winRate = totalTrades > 0 ? winningTrades / totalTrades : 0;
-
-  // Score: win_rate weighted by trade count (more data = more reliable)
-  const reliability = Math.min(totalTrades / 10, 1); // max reliability at 10+ trades
-  const score = winRate * reliability * 100;
 
   await supabase.from("user_credibility").upsert(
     {
       discord_user: author,
       total_trades: totalTrades,
       winning_trades: winningTrades,
-      total_pnl: totalPnl,
-      win_rate: winRate,
-      score: Math.round(score),
-      total_signals: totalTrades,
-      correct_signals: winningTrades,
+      total_pnl: Math.round(totalPnl * 100) / 100,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "discord_user" }

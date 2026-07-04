@@ -73,7 +73,8 @@ export async function flagForReview(input: FlagInput) {
   const isHighStakes = input.result.signal_type === "entry" || input.result.signal_type === "exited";
   if (!isHighStakes && input.assetSource !== "unknown") return;
 
-  await supabase.from("classification_reviews").insert({
+  // Upsert on signal_id: re-processing a message never duplicates its review
+  await supabase.from("classification_reviews").upsert({
     signal_id: input.signalId,
     message_id: input.messageId,
     gpt_asset: input.result.asset,
@@ -87,7 +88,7 @@ export async function flagForReview(input: FlagInput) {
     context_messages: input.contextMessages.slice(0, 8),
     channel: input.channel,
     author: input.author,
-  });
+  }, { onConflict: "signal_id", ignoreDuplicates: true });
 }
 
 // ── Load learned feedback for GPT prompt injection ──────────────────
