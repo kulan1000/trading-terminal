@@ -141,25 +141,24 @@ export async function GET() {
     });
   }
 
-  // 4) Open positions: entry signals not yet scored (< 4h old)
-  const { data: scoredIds } = await supabase
-    .from("signal_scores")
-    .select("signal_id");
-  const scoredSet = new Set(
-    ((scoredIds ?? []) as Array<{ signal_id: number }>).map((r) => r.signal_id)
-  );
-
-  const { data: allEntries } = await supabase
+  // 4) Open positions: signals awaiting their first score. The scorer only
+  // grades signals older than 4h, so "< 4h old and still pending" IS the
+  // open set — no need to diff against the whole signal_scores table (which
+  // silently caps at 1000 un-ranged rows and would mislabel scored signals
+  // as open once it overflows).
+  const since4h = new Date(Date.now() - 4 * 60 * 60_000).toISOString();
+  const { data: pendingEntries } = await supabase
     .from("signals")
     .select("id, author, asset, position, price_at_signal, created_at")
     .in("signal_type", ["entry", "exited"])
     .not("price_at_signal", "is", null)
     .not("author", "is", null)
-    .order("created_at", { ascending: false });
+    .is("scoring_status", null)
+    .gte("created_at", since4h)
+    .order("created_at", { ascending: false })
+    .limit(200);
 
-  const openPositions = ((allEntries ?? []) as OpenEntry[]).filter(
-    (e) => !scoredSet.has(e.id)
-  );
+  const openPositions = (pendingEntries ?? []) as OpenEntry[];
 
   // 5) Recent scored signals (last 20)
   const recentScored = allScores.slice(0, 20).map((s) => ({

@@ -31,7 +31,11 @@ export async function saveSentimentSnapshots() {
   }));
 
   const { error } = await supabase.from("sentiment_snapshots").insert(rows);
-  return { saved: rows.length, error: error?.message };
+  if (error) {
+    console.error("[SENTIMENT-SNAPSHOT] Insert failed:", error.message);
+    return { saved: 0, error: error.message };
+  }
+  return { saved: rows.length };
 }
 
 /** Get sentiment history for sparklines (last N hours) */

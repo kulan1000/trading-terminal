@@ -12,6 +12,23 @@ function safeEqual(a: string, b: string): boolean {
 }
 
 /**
+ * Constant-time check of a bare secret value (e.g. from a JSON body field)
+ * against one or more server-side secrets. Trims both sides; empty/undefined
+ * candidates are ignored — with no secret configured this always fails closed.
+ */
+export function verifySecretValue(
+  value: string | undefined | null,
+  secrets: Array<string | undefined | null>,
+): boolean {
+  const token = value?.trim();
+  if (!token) return false;
+  const candidates = secrets
+    .map((s) => s?.trim())
+    .filter((s): s is string => !!s);
+  return candidates.some((s) => safeEqual(token, s));
+}
+
+/**
  * Verify a request's `Authorization: Bearer <secret>` header against one or more
  * server-side secrets, in constant time.
  *
@@ -27,10 +44,5 @@ export function verifyBearerAuth(
 ): boolean {
   const header = request.headers.get("authorization");
   if (!header) return false;
-  const token = header.replace(/^Bearer\s+/i, "").trim();
-  if (!token) return false;
-  const candidates = secrets
-    .map((s) => s?.trim())
-    .filter((s): s is string => !!s);
-  return candidates.some((s) => safeEqual(token, s));
+  return verifySecretValue(header.replace(/^Bearer\s+/i, ""), secrets);
 }

@@ -48,7 +48,7 @@ export async function getDailyBriefing(): Promise<DailyBriefing> {
       .select("asset, direction, confidence, strength, signal_type, author, created_at, discord_messages(content)")
       .gte("created_at", since)
       .order("created_at", { ascending: false })
-      .limit(500),
+      .limit(1000),
     supabase
       .from("discord_messages")
       .select("id", { count: "exact", head: true })
@@ -132,9 +132,10 @@ export async function getDailyBriefing(): Promise<DailyBriefing> {
       };
     });
 
-  // --- High confidence signals (top 5) ---
+  // --- High confidence signals (top 5 BY CONFIDENCE, not recency) ---
   const highConfidence = signals
     .filter((s) => s.confidence >= 0.75 && s.signal_type !== "opinion")
+    .sort((a, b) => b.confidence - a.confidence)
     .slice(0, 5)
     .map((s) => ({
       asset: s.asset,

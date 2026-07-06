@@ -5,7 +5,9 @@ export async function getTraderScores(): Promise<Record<string, number>> {
   const { data } = await supabase
     .from("user_credibility" as never)
     .select("discord_user, win_rate, total_trades")
-    .gt("total_trades", 0);
+    .gt("total_trades", 0)
+    .order("updated_at", { ascending: false })
+    .limit(1000); // un-ranged selects silently cap at 1000 — keep active traders
 
   const map: Record<string, number> = {};
   for (const r of (data ?? []) as Array<{ discord_user: string; win_rate: number }>) {

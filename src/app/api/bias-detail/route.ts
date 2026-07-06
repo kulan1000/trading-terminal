@@ -58,7 +58,9 @@ export async function GET(req: NextRequest) {
     fetchYahoo(asset, YAHOO_SYMBOLS[asset]),
     supabase
       .from("user_credibility")
-      .select("discord_user, score, win_rate, total_signals, correct_signals"),
+      .select("discord_user, score, win_rate, total_signals, correct_signals")
+      .order("updated_at", { ascending: false })
+      .limit(1000), // un-ranged selects silently cap at 1000 — keep active traders
   ]);
 
   type RawSignal = {

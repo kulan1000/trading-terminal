@@ -39,10 +39,15 @@ function toFeedMessages(rows: RawMessageWithSignals[]): FeedMessage[] {
 
 /** Fetch credibility scores as Map<author, score 0-100> */
 async function getCredibilityMap(): Promise<Map<string, number>> {
+  // Ordered + capped: an un-ranged select silently truncates at 1000 rows —
+  // this keeps the 1000 most recently updated (= active) traders if the
+  // community ever outgrows that.
   const { data } = await supabase
     .from("user_credibility" as never)
     .select("discord_user, score")
-    .gt("score", 0);
+    .gt("score", 0)
+    .order("updated_at", { ascending: false })
+    .limit(1000);
 
   const map = new Map<string, number>();
   for (const r of (data ?? []) as Array<{ discord_user: string; score: number }>) {
@@ -157,19 +162,40 @@ export async function getFilteredFeed(options?: {
   const { channel, asset, query, author, signalType, dateFrom, dateTo, limit: rawLimit = 50 } = options ?? {};
   const limit = Math.min(rawLimit, 100);
 
-  let q = supabase
+  // Signals-first (same shape as getSignalFeed): only ~10% of messages carry
+  // signals, so limiting message rows BEFORE the signal join meant a "50-row"
+  // feed really held ~5, and an asset filter could look empty while older
+  // matches existed. Filter on the signal side, then hydrate the matching
+  // messages with all their signals. 3x overfetch covers multi-signal
+  // messages and the noise-drop in toFeedMessages.
+  let sq = supabase
+    .from("signals")
+    .select("message_id, discord_messages!inner(id)")
+    .order("created_at", { ascending: false })
+    .limit(limit * 3);
+
+  if (asset && asset !== "all") sq = sq.eq("asset", asset);
+  if (signalType && signalType !== "all") sq = sq.eq("signal_type", signalType);
+  if (channel && channel !== "all") sq = sq.eq("discord_messages.channel", channel);
+  if (author) sq = sq.ilike("discord_messages.author", `%${author}%`);
+  if (query) sq = sq.ilike("discord_messages.content", `%${query}%`);
+  if (dateFrom) sq = sq.gte("discord_messages.timestamp", dateFrom);
+  if (dateTo) sq = sq.lte("discord_messages.timestamp", dateTo);
+
+  const { data: signalRows } = await sq;
+  // Overfetch ids by 1.5x — the noise-drop in toFeedMessages happens after
+  // hydration, so an exact slice would leave the page short.
+  const msgIds = [
+    ...new Set(((signalRows ?? []) as Array<{ message_id: number }>).map((r) => r.message_id)),
+  ].slice(0, Math.ceil(limit * 1.5));
+  if (!msgIds.length) return [];
+
+  const { data } = await supabase
     .from("discord_messages")
     .select("id, author, content, channel, timestamp, processed, signals(asset, direction, strength, signal_type, position, interpretation)")
-    .order("timestamp", { ascending: false })
-    .limit(limit);
+    .in("id", msgIds)
+    .order("timestamp", { ascending: false });
 
-  if (channel && channel !== "all") q = q.eq("channel", channel);
-  if (author) q = q.ilike("author", `%${author}%`);
-  if (query) q = q.ilike("content", `%${query}%`);
-  if (dateFrom) q = q.gte("timestamp", dateFrom);
-  if (dateTo) q = q.lte("timestamp", dateTo);
-
-  const { data } = await q;
   let feed = toFeedMessages((data ?? []) as RawMessageWithSignals[]);
 
   if (asset && asset !== "all") {
@@ -178,7 +204,7 @@ export async function getFilteredFeed(options?: {
   if (signalType && signalType !== "all") {
     feed = feed.filter((m) => m.assets.some((a) => a.signal_type === signalType));
   }
-  return feed;
+  return feed.slice(0, limit);
 }
 
 // Bias queries (targets, hot asset, history) → lib/queries-bias.ts

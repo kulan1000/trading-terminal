@@ -6,18 +6,23 @@ export const revalidate = 60;
 export async function GET() {
   const supabase = getSupabaseAdmin();
 
-  // Fetch all reviews (limited to recent 500)
-  const { data: reviews } = await supabase
-    .from("classification_reviews")
-    .select("status")
-    .limit(500);
-
+  // Exact per-status counts — head:true count queries instead of pulling
+  // rows (the old limit(500) capped `total` and made the split arbitrary
+  // once reviews outgrew it).
+  const statuses = ["approved", "corrected", "rejected", "pending"] as const;
+  const countRows = await Promise.all(
+    statuses.map((s) =>
+      supabase
+        .from("classification_reviews")
+        .select("id", { count: "exact", head: true })
+        .eq("status", s)
+    )
+  );
   const counts = { total: 0, approved: 0, corrected: 0, rejected: 0, pending: 0 };
-  for (const r of reviews ?? []) {
-    counts.total++;
-    const s = r.status as keyof typeof counts;
-    if (s in counts) counts[s]++;
-  }
+  statuses.forEach((s, i) => {
+    counts[s] = countRows[i].count ?? 0;
+    counts.total += counts[s];
+  });
 
   // Count active feedback rules
   const { count: activeRules } = await supabase

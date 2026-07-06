@@ -108,7 +108,12 @@ function weightedScore(signal: RawSignal, nowMs: number): number {
 }
 
 /** Calculate sentiment for one asset from a set of signals */
-function calcAssetSentiment(asset: Asset, signals: RawSignal[], nowMs: number): AssetSentiment {
+function calcAssetSentiment(
+  asset: Asset,
+  signals: RawSignal[],
+  nowMs: number,
+  windowMinutes: number = WINDOWS.primary
+): AssetSentiment {
   let bullPressure = 0;
   let bearPressure = 0;
   let entries = 0, exits = 0, holdings = 0, opinions = 0;
@@ -167,9 +172,11 @@ function calcAssetSentiment(asset: Asset, signals: RawSignal[], nowMs: number): 
   const hotBias: Direction = hotNet > 0.3 ? "bullish" : hotNet < -0.3 ? "bearish" : "neutral";
   const hotConfidence = Math.round(hotDir * Math.min(hotSignals / 3, 1) * 100) / 10;
 
-  // Acceleration: normalize to per-minute rate
+  // Acceleration: normalize to per-minute rate. The cold span is the caller's
+  // window minus the hot window — hardcoding primary understated extended-
+  // window acceleration 2.5x.
   const hotRate = hotSignals / WINDOWS.hot;
-  const coldRate = coldSignals / (WINDOWS.primary - WINDOWS.hot);
+  const coldRate = coldSignals / Math.max(windowMinutes - WINDOWS.hot, 1);
   const acceleration = coldRate > 0 ? Math.round((hotRate / coldRate) * 100) / 100 : hotSignals > 0 ? 2.0 : 0;
 
   // Find most recent signal (safe: reduce needs initial value from first element)
@@ -209,6 +216,6 @@ export function calcSentiment(
 
   return assets.map((asset) => {
     const assetSignals = windowSignals.filter((s) => s.asset === asset);
-    return calcAssetSentiment(asset, assetSignals, nowMs);
+    return calcAssetSentiment(asset, assetSignals, nowMs, windowMinutes);
   });
 }

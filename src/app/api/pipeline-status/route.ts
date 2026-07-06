@@ -60,12 +60,15 @@ export async function GET() {
     ),
 
     // --- NEW: bias history (24h, one row per snapshot) ---
+    // Desc + reverse: ascending with the implicit 1000-row cap would drop the
+    // NEWEST snapshots first once cadence/assets grow past ~330 runs/day.
     safeRows(
       supabase.from("bias_snapshots")
         .select("asset, direction, score, created_at")
         .gte("created_at", new Date(now - 24 * 60 * 60_000).toISOString())
-        .order("created_at", { ascending: true })
-        .then((r) => (r.data ?? []) as any[])
+        .order("created_at", { ascending: false })
+        .limit(1000)
+        .then((r) => ((r.data ?? []) as any[]).reverse())
     ),
 
     // --- signals by asset last 7d (used for 24h breakdown + 7d history chart) ---

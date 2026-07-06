@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runPipeline } from "@/lib/run-pipeline";
+import { verifyBearerAuth } from "@/lib/api-auth";
 
 // Full pipeline can exceed the default serverless window — allow 300s.
 export const maxDuration = 300;
@@ -7,8 +8,9 @@ export const maxDuration = 300;
 // Vercel Cron — scheduled trigger, uses the same runPipeline() as manual ingest
 // so every run (manual or cron) shows up in pipeline_runs and the admin UI.
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  // Constant-time, fail-closed: with CRON_SECRET unset the old string
+  // comparison accepted the literal "Bearer undefined".
+  if (!verifyBearerAuth(request, [process.env.CRON_SECRET])) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

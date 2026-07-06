@@ -207,17 +207,23 @@ export async function processUnclassified(limit = 120) {
           msg.content, result.asset, msg.channel, contextMessages,
         );
         if (assetSource !== "explicit" && inserted?.id) {
-          await flagForReview({
-            signalId: inserted.id,
-            messageId: msg.id,
-            result: { ...result, signal_type: sigType },
-            originalMessage: msg.content,
-            contextMessages: contextMessages.slice(0, 8),
-            channel: msg.channel,
-            author: msg.author,
-            assetSource,
-          });
-          flagged++;
+          // Best-effort audit trail — a review-queue hiccup must never make
+          // the batch re-classify (and re-bill) an already-saved signal.
+          try {
+            await flagForReview({
+              signalId: inserted.id,
+              messageId: msg.id,
+              result: { ...result, signal_type: sigType },
+              originalMessage: msg.content,
+              contextMessages: contextMessages.slice(0, 8),
+              channel: msg.channel,
+              author: msg.author,
+              assetSource,
+            });
+            flagged++;
+          } catch (err) {
+            console.error(`[CLASSIFY] flagForReview failed for signal ${inserted.id}:`, err);
+          }
         }
 
         signalCount++;

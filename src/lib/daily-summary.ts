@@ -31,13 +31,18 @@ export async function generateDailySummary(dateStr?: string) {
   const results: DailySummaryRow[] = [];
 
   for (const asset of ASSETS) {
-    // Get all signals for this asset today
+    // Get all signals for this asset today. Ordered + capped: PostgREST
+    // silently truncates un-ranged selects at 1000 rows over an ARBITRARY
+    // subset — newest-first keeps the day's freshest signals if a day ever
+    // exceeds the cap.
     const { data: signals } = await supabase
       .from("signals")
       .select("direction, confidence, strength, signal_type, author, created_at")
       .eq("asset", asset)
       .gte("created_at", dayStart)
-      .lte("created_at", dayEnd);
+      .lte("created_at", dayEnd)
+      .order("created_at", { ascending: false })
+      .limit(1000);
 
     const rows = (signals ?? []) as Array<{
       direction: string; confidence: number; strength: string;

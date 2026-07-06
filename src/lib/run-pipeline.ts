@@ -16,6 +16,8 @@ import { isMarketOpen } from "@/lib/market-hours";
 export interface PipelineResult {
   runId: number | null;
   marketOpen: boolean;
+  /** Set when the run was skipped because another run is in progress */
+  skipped?: string;
   ingest: { ingested: number };
   classify: {
     processed: number;
@@ -48,6 +50,30 @@ export async function runPipeline(_trigger: "manual" | "cron"): Promise<Pipeline
     .update({ status: "error", error_message: "timed out (marked by next run)", finished_at: startedAt.toISOString() })
     .eq("status", "running")
     .lt("started_at", new Date(startedAt.getTime() - 15 * 60_000).toISOString());
+
+  // Best-effort run lock: overlapping runs (cron + manual trigger) would
+  // write duplicate sentiment/bias snapshot rows for the same minute.
+  const { data: liveRun } = await supabase
+    .from("pipeline_runs")
+    .select("id")
+    .eq("status", "running")
+    .gte("started_at", new Date(startedAt.getTime() - 15 * 60_000).toISOString())
+    .limit(1);
+  if (liveRun?.length) {
+    return {
+      runId: null,
+      marketOpen,
+      skipped: `run ${(liveRun[0] as { id: number }).id} already in progress`,
+      ingest: { ingested: 0 },
+      classify: { processed: 0, signals: 0, skipped: 0, flagged: 0, openai_calls: 0 },
+      prices: { skipped: "run in progress" },
+      scoring: { skipped: "run in progress" },
+      pairing: { skipped: "run in progress" },
+      sentiment: null,
+      bias: null,
+      dailySummary: 0,
+    };
+  }
 
   const { data: runRow } = await supabase
     .from("pipeline_runs")

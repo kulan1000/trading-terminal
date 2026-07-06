@@ -17,7 +17,8 @@ export async function GET() {
     .from("signals")
     .select("id, asset, direction, signal_type, position, strength, confidence, author, created_at")
     .gte("created_at", cutoff)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(1000); // explicit cap (PostgREST truncates here anyway) — desc order keeps the newest
 
   const signals = (data ?? []) as RawSignal[];
 

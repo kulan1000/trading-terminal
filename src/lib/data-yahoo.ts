@@ -56,7 +56,9 @@ export async function fetchYahoo(asset: Asset, symbol: string): Promise<YahooRes
 
     return {
       price: meta.regularMarketPrice,
-      prevClose: meta.chartPreviousClose,
+      // Missing prevClose would make change = price - undefined = NaN, which
+      // serializes to null and renders as a plausible-looking 0.00.
+      prevClose: meta.chartPreviousClose ?? meta.previousClose ?? meta.regularMarketPrice,
       volume: meta.regularMarketVolume ?? 0,
       dayHigh: meta.regularMarketDayHigh ?? meta.regularMarketPrice,
       dayLow: meta.regularMarketDayLow ?? meta.regularMarketPrice,

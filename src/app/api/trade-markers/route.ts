@@ -5,7 +5,10 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const asset = searchParams.get("asset"); // Gold, Silver, Oil
-  const hours = Number(searchParams.get("hours") ?? "48");
+  // Clamp to 1h–14d: `hours=abc` would otherwise throw on toISOString (500),
+  // and a huge value would turn the window unbounded.
+  const rawHours = Number(searchParams.get("hours") ?? "48");
+  const hours = Number.isFinite(rawHours) ? Math.min(Math.max(rawHours, 1), 336) : 48;
 
   if (!asset) return NextResponse.json({ error: "asset required" }, { status: 400 });
 

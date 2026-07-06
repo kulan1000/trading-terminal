@@ -23,7 +23,11 @@ export async function savePriceSnapshots() {
   if (!rows.length) return { saved: 0 };
 
   const { error } = await supabase.from("price_snapshots").insert(rows);
-  return { saved: rows.length, error: error?.message };
+  if (error) {
+    console.error("[PRICE-SNAPSHOT] Insert failed:", error.message);
+    return { saved: 0, error: error.message };
+  }
+  return { saved: rows.length };
 }
 
 /** Look up the closest price snapshot to a given timestamp.

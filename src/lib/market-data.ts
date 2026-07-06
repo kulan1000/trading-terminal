@@ -99,9 +99,23 @@ async function fetchQuote(asset: Asset): Promise<MarketQuote | null> {
   };
 }
 
+// Last-known-good per asset (module memory, survives warm lambda invocations).
+// A Yahoo hiccup used to map to a zeroed fallback quote, which then overwrote
+// the route-level cache — a 10-minute outage blanked every price card even
+// though seconds-old good data existed. Serve the previous good quote instead;
+// zeros only appear if an asset has NEVER fetched successfully.
+const lastGood = new Map<Asset, MarketQuote>();
+
 export async function getMarketQuotes(): Promise<MarketQuote[]> {
   const results = await Promise.all(ASSETS.map(fetchQuote));
-  return results.map((result, i) => result ?? fallbackQuote(ASSETS[i]));
+  return results.map((result, i) => {
+    const asset = ASSETS[i];
+    if (result && result.price > 0) {
+      lastGood.set(asset, result);
+      return result;
+    }
+    return lastGood.get(asset) ?? fallbackQuote(asset);
+  });
 }
 
 const fallbackQuote = (asset: Asset): MarketQuote => ({

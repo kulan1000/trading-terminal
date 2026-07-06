@@ -160,6 +160,12 @@ export async function classifyMessage(
     // whatever signals happened to fit before the cutoff.
     throw new Error(`classification truncated at max output tokens for: ${content.slice(0, 80)}`);
   }
+  if (!text.trim()) {
+    // An SSE stream that dies mid-flight yields empty content with a normal
+    // finish — parsing "" would silently mark the message processed with no
+    // signal. Throw retryably so the batch leaves it for the next run.
+    throw new Error("classification returned empty response (stream cut) — network");
+  }
   try {
     const raw = JSON.parse(text);
     const parsed = raw.signals ?? (Array.isArray(raw) ? raw : [raw]);

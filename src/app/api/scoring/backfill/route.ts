@@ -24,7 +24,9 @@ function checkpointScore(
   entryPrice: number, checkpointPrice: number
 ): number {
   const pctChange = ((checkpointPrice - entryPrice) / entryPrice) * 100;
-  if (signalType === "entry") {
+  // Same semantics as score-signals: entries AND holds are graded on the
+  // position's direction; exits are graded on whether price reversed after.
+  if (signalType === "entry" || signalType === "position") {
     return position === "short" ? -pctChange : pctChange;
   }
   return position === "short" ? pctChange : -pctChange;
@@ -60,46 +62,77 @@ export async function POST(request: Request) {
 
   const supabase = getSupabaseAdmin();
 
-  // Find all entry/exit signals with prices that haven't been scored
-  const { data: allSignals, error: signalsError } = await supabase
-    .from("signals")
-    .select("id, author, asset, signal_type, position, price_at_signal, created_at")
-    .in("signal_type", ["entry", "exited"])
-    .not("price_at_signal", "is", null)
-    .not("author", "is", null)
-    .order("created_at", { ascending: true });
+  type Sig = { id: number; author: string; asset: string; signal_type: string; position: string | null; direction: string | null; price_at_signal: number; created_at: string };
 
-  if (signalsError) {
-    return NextResponse.json(
-      { error: `signals query failed: ${signalsError.message}` },
-      { status: 500 }
-    );
+  // Find all entry/exit signals with prices that haven't been scored.
+  // Paginated: PostgREST silently caps un-ranged selects at 1000 rows, which
+  // would make the backfill permanently blind to newer signals. Position and
+  // 'position' signal_type rows are handled by the main scorer; the backfill
+  // mirrors its selection.
+  const allSignals: Sig[] = [];
+  for (let page = 0; page < 20; page++) {
+    const { data: chunk, error: signalsError } = await supabase
+      .from("signals")
+      .select("id, author, asset, signal_type, position, direction, price_at_signal, created_at")
+      .in("signal_type", ["entry", "exited", "position"])
+      .not("price_at_signal", "is", null)
+      .not("author", "is", null)
+      .is("scoring_status", null)
+      .order("created_at", { ascending: true })
+      .range(page * 1000, page * 1000 + 999);
+    if (signalsError) {
+      return NextResponse.json(
+        { error: `signals query failed: ${signalsError.message}` },
+        { status: 500 }
+      );
+    }
+    if (!chunk?.length) break;
+    allSignals.push(...(chunk as Sig[]));
+    if (chunk.length < 1000) break;
   }
-  if (!allSignals?.length) return NextResponse.json({ backfilled: 0, skipped: 0, failed: 0 });
+  if (!allSignals.length) return NextResponse.json({ backfilled: 0, skipped: 0, failed: 0 });
 
-  // Get already scored IDs
-  const { data: existing, error: existingError } = await supabase
-    .from("signal_scores")
-    .select("signal_id");
-  if (existingError) {
-    return NextResponse.json(
-      { error: `signal_scores query failed: ${existingError.message}` },
-      { status: 500 }
-    );
+  // Already-scored IDs (rows from before scoring_status existed) — paginated
+  // for the same 1000-row-cap reason.
+  const scoredSet = new Set<number>();
+  for (let page = 0; page < 20; page++) {
+    const { data: chunk, error: existingError } = await supabase
+      .from("signal_scores")
+      .select("signal_id")
+      .order("signal_id", { ascending: true })
+      .range(page * 1000, page * 1000 + 999);
+    if (existingError) {
+      return NextResponse.json(
+        { error: `signal_scores query failed: ${existingError.message}` },
+        { status: 500 }
+      );
+    }
+    if (!chunk?.length) break;
+    for (const e of chunk as Array<{ signal_id: number }>) scoredSet.add(e.signal_id);
+    if (chunk.length < 1000) break;
   }
-  const scoredSet = new Set(
-    ((existing ?? []) as Array<{ signal_id: number }>).map((e) => e.signal_id)
-  );
 
-  type Sig = { id: number; author: string; asset: string; signal_type: string; position: string | null; price_at_signal: number; created_at: string };
-  const unscored = (allSignals as Sig[]).filter((s) => !scoredSet.has(s.id));
+  const unscored = allSignals.filter((s) => !scoredSet.has(s.id));
 
   let backfilled = 0;
   let skipped = 0;
   let failed = 0;
 
+  const backfilledAuthors = new Set<string>();
+
   for (const signal of unscored) {
     const signalTime = new Date(signal.created_at);
+
+    // Same position resolution as the main scorer: entries/positions may fall
+    // back to direction, exits NEVER guess their side (direction on an exit is
+    // outlook, not the position held — guessing inverts perfect exits).
+    let effectivePosition = signal.position;
+    if (!effectivePosition && signal.signal_type !== "exited") {
+      if (signal.direction === "bearish") effectivePosition = "short";
+      else if (signal.direction === "bullish") effectivePosition = "long";
+    }
+    if (!effectivePosition) { skipped++; continue; }
+
     // The 4 checkpoint price lookups are independent — run them concurrently.
     const lookups = await Promise.all(
       CHECKPOINTS.map((cp) =>
@@ -112,7 +145,7 @@ export async function POST(request: Request) {
       const price = lookups[i];
       prices[cp.key] = price;
       scores[cp.key] = price != null
-        ? checkpointScore(signal.signal_type, signal.position, signal.price_at_signal, price)
+        ? checkpointScore(signal.signal_type, effectivePosition, signal.price_at_signal, price)
         : null;
     });
 
@@ -127,7 +160,7 @@ export async function POST(request: Request) {
 
     const { error: scoreError } = await supabase.from("signal_scores").upsert({
       signal_id: signal.id, signal_type: signal.signal_type,
-      position: signal.position, asset: signal.asset, author: signal.author,
+      position: effectivePosition, asset: signal.asset, author: signal.author,
       price_at_signal: signal.price_at_signal,
       price_30m: prices["30m"], price_1h: prices["1h"],
       price_2h: prices["2h"], price_4h: prices["4h"],
@@ -140,28 +173,32 @@ export async function POST(request: Request) {
     if (scoreError) { failed++; continue; }
     await supabase.from("signals").update({ scoring_status: "scored" }).eq("id", signal.id);
     backfilled++;
+    backfilledAuthors.add(signal.author);
   }
 
-  // Refresh credibility for all backfilled authors
-  if (backfilled > 0) {
-    const authors = [...new Set(unscored.map((s) => s.author))];
-    for (const author of authors) {
-      const { data } = await supabase
-        .from("signal_scores").select("weighted_score, signal_type").eq("author", author);
-      const rows = (data ?? []) as Array<{ weighted_score: number; signal_type: string }>;
-      if (!rows.length) continue;
-      const wins = rows.filter((r) => r.weighted_score > 0).length;
-      const winRate = wins / rows.length;
-      const reliability = Math.min(rows.length / 10, 1);
-      await supabase.from("user_credibility").upsert({
-        discord_user: author, total_trades: rows.length, winning_trades: wins,
-        total_pnl: Math.round(rows.reduce((s, r) => s + r.weighted_score, 0) * 100) / 100,
-        win_rate: Math.round(winRate * 1000) / 1000,
-        score: Math.round(winRate * reliability * 100),
-        total_signals: rows.length, correct_signals: wins,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "discord_user" });
-    }
+  // Refresh credibility for authors that actually gained scores. Writes ONLY
+  // the signal-accuracy fields refreshTimeScoring owns — total_trades/
+  // winning_trades/total_pnl belong to trade-pairing and must not be
+  // overwritten with score-count semantics.
+  for (const author of backfilledAuthors) {
+    const { data } = await supabase
+      .from("signal_scores")
+      .select("weighted_score, signal_type")
+      .eq("author", author)
+      .order("scored_at", { ascending: false })
+      .limit(200);
+    const rows = (data ?? []) as Array<{ weighted_score: number; signal_type: string }>;
+    if (!rows.length) continue;
+    const wins = rows.filter((r) => r.weighted_score > 0).length;
+    const winRate = wins / rows.length;
+    const reliability = Math.min(rows.length / 10, 1);
+    await supabase.from("user_credibility").upsert({
+      discord_user: author,
+      win_rate: Math.round(winRate * 1000) / 1000,
+      score: Math.round(winRate * reliability * 100),
+      total_signals: rows.length, correct_signals: wins,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "discord_user" });
   }
 
   return NextResponse.json({ backfilled, skipped, failed, total: unscored.length });

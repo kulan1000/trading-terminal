@@ -30,14 +30,31 @@ export async function pairTrades() {
 
   if (!entries?.length) return { paired: 0 };
 
-  // Get already-paired entry IDs
-  const { data: pairedEntries } = await supabase
-    .from("trade_pairs")
-    .select("entry_signal_id");
-  const pairedSet = new Set((pairedEntries ?? []).map((p: { entry_signal_id: number }) => p.entry_signal_id));
+  // Already-paired signal ids — paginated: an un-ranged select silently caps
+  // at 1000 rows (PostgREST), which would "forget" old pairings and re-pair
+  // their entries once the table grows. The unique indexes on
+  // entry/exit_signal_id are the DB-level backstop for the same failure.
+  const pairedSet = new Set<number>();
+  const exitPairedSet = new Set<number>();
+  for (let page = 0; page < 20; page++) {
+    const { data: chunk } = await supabase
+      .from("trade_pairs")
+      .select("entry_signal_id, exit_signal_id")
+      .order("id", { ascending: true })
+      .range(page * 1000, page * 1000 + 999);
+    if (!chunk?.length) break;
+    for (const p of chunk as Array<{ entry_signal_id: number; exit_signal_id: number }>) {
+      pairedSet.add(p.entry_signal_id);
+      exitPairedSet.add(p.exit_signal_id);
+    }
+    if (chunk.length < 1000) break;
+  }
 
-  // Filter to unmatched entries
-  const unmatched = (entries as Signal[]).filter((e) => !pairedSet.has(e.id));
+  // Filter to unmatched entries with a known side — PnL is undefined for an
+  // entry whose long/short side is unknown
+  const unmatched = (entries as Signal[]).filter(
+    (e) => !pairedSet.has(e.id) && e.position != null
+  );
   if (!unmatched.length) return { paired: 0 };
 
   // Get exit signals (last 30 days)
@@ -49,14 +66,11 @@ export async function pairTrades() {
     .gte("created_at", since30d)
     .order("created_at", { ascending: true });
 
-  const { data: pairedExits } = await supabase
-    .from("trade_pairs")
-    .select("exit_signal_id");
-  const exitPairedSet = new Set((pairedExits ?? []).map((p: { exit_signal_id: number }) => p.exit_signal_id));
   const availableExits = ((exits ?? []) as Signal[]).filter((e) => !exitPairedSet.has(e.id));
 
   let paired = 0;
 
+  const pairedAuthors = new Set<string>();
   for (const entry of unmatched) {
     // Find first matching exit: same author + asset, after entry time,
     // and same side — a long entry must not pair with a short-cover exit.
@@ -79,24 +93,33 @@ export async function pairTrades() {
       ? exitPrice - entryPrice
       : entryPrice - exitPrice;
 
-    await supabase.from("trade_pairs").insert({
-      author: entry.author,
-      asset: entry.asset,
-      entry_signal_id: entry.id,
-      exit_signal_id: exit.id,
-      entry_price: entryPrice,
-      exit_price: exitPrice,
-      position: entry.position,
-      pnl,
-    });
+    // Upsert on the unique entry index: a concurrent run pairing the same
+    // entry becomes a no-op instead of a duplicate row.
+    const { error } = await supabase.from("trade_pairs").upsert(
+      {
+        author: entry.author,
+        asset: entry.asset,
+        entry_signal_id: entry.id,
+        exit_signal_id: exit.id,
+        entry_price: entryPrice,
+        exit_price: exitPrice,
+        position: entry.position,
+        pnl,
+      },
+      { onConflict: "entry_signal_id", ignoreDuplicates: true }
+    );
+    if (error) {
+      console.error(`[TRADE-PAIR] Insert failed for entry ${entry.id}:`, error.message);
+      continue;
+    }
 
     paired++;
+    pairedAuthors.add(entry.author);
   }
 
-  // Refresh credibility for affected authors
+  // Refresh credibility only for authors that actually gained a pair
   if (paired > 0) {
-    const authors = [...new Set(unmatched.map((e) => e.author))];
-    for (const author of authors) {
+    for (const author of pairedAuthors) {
       try {
         await refreshCredibility(supabase, author);
       } catch (err) {

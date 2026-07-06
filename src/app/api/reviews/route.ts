@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { verifyBearerAuth, verifySecretValue } from "@/lib/api-auth";
 
 export const revalidate = 30;
 
@@ -24,16 +25,24 @@ export async function GET(req: NextRequest) {
 
 // POST — submit feedback on a review
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  const body = await req.json().catch(() => null);
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const { reviewId, action, correctAsset, correctDirection, correctSignalType, feedbackNote, secret } = body;
 
-  // Auth: accept either CLASSIFY_SECRET or internal origin (same-site fetch)
-  if (secret !== process.env.CLASSIFY_SECRET) {
-    const origin = req.headers.get("origin") ?? "";
-    const host = req.headers.get("host") ?? "";
-    if (!origin.includes(host) && !origin.includes("localhost")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  // Auth: review actions rewrite signals and inject rules into the GPT
+  // prompt, so they require the admin secret — as a Bearer header or a body
+  // field, compared in constant time. (The old Origin-header fallback was
+  // forgeable: Origin is attacker-controlled outside a browser.)
+  const authed =
+    verifyBearerAuth(req, [process.env.CLASSIFY_SECRET, process.env.CRON_SECRET]) ||
+    verifySecretValue(typeof secret === "string" ? secret : null, [
+      process.env.CLASSIFY_SECRET,
+      process.env.CRON_SECRET,
+    ]);
+  if (!authed) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!reviewId || !action) {
     return NextResponse.json({ error: "Missing reviewId or action" }, { status: 400 });
@@ -79,7 +88,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (rev) {
-      const msgSnippet = `"${rev.original_message.slice(0, 60)}..."`;
+      const msgSnippet = `"${(rev.original_message ?? "").slice(0, 60)}..."`;
       const rules: Array<{ category: string; rule_text: string }> = [];
 
       // Asset correction rule
