@@ -109,6 +109,10 @@ there is no single point of failure.
   tables. All writes go through the service role (server-side only).
 - Secrets live in Vercel env + `bot/run.sh` + `.env*.local` (all gitignored). The repo is public —
   never commit eval results (real member messages) or anything from `.env`.
+- Mutating endpoints (`/api/ingest`, `/api/scoring/backfill`, `/api/daily-summary`,
+  `/api/bias-snapshot`) require `Bearer CLASSIFY_SECRET` (backfill also accepts `CRON_SECRET`
+  for cron/scripts). UI trigger buttons take the key as typed input at runtime — never add a
+  `NEXT_PUBLIC_*` secret to make a button work; anything `NEXT_PUBLIC_` ships in public JS.
 
 ## Before sharing with the Discord group (remaining)
 

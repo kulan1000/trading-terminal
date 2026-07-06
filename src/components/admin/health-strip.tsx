@@ -76,17 +76,19 @@ function buildTiles(d: PipelineData): Tile[] {
     },
     {
       id: "filter",
-      label: "Pre-filter",
-      value: `${(d.filterRatio * 100).toFixed(1)}%`,
-      sub: "pass rate",
+      label: "Classifier",
+      value: "gpt-5.5",
+      sub: "local worker · subscription",
       status: "ok",
     },
     {
+      // Classification is subscription-billed on the worker, so any dollar
+      // here means the serverless API fallback ran — that's the alert.
       id: "cost",
-      label: "Cost today",
+      label: "API cost today",
       value: fmtCost(d.todayCostUsd),
-      sub: `${d.todayOpenAICalls} calls`,
-      status: d.todayCostUsd > 1 ? "warn" : "ok",
+      sub: d.todayCostUsd > 0 ? `${d.todayOpenAICalls} fallback calls` : "fallback idle",
+      status: d.todayCostUsd > 0 ? "warn" : "ok",
     },
   ];
 }
@@ -155,99 +157,39 @@ export function HealthDrilldown({
         <Stat label="Unprocessed" value={data.unprocessed} />
         <Stat label="Ingested / 1h" value={data.recentMessages} />
         <Stat label="Classified / 1h" value={data.recentSignals} />
-        <Stat
-          label="Pass rate"
-          value={`${(data.filterRatio * 100).toFixed(1)}%`}
-          sub="last 24h"
-        />
+        <Stat label="Drain order" value="newest first" sub="live stays current" />
       </div>
     );
   } else if (openId === "cost") {
     body = (
       <div>
         <div className="grid grid-cols-2 gap-px md:grid-cols-4" style={{ background: "var(--color-tv-border)" }}>
-          <Stat label="Filter cost" value={fmtCost(data.todayFilterCostUsd)} sub="regex / free" />
+          <Stat label="Primary" value="$0.00" sub="subscription-billed" />
           <Stat
-            label="Classifier"
-            value={fmtCost(data.todayClassifierCostUsd)}
-            sub="main model"
-          />
-          <Stat
-            label="Total"
+            label="API fallback"
             value={fmtCost(data.todayCostUsd)}
-            sub={`${data.todayOpenAICalls} calls`}
+            sub={`${data.todayOpenAICalls} calls today`}
           />
           <Stat
             label="Est. monthly"
             value={fmtCost(data.todayCostUsd * 30)}
-            sub="projection"
+            sub="at today's fallback rate"
           />
+          <Stat label="Fallback trigger" value="CLASSIFY_IN_PIPELINE=1" sub="never set on Vercel" />
         </div>
-        <div className="px-4 pb-3 pt-2">
-          <div className="flex items-center gap-2 text-[11px] text-white/50">
-            <span className="lbl">split</span>
-            <div className="flex h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.04)" }}>
-              {data.todayCostUsd > 0 && (
-                <>
-                  <div
-                    style={{
-                      width: `${(data.todayFilterCostUsd / Math.max(data.todayCostUsd, 0.0001)) * 100}%`,
-                      background: "#6E7681",
-                    }}
-                  />
-                  <div
-                    style={{
-                      width: `${(data.todayClassifierCostUsd / Math.max(data.todayCostUsd, 0.0001)) * 100}%`,
-                      background: "#2962FF",
-                    }}
-                  />
-                </>
-              )}
-            </div>
-          </div>
+        <div className="px-4 pb-3 pt-2 text-[11px] text-white/40">
+          Classification runs on the local worker via the ChatGPT subscription — zero marginal
+          cost. Any dollar above means the serverless API fallback was switched on.
         </div>
       </div>
     );
   } else if (openId === "filter") {
-    const c = data.cascade;
-    const steps = [
-      { label: "Ingested", value: c.messagesIn },
-      { label: "Pre-filter", value: c.preFilterPassed },
-      { label: "Classified", value: c.classified },
-      { label: "Signals", value: c.signalsExtracted },
-    ];
-    const max = Math.max(steps[0].value, 1);
     body = (
-      <div className="space-y-2 px-4 py-4">
-        {steps.map((s, i) => {
-          const pct = (s.value / max) * 100;
-          const prev = i > 0 ? steps[i - 1].value : 0;
-          const drop = i > 0 && prev > 0 ? 100 - (s.value / prev) * 100 : 0;
-          return (
-            <div key={s.label} className="flex items-center gap-3">
-              <span className="w-20 text-[11px] text-white/50">{s.label}</span>
-              <div className="relative h-5 flex-1 rounded" style={{ background: "rgba(255,255,255,0.03)" }}>
-                <div
-                  className="absolute inset-y-0 left-0 rounded"
-                  style={{
-                    width: `${pct}%`,
-                    background: "rgba(41,98,255,0.35)",
-                    borderRight: "1px solid rgba(41,98,255,0.8)",
-                  }}
-                />
-                <span className="tick absolute inset-y-0 left-2 flex items-center text-[11px] text-white">
-                  {s.value.toLocaleString()}
-                </span>
-              </div>
-              <span
-                className="tick w-14 text-right text-[11px]"
-                style={{ color: i === 0 ? "var(--color-tv-muted)" : "var(--color-tv-bear)" }}
-              >
-                {i === 0 ? "—" : `−${drop.toFixed(0)}%`}
-              </span>
-            </div>
-          );
-        })}
+      <div className="grid grid-cols-2 gap-px md:grid-cols-4" style={{ background: "var(--color-tv-border)" }}>
+        <Stat label="Model" value="gpt-5.5" sub="reasoning effort low" />
+        <Stat label="Transport" value="subscription" sub="Codex backend · SSE" />
+        <Stat label="Runs on" value="local worker" sub="LaunchAgent · KeepAlive" />
+        <Stat label="Serverless classify" value="off" sub="ingest/scoring only" />
       </div>
     );
   } else if (openId === "signals" || openId === "messages") {

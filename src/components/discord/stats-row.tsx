@@ -94,9 +94,9 @@ export function StatsRow({
       {items.map((item) => (
         <div
           key={item.label}
-          className={`animate-fade-in relative overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111] px-4 py-3 transition-colors hover:border-white/[0.12] hover:bg-[#151515] ${item.bias?.glow ?? ""}`}
+          className={`animate-fade-in relative overflow-hidden rounded-xl border border-white/[0.06] bg-[#111111] px-4 py-3.5 transition-colors hover:border-white/[0.12] hover:bg-[#151515] ${item.bias?.glow ?? ""}`}
         >
-          <div className="font-sans text-[11px] font-medium text-white/40">{item.label}</div>
+          <div className="font-sans text-[11px] font-medium text-white/50">{item.label}</div>
           {item.bias ? (
             <div className="mt-1.5">
               <span
@@ -107,12 +107,12 @@ export function StatsRow({
             </div>
           ) : (
             <div
-              className={`mt-1 font-mono text-[22px] font-bold tabular-nums tracking-tight ${item.valueCls}`}
+              className={`mt-1 font-mono text-[24px] font-bold tabular-nums tracking-tight ${item.valueCls}`}
             >
               {item.value}
             </div>
           )}
-          <div className="mt-1 font-sans text-[11px] text-white/30">{item.sub}</div>
+          <div className="mt-1 font-sans text-[11px] text-white/40">{item.sub}</div>
         </div>
       ))}
     </div>

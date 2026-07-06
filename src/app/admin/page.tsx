@@ -11,7 +11,7 @@ import { RecentClassifications } from "@/components/admin/recent-classifications
 import { PipelineLog } from "@/components/admin/pipeline-log";
 import { DatabaseInfo } from "@/components/admin/database-info";
 import { PipelineTrigger } from "@/components/admin/pipeline-trigger";
-import { fmtAgoShort, fmtCost, fmtTimeFull } from "@/lib/format-utils";
+import { fmtAgoShort, fmtTimeFull } from "@/lib/format-utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface PipelineData {
@@ -108,28 +108,17 @@ function HeaderStrip({ data }: { data: PipelineData }) {
       <div className="flex items-center gap-2.5">
         <h1 className="text-[15px] font-semibold tracking-wide text-white">Pipeline</h1>
         <LiveDot />
-      </div>
-      <div className="hidden items-center gap-5 text-[12px] text-white/50 md:flex">
-        <span>
-          pre-filter <span className="tick text-white">{(data.filterRatio * 100).toFixed(1)}%</span>
-        </span>
-        <span>
-          queue <span className="tick text-white">{data.unprocessed}</span>
-        </span>
-        <span>
-          1h <span className="tick text-white">{data.recentSignals}</span> sig
-        </span>
-        <span>
-          cost <span className="tick text-white">{fmtCost(data.todayCostUsd)}</span>
-        </span>
-        <span>
-          updated{" "}
-          <span className="tick text-white">
-            {data.latestMessage ? fmtAgoShort(data.latestMessage) : "—"}
-          </span>{" "}
-          ago
+        <span className="font-sans text-[11px] text-white/55">
+          ingest every 5m · classification on local worker
         </span>
       </div>
+      <span className="hidden font-sans text-[12px] text-white/40 md:block">
+        updated{" "}
+        <span className="tick text-white/70">
+          {data.latestMessage ? fmtAgoShort(data.latestMessage) : "—"}
+        </span>{" "}
+        ago
+      </span>
     </div>
   );
 }
@@ -139,7 +128,9 @@ export default function AdminPage() {
   const [data, setData] = useState<PipelineData | null>(null);
   const [error, setError] = useState(false);
   const [healthOpen, setHealthOpen] = useState<TileId | null>(null);
-  const [sectionOpen, setSectionOpen] = useState<SectionId | null>("tuning");
+  // All sections start collapsed — the health strip is the at-a-glance view,
+  // detail opens on demand (same compact-first philosophy as /market).
+  const [sectionOpen, setSectionOpen] = useState<SectionId | null>(null);
 
   const fetchStatus = useCallback(() => {
     // `?demo=1` renders the page with a stubbed dataset so the redesign can be
@@ -222,9 +213,8 @@ export default function AdminPage() {
         id="tuning"
         openId={sectionOpen}
         setOpenId={setSectionOpen}
-        title="Classifier Tuning"
-        badge={<Chip tone="blue">NEW</Chip>}
-        summary="3 stages · 4 models · eval n=500"
+        title="Models"
+        summary="3 stages · gpt-5.5 classifier · eval n=16"
       >
         <ClassifierTuning />
       </Section>

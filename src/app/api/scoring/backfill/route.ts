@@ -24,10 +24,14 @@ function checkpointScore(
 }
 
 export async function POST(request: Request) {
-  // Auth: accept cron secret or allow if no secret is set (dev mode)
+  // Auth: Bearer CRON_SECRET (cron/scripts) or CLASSIFY_SECRET (typed into the UI).
+  // Secrets are server-only — never expose them via NEXT_PUBLIC_. With no secret
+  // configured the route only opens in local dev, never in production.
   const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-  const validAuth = !cronSecret || authHeader === `Bearer ${cronSecret}`;
+  const secrets = [process.env.CRON_SECRET, process.env.CLASSIFY_SECRET].filter(Boolean);
+  const validAuth = secrets.length
+    ? secrets.some((secret) => authHeader === `Bearer ${secret}`)
+    : process.env.NODE_ENV === "development";
   if (!validAuth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

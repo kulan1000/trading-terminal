@@ -9,6 +9,7 @@ import { BriefingSection } from "@/components/discord/briefing-section";
 import { SummaryCards } from "@/components/discord/summary-cards";
 import { LiveFeedTeaser } from "@/components/discord/live-feed-teaser";
 import { FetchError } from "@/components/ui/fetch-error";
+import { SectionDivider } from "@/components/ui/section-divider";
 import { usePollingFetch } from "@/hooks/use-polling-fetch";
 import type { DailyBriefing } from "@/lib/queries-briefing";
 
@@ -103,19 +104,28 @@ function DiscordIntelContent() {
       )}
 
       {/* Most Active + Strongest Signals */}
-      {data?.briefing && <SummaryCards data={data.briefing} />}
+      {data?.briefing && (
+        <>
+          <SectionDivider label="Community" meta="contributors · confidence leaders" />
+          <SummaryCards data={data.briefing} />
+        </>
+      )}
 
       {/* Live Feed teaser */}
       {data && (
-        <LiveFeedTeaser
-          messages={messages}
-          totalCount={stats.total}
-          onBrowse={scrollToFeed}
-        />
+        <>
+          <SectionDivider label="Live Feed" meta="updates every 30s" />
+          <LiveFeedTeaser
+            messages={messages}
+            totalCount={stats.total}
+            onBrowse={scrollToFeed}
+          />
+        </>
       )}
 
       {/* Full browsable feed with search — anchor for teaser scroll */}
       <div ref={feedRef} className="space-y-4 pt-2">
+        <SectionDivider label="Browse & Search" meta="full message archive" />
         <AdvancedSearch />
         {data ? (
           <MessageFeed

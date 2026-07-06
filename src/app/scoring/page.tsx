@@ -9,6 +9,7 @@ import { LeaderboardTeaser } from "@/components/scoring/leaderboard-teaser";
 import { LiveFeedTeaser } from "@/components/scoring/live-feed-teaser";
 import { ExploreTiles } from "@/components/scoring/explore-tiles";
 import { BackfillButton } from "@/components/scoring/backfill-button";
+import { SectionDivider } from "@/components/ui/section-divider";
 
 const ASSETS = ["all", "gold", "silver", "oil"] as const;
 type AssetFilter = (typeof ASSETS)[number];
@@ -92,7 +93,7 @@ export default function ScoringPage() {
                 onClick={() => setAsset(a)}
                 className={`rounded-md px-3.5 py-1.5 font-sans text-[11px] font-semibold uppercase tracking-[0.04em] transition-all ${
                   asset === a
-                    ? "border border-[#FF9800]/25 bg-[#FF9800]/[0.12] text-[#FF9800] shadow-[0_0_16px_-4px_rgba(255,152,0,0.35)]"
+                    ? "border border-[#2962FF]/25 bg-[#2962FF]/[0.10] text-[#5B8DEF]"
                     : "border border-transparent bg-white/[0.03] text-white/40 hover:text-white/75"
                 }`}
               >
@@ -132,10 +133,11 @@ export default function ScoringPage() {
             tradePairs={filteredPairs}
           />
 
-          {/* Tier 2: podium (top 3 traders) */}
+          {/* Tier 2: podium (top 3 traders) — renders its own divider */}
           <Podium traders={filteredScoreboard} traderSignals={filteredSignals} />
 
           {/* Tier 3: 2 summary teaser cards — leaderboard + live feed */}
+          <SectionDivider label="Leaderboard & Feed" meta="updates every 60s" />
           <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
             <LeaderboardTeaser
               open={modal === "leaderboard"}
@@ -153,6 +155,7 @@ export default function ScoringPage() {
           </div>
 
           {/* Tier 4: 3 explore tiles — pairs / accuracy / reviews */}
+          <SectionDivider label="Explore" meta="trade pairs · accuracy · reviews" />
           <ExploreTiles
             scoreboard={filteredScoreboard}
             traderSignals={filteredSignals}

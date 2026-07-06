@@ -1,6 +1,7 @@
 "use client";
 
 import type { DailyBriefing, AssetBreakdown } from "@/lib/queries-briefing";
+import { SectionDivider } from "@/components/ui/section-divider";
 
 const ASSET_META: Record<string, { color: string; rgb: string }> = {
   Gold: { color: "#FFD700", rgb: "255,215,0" },
@@ -159,15 +160,11 @@ export function BriefingSection({ data, onAssetFilter }: Props) {
   );
 
   return (
-    <section className="animate-fade-in space-y-2.5">
-      <div className="flex items-baseline justify-between px-0.5">
-        <h2 className="font-sans text-[12px] font-semibold uppercase tracking-[0.04em] text-white/55">
-          Daily Briefing
-        </h2>
-        <span className="font-sans text-[10px] text-white/40">
-          {data.signalCount} signals today · across all three commodities
-        </span>
-      </div>
+    <section className="animate-fade-in space-y-3">
+      <SectionDivider
+        label="Daily Briefing"
+        meta={`${data.signalCount} signals today · all three commodities`}
+      />
       <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3">
         {breakdowns.map((b) => (
           <BriefingCard key={b.asset} breakdown={b} onFilter={onAssetFilter} />
