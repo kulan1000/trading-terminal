@@ -124,3 +124,18 @@ there is no single point of failure.
 2. Consider moving trading tables to a dedicated Supabase project (personal tables share
    this one, though RLS now denies anon access).
 3. Frontend design pass (Caspar).
+
+## Desktop app (macOS)
+
+`desktop/build-app.sh` builds **Trading Terminal.app** — a chromeless Chrome
+app-window wrapper around the production URL, same pattern as the Cowork OS
+desktop launcher. It uses a dedicated Chrome user-data-dir
+(`~/.trading-terminal-chrome`) so it always starts its own instance and never
+touches the main Chrome profiles. Rebuild/install with:
+
+```bash
+bash desktop/build-app.sh            # installs to /Applications
+```
+
+The bundle is ad-hoc signed and built locally, so Gatekeeper never quarantines
+it. Icon source: `desktop/icon.svg` → `desktop/icon.icns`.

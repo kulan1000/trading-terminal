@@ -1,0 +1,45 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#181818"/>
+      <stop offset="1" stop-color="#0a0a0a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.78" cy="0.16" r="0.75">
+      <stop offset="0" stop-color="#2962FF" stop-opacity="0.22"/>
+      <stop offset="0.55" stop-color="#2962FF" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#2962FF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="goldBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE566"/>
+      <stop offset="1" stop-color="#E6B800"/>
+    </linearGradient>
+    <clipPath id="squircle">
+      <rect x="64" y="64" width="896" height="896" rx="200"/>
+    </clipPath>
+  </defs>
+
+  <!-- Base tile -->
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#bg)"/>
+  <g clip-path="url(#squircle)">
+    <rect x="64" y="64" width="896" height="896" fill="url(#glow)"/>
+    <!-- faint grid lines, terminal feel -->
+    <g stroke="#ffffff" stroke-opacity="0.045" stroke-width="3">
+      <line x1="64" y1="392" x2="960" y2="392"/>
+      <line x1="64" y1="574" x2="960" y2="574"/>
+      <line x1="64" y1="756" x2="960" y2="756"/>
+    </g>
+  </g>
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="none"
+        stroke="#ffffff" stroke-opacity="0.10" stroke-width="4"/>
+
+  <!-- Candlesticks: red down · teal up · gold up (ascending) -->
+  <!-- red -->
+  <line x1="298" y1="420" x2="298" y2="800" stroke="#EF5350" stroke-width="16" stroke-linecap="round"/>
+  <rect x="238" y="500" width="120" height="212" rx="26" fill="#EF5350"/>
+  <!-- teal -->
+  <line x1="512" y1="330" x2="512" y2="722" stroke="#26A69A" stroke-width="16" stroke-linecap="round"/>
+  <rect x="452" y="404" width="120" height="236" rx="26" fill="#26A69A"/>
+  <!-- gold, tallest -->
+  <line x1="726" y1="212" x2="726" y2="646" stroke="#E6B800" stroke-width="16" stroke-linecap="round"/>
+  <rect x="666" y="284" width="120" height="272" rx="26" fill="url(#goldBody)"/>
+</svg>
