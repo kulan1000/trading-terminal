@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getPriceAtTime } from "@/lib/price-snapshots";
+import { verifyBearerAuth } from "@/lib/api-auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 // Backfill scoring for signals that missed the 5min cron window
 // This tries to score ANY unscored entry/exit signal that's old enough
+
+// A full backfill scans every unscored signal and does 4 price lookups each —
+// give it the same 300s window as the main pipeline so it isn't guillotined
+// mid-loop (which would leave scoring_status writes half-applied).
+export const maxDuration = 300;
 
 const CHECKPOINTS = [
   { key: "30m", minutes: 30, weight: 0.15 },
@@ -24,22 +31,37 @@ function checkpointScore(
 }
 
 export async function POST(request: Request) {
-  // Auth: Bearer CRON_SECRET (cron/scripts) or CLASSIFY_SECRET (typed into the UI).
-  // Secrets are server-only — never expose them via NEXT_PUBLIC_. With no secret
-  // configured the route only opens in local dev, never in production.
-  const authHeader = request.headers.get("authorization");
-  const secrets = [process.env.CRON_SECRET, process.env.CLASSIFY_SECRET].filter(Boolean);
-  const validAuth = secrets.length
-    ? secrets.some((secret) => authHeader === `Bearer ${secret}`)
-    : process.env.NODE_ENV === "development";
-  if (!validAuth) {
+  // Auth: Bearer CRON_SECRET or CLASSIFY_SECRET (typed into the admin UI).
+  // Both are server-only — never NEXT_PUBLIC, or the secret ships in client JS.
+  // With no secret configured the route only opens under `next dev`; any
+  // built/deployed env (Vercel sets NODE_ENV=production for Production AND
+  // Preview) requires a valid secret and otherwise fails closed.
+  const hasSecret = !!(
+    process.env.CRON_SECRET?.trim() || process.env.CLASSIFY_SECRET?.trim()
+  );
+  const authed = verifyBearerAuth(request, [
+    process.env.CRON_SECRET,
+    process.env.CLASSIFY_SECRET,
+  ]);
+  const devOpen = !hasSecret && process.env.NODE_ENV !== "production";
+  if (!authed && !devOpen) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // This endpoint fans out to a full-table scan plus many service-role writes
+  // and is reachable by anyone holding the secret — cap it like /api/ingest.
+  const limited = checkRateLimit("scoring-backfill", 6, 5 * 60_000);
+  if (limited) {
+    return NextResponse.json(
+      { error: "Rate limited", retryAfterMs: limited.retryAfterMs },
+      { status: 429 }
+    );
   }
 
   const supabase = getSupabaseAdmin();
 
   // Find all entry/exit signals with prices that haven't been scored
-  const { data: allSignals } = await supabase
+  const { data: allSignals, error: signalsError } = await supabase
     .from("signals")
     .select("id, author, asset, signal_type, position, price_at_signal, created_at")
     .in("signal_type", ["entry", "exited"])
@@ -47,10 +69,24 @@ export async function POST(request: Request) {
     .not("author", "is", null)
     .order("created_at", { ascending: true });
 
-  if (!allSignals?.length) return NextResponse.json({ backfilled: 0, skipped: 0 });
+  if (signalsError) {
+    return NextResponse.json(
+      { error: `signals query failed: ${signalsError.message}` },
+      { status: 500 }
+    );
+  }
+  if (!allSignals?.length) return NextResponse.json({ backfilled: 0, skipped: 0, failed: 0 });
 
   // Get already scored IDs
-  const { data: existing } = await supabase.from("signal_scores").select("signal_id");
+  const { data: existing, error: existingError } = await supabase
+    .from("signal_scores")
+    .select("signal_id");
+  if (existingError) {
+    return NextResponse.json(
+      { error: `signal_scores query failed: ${existingError.message}` },
+      { status: 500 }
+    );
+  }
   const scoredSet = new Set(
     ((existing ?? []) as Array<{ signal_id: number }>).map((e) => e.signal_id)
   );
@@ -60,20 +96,25 @@ export async function POST(request: Request) {
 
   let backfilled = 0;
   let skipped = 0;
+  let failed = 0;
 
   for (const signal of unscored) {
     const signalTime = new Date(signal.created_at);
+    // The 4 checkpoint price lookups are independent — run them concurrently.
+    const lookups = await Promise.all(
+      CHECKPOINTS.map((cp) =>
+        getPriceAtTime(signal.asset, new Date(signalTime.getTime() + cp.minutes * 60_000))
+      )
+    );
     const prices: Record<string, number | null> = {};
     const scores: Record<string, number | null> = {};
-
-    for (const cp of CHECKPOINTS) {
-      const targetTime = new Date(signalTime.getTime() + cp.minutes * 60_000);
-      const price = await getPriceAtTime(signal.asset, targetTime);
+    CHECKPOINTS.forEach((cp, i) => {
+      const price = lookups[i];
       prices[cp.key] = price;
       scores[cp.key] = price != null
         ? checkpointScore(signal.signal_type, signal.position, signal.price_at_signal, price)
         : null;
-    }
+    });
 
     const valid = CHECKPOINTS.filter((cp) => scores[cp.key] != null);
     if (valid.length < 2) { skipped++; continue; }
@@ -84,7 +125,7 @@ export async function POST(request: Request) {
     const consistent = dirs.every((d) => d === dirs[0]) && dirs[0] !== 0;
     const finalScore = consistent ? weighted * 1.2 : weighted;
 
-    await supabase.from("signal_scores").upsert({
+    const { error: scoreError } = await supabase.from("signal_scores").upsert({
       signal_id: signal.id, signal_type: signal.signal_type,
       position: signal.position, asset: signal.asset, author: signal.author,
       price_at_signal: signal.price_at_signal,
@@ -95,6 +136,8 @@ export async function POST(request: Request) {
       weighted_score: Math.round(finalScore * 100) / 100,
       consistency_bonus: consistent,
     }, { onConflict: "signal_id" });
+    // A failed write must not be reported as a success — count it, don't swallow it.
+    if (scoreError) { failed++; continue; }
     await supabase.from("signals").update({ scoring_status: "scored" }).eq("id", signal.id);
     backfilled++;
   }
@@ -121,5 +164,5 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json({ backfilled, skipped, total: unscored.length });
+  return NextResponse.json({ backfilled, skipped, failed, total: unscored.length });
 }

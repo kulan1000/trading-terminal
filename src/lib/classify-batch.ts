@@ -69,7 +69,8 @@ export async function processUnclassified(limit = 120) {
     .order("timestamp", { ascending: false })
     .limit(limit);
 
-  if (!messages?.length) return { processed: 0, signals: 0 };
+  if (!messages?.length)
+    return { processed: 0, signals: 0, skipped: 0, flagged: 0, failures: 0, openai_calls: 0 };
   let signalCount = 0;
   let skipped = 0;
   let flagged = 0;

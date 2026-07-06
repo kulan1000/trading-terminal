@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { runPipeline } from "@/lib/run-pipeline";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { verifyBearerAuth } from "@/lib/api-auth";
 
 // Full pipeline (ingest + GPT classify batch) can exceed the default
 // serverless window during busy periods — give it the full 300s.
@@ -8,10 +9,7 @@ export const maxDuration = 300;
 
 // POST /api/ingest — manual trigger of the full pipeline
 export async function POST(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  const expected = `Bearer ${process.env.CLASSIFY_SECRET}`;
-
-  if (!authHeader || authHeader !== expected) {
+  if (!verifyBearerAuth(request, [process.env.CLASSIFY_SECRET])) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

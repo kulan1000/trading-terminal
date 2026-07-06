@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateDailySummary, getDailySummaries } from "@/lib/daily-summary";
+import { verifyBearerAuth } from "@/lib/api-auth";
 
 // GET /api/daily-summary?date=2026-03-29  → fetch existing summaries
 export async function GET(request: Request) {
@@ -11,9 +12,7 @@ export async function GET(request: Request) {
 
 // POST /api/daily-summary  → generate summaries for today (or ?date=...)
 export async function POST(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  const expected = `Bearer ${process.env.CLASSIFY_SECRET}`;
-  if (!authHeader || authHeader !== expected) {
+  if (!verifyBearerAuth(request, [process.env.CLASSIFY_SECRET])) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

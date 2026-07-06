@@ -108,11 +108,15 @@ there is no single point of failure.
   trader_profiles, user_credibility, daily_summaries), ZERO access to pipeline/admin/personal
   tables. All writes go through the service role (server-side only).
 - Secrets live in Vercel env + `bot/run.sh` + `.env*.local` (all gitignored). The repo is public —
-  never commit eval results (real member messages) or anything from `.env`.
+  never commit eval results (real member messages) or anything from `.env`. Secrets must be
+  high-entropy (`openssl rand -hex 32`) — never derived from public strings like the repo name
+  or year (the old `CRON_SECRET` was guessable and has been rotated).
 - Mutating endpoints (`/api/ingest`, `/api/scoring/backfill`, `/api/daily-summary`,
-  `/api/bias-snapshot`) require `Bearer CLASSIFY_SECRET` (backfill also accepts `CRON_SECRET`
-  for cron/scripts). UI trigger buttons take the key as typed input at runtime — never add a
+  `/api/bias-snapshot`) require a `Bearer` secret checked server-side via `verifyBearerAuth`
+  (constant-time, whitespace-trimmed): `CLASSIFY_SECRET` for all four, plus `CRON_SECRET` for
+  backfill. The admin UI buttons take the key as **typed input** at runtime — never add a
   `NEXT_PUBLIC_*` secret to make a button work; anything `NEXT_PUBLIC_` ships in public JS.
+  Note: no scheduled job calls `/api/scoring/backfill` today — it's a manual/admin action only.
 
 ## Before sharing with the Discord group (remaining)
 

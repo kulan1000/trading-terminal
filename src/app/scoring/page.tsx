@@ -71,7 +71,7 @@ export default function ScoringPage() {
   return (
     <div className="animate-fade-in space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-y-2">
         <div className="flex items-center gap-3">
           <h1 className="font-sans text-[15px] font-semibold tracking-wide text-white">
             Trader Scoring

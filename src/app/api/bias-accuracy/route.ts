@@ -3,51 +3,75 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export const revalidate = 300; // 5 min cache
 
+// How far back the accuracy stats look. Both tables grow ~100-300 rows/day
+// per asset, so the window keeps row counts small enough to page through —
+// an un-windowed select silently caps at 1000 rows (PostgREST default) and
+// was computing "accuracy" against only the oldest 1000 price snapshots.
+const WINDOW_DAYS = 14;
+const PAGE = 1000;
+
+interface SnapRow { asset: string; direction: string; score: number; created_at: string }
+interface PriceRow { asset: string; price: number; created_at: string }
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+async function pageAll<T>(build: (from: number, to: number) => any, maxPages: number): Promise<T[]> {
+  const rows: T[] = [];
+  for (let p = 0; p < maxPages; p++) {
+    const { data } = await build(p * PAGE, p * PAGE + PAGE - 1);
+    if (!data?.length) break;
+    rows.push(...data);
+    if (data.length < PAGE) break;
+  }
+  return rows;
+}
+
 export async function GET() {
   try {
     const supabase = getSupabaseAdmin();
+    const since = new Date(Date.now() - WINDOW_DAYS * 24 * 3600_000).toISOString();
 
-    // Get bias snapshots with score >= 60 (confident predictions)
-    const { data: snapshots } = await supabase
-      .from("bias_snapshots")
-      .select("asset, direction, score, created_at")
-      .in("direction", ["bullish", "bearish"])
-      .gte("score", 60)
-      .order("created_at", { ascending: true });
+    const snapshots = await pageAll<SnapRow>(
+      (from, to) =>
+        supabase
+          .from("bias_snapshots")
+          .select("asset, direction, score, created_at")
+          .in("direction", ["bullish", "bearish"])
+          .gte("score", 60)
+          .gte("created_at", since)
+          .order("created_at", { ascending: true })
+          .range(from, to),
+      10,
+    );
+    if (!snapshots.length) return NextResponse.json({ rows: [] });
 
-    if (!snapshots?.length) return NextResponse.json({ rows: [] });
+    const prices = await pageAll<PriceRow>(
+      (from, to) =>
+        supabase
+          .from("price_snapshots")
+          .select("asset, price, created_at")
+          .gte("created_at", since)
+          .order("created_at", { ascending: true })
+          .range(from, to),
+      20,
+    );
+    if (prices.length < 10) return NextResponse.json({ rows: [] });
 
-    // Get all price snapshots for matching
-    const { data: prices } = await supabase
-      .from("price_snapshots")
-      .select("asset, price, created_at")
-      .order("created_at", { ascending: true });
-
-    if (!prices?.length || prices.length < 10) {
-      return NextResponse.json({ rows: [] });
+    const pricesByAsset: Record<string, Array<{ ms: number; price: number }>> = {};
+    for (const p of prices) {
+      (pricesByAsset[p.asset] ??= []).push({ ms: new Date(p.created_at).getTime(), price: p.price });
     }
-
-    type PriceRow = { asset: string; price: number; created_at: string };
-    const pricesByAsset: Record<string, PriceRow[]> = {};
-    for (const p of prices as PriceRow[]) {
-      if (!pricesByAsset[p.asset]) pricesByAsset[p.asset] = [];
-      pricesByAsset[p.asset].push(p);
-    }
+    // rows arrive created_at-ascending, so each per-asset array is sorted by ms
 
     // For each bias snapshot, find closest price at snapshot time and 4h later
     const results: Record<string, { total: number; correct: number }> = {};
 
-    for (const snap of snapshots as Array<{ asset: string; direction: string; score: number; created_at: string }>) {
+    for (const snap of snapshots) {
       const assetPrices = pricesByAsset[snap.asset];
       if (!assetPrices?.length) continue;
 
       const snapTime = new Date(snap.created_at).getTime();
-      const targetTime = snapTime + 4 * 60 * 60_000;
-
-      // Find closest price to snapshot time (within 20 min)
       const priceNow = findClosest(assetPrices, snapTime, 20 * 60_000);
-      const priceLater = findClosest(assetPrices, targetTime, 20 * 60_000);
-
+      const priceLater = findClosest(assetPrices, snapTime + 4 * 3600_000, 20 * 60_000);
       if (!priceNow || !priceLater) continue;
 
       const key = `${snap.asset}|${snap.direction}`;
@@ -81,20 +105,25 @@ export async function GET() {
   }
 }
 
+/** Binary search over an ms-sorted price array — the linear scan was
+ *  O(snapshots × prices) and blew up once both tables held weeks of data. */
 function findClosest(
-  prices: Array<{ price: number; created_at: string }>,
+  sorted: Array<{ ms: number; price: number }>,
   targetMs: number,
-  maxDiffMs: number
+  maxDiffMs: number,
 ): { price: number } | null {
-  let best: { price: number } | null = null;
-  let bestDiff = Infinity;
-
-  for (const p of prices) {
-    const diff = Math.abs(new Date(p.created_at).getTime() - targetMs);
-    if (diff < bestDiff && diff <= maxDiffMs) {
-      bestDiff = diff;
-      best = p;
-    }
+  let lo = 0;
+  let hi = sorted.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (sorted[mid].ms < targetMs) lo = mid + 1;
+    else hi = mid;
   }
-  return best;
+  let best: { ms: number; price: number } | null = null;
+  for (const cand of [sorted[lo - 1], sorted[lo]]) {
+    if (!cand) continue;
+    const diff = Math.abs(cand.ms - targetMs);
+    if (diff <= maxDiffMs && (!best || diff < Math.abs(best.ms - targetMs))) best = cand;
+  }
+  return best ? { price: best.price } : null;
 }

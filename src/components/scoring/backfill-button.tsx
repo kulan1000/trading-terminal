@@ -21,14 +21,35 @@ export function BackfillButton() {
         method: "POST",
         headers: { authorization: `Bearer ${key.trim()}` },
       });
-      const data = await res.json();
+
       if (res.status === 401) {
         setStatus("Wrong key — check CLASSIFY_SECRET");
-      } else if (data.error) {
-        setStatus(`Error: ${data.error}`);
-      } else {
-        setStatus(`Done! ${data.backfilled} scored, ${data.skipped} missing price data`);
+        return;
       }
+      if (res.status === 429) {
+        const body = await res.json().catch(() => null);
+        const secs = Math.ceil((body?.retryAfterMs ?? 60_000) / 1000);
+        setStatus(`Rate limited — wait ${secs}s`);
+        return;
+      }
+      // Backfill can run long enough to hit a gateway timeout, which returns an
+      // HTML error page, not JSON — check status before parsing so a 5xx never
+      // surfaces as a "Unexpected token '<'" crash.
+      if (!res.ok) {
+        setStatus(`Error: server returned ${res.status}`);
+        return;
+      }
+      const data = await res.json().catch(() => null);
+      if (!data) {
+        setStatus("Error: invalid response (timeout?)");
+        return;
+      }
+      if (data.error) {
+        setStatus(`Error: ${data.error}`);
+        return;
+      }
+      const failedNote = data.failed ? `, ${data.failed} failed` : "";
+      setStatus(`Done! ${data.backfilled} scored, ${data.skipped} missing price data${failedNote}`);
     } catch (err) {
       setStatus(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
     } finally {

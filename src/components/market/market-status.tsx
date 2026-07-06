@@ -59,7 +59,10 @@ function formatHM(hours: number, minsOffset: number): string {
 }
 
 export function MarketStatus() {
-  const [state, setState] = useState<MarketState>(computeState);
+  // null until mounted: the countdown depends on the clock, so computing it
+  // during SSR guarantees a hydration text mismatch (React #418) — server
+  // renders one minute-count, the client hydrates seconds later with another.
+  const [state, setState] = useState<MarketState | null>(null);
 
   useEffect(() => {
     setState(computeState());
@@ -73,11 +76,13 @@ export function MarketStatus() {
       <div className="flex items-center gap-3 px-5 py-3">
         <span
           className={`inline-block h-2 w-2 rounded-full ${
-            state.open ? "bg-tv-bull animate-pulse" : "bg-tv-bear"
+            state === null ? "bg-white/20" : state.open ? "bg-tv-bull animate-pulse" : "bg-tv-bear"
           }`}
         />
-        <span className="font-sans text-[13px] font-medium text-white/80">{state.label}</span>
-        {state.countdown && (
+        <span className="font-sans text-[13px] font-medium text-white/80">
+          {state === null ? "Checking market hours…" : state.label}
+        </span>
+        {state?.countdown && (
           <span className="font-sans text-[12px] text-white/30">
             {state.open ? "closes in " : "opens in "}
             {state.countdown}
