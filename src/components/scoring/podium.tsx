@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import type { TraderScore, ScoredSignal } from "@/hooks/use-scoring-data";
+import { rankTraders } from "@/lib/rank-traders";
+import { SectionDivider } from "@/components/ui/section-divider";
 
 interface PodiumProps {
   traders: TraderScore[];
@@ -81,25 +83,19 @@ function deriveTrend(signals: ScoredSignal[] | undefined, n = 8): number[] {
  * Falls back gracefully when fewer than 3 traders are available.
  */
 export function Podium({ traders, traderSignals }: PodiumProps) {
-  // Sort by win rate desc, then weighted score desc (same implicit order used
-  // by the scoreboard so rankings match).
-  const ranked = [...traders]
-    .filter((t) => t.signals >= 3)
-    .sort((a, b) => b.winRate - a.winRate || b.totalScore - a.totalScore)
-    .slice(0, 3);
+  // Reliability-weighted rank (win rate × min(n/10,1)) — same formula as the
+  // backend credibility score, so a 3-for-3 fluke can't outrank a 9-of-10
+  // trader. 3-signal floor keeps one-offs out entirely.
+  const ranked = rankTraders(traders.filter((t) => t.signals >= 3)).slice(0, 3);
 
   if (ranked.length === 0) return null;
 
   return (
-    <section className="space-y-2.5">
-      <div className="flex items-baseline justify-between px-0.5">
-        <h2 className="font-sans text-[11px] font-bold uppercase tracking-[0.08em] text-white/65">
-          Podium — Top Performers
-        </h2>
-        <span className="font-mono text-[10px] text-white/40">
-          {ranked.length} of {traders.length}
-        </span>
-      </div>
+    <section className="space-y-3">
+      <SectionDivider
+        label="Podium — Top Performers"
+        meta={`top ${ranked.length} of ${traders.length} · reliability-weighted`}
+      />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {ranked.map((t, i) => {

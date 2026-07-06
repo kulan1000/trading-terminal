@@ -50,7 +50,7 @@ export function ScoringStats({ scoreboard, recentScored, tradePairs }: Props) {
     {
       label: "Active Traders",
       value: activeTraders.toString(),
-      sub: `of ${totalTraders} total`,
+      sub: totalTraders === activeTraders ? "scored last 30 days" : `of ${totalTraders} total`,
       valueCls: "text-white",
     },
     {
@@ -78,13 +78,13 @@ export function ScoringStats({ scoreboard, recentScored, tradePairs }: Props) {
       {items.map((item) => (
         <div
           key={item.label}
-          className="animate-fade-in rounded-xl border border-white/[0.06] bg-[#111111] px-4 py-4 transition-all duration-200 hover:-translate-y-px hover:border-white/[0.14] hover:bg-[#151515]"
+          className="animate-fade-in rounded-xl border border-white/[0.06] bg-[#111111] px-4 py-3.5 transition-all duration-200 hover:-translate-y-px hover:border-white/[0.14] hover:bg-[#151515]"
         >
-          <div className="font-sans text-[11px] font-medium text-white/55">
+          <div className="font-sans text-[11px] font-medium text-white/50">
             {item.label}
           </div>
           <div
-            className={`mt-1 font-mono text-[26px] font-bold tabular-nums tracking-tight ${item.valueCls}`}
+            className={`mt-1 font-mono text-[24px] font-bold tabular-nums tracking-tight ${item.valueCls}`}
           >
             {item.value}
           </div>

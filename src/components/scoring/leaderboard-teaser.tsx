@@ -3,6 +3,7 @@
 import type { TraderScore, ScoredSignal } from "@/hooks/use-scoring-data";
 import { Modal } from "@/components/ui/modal";
 import { ScoreboardTable } from "./scoreboard-table";
+import { rankTraders } from "@/lib/rank-traders";
 
 interface Props {
   open: boolean;
@@ -57,9 +58,8 @@ export function LeaderboardTeaser({
   traders,
   traderSignals,
 }: Props) {
-  const ranked = [...traders].sort(
-    (a, b) => b.winRate - a.winRate || b.totalScore - a.totalScore,
-  );
+  // Same reliability-weighted order as the podium and backend credibility
+  const ranked = rankTraders(traders);
   const top3 = ranked.slice(0, 3);
   const moreCount = Math.max(0, ranked.length - 3);
 
@@ -76,7 +76,7 @@ export function LeaderboardTeaser({
               Full Leaderboard
             </div>
             <div className="mt-1 font-sans text-[11px] text-white/55">
-              {ranked.length} traders · ranked by weighted score
+              {ranked.length} traders · reliability-weighted win rate
             </div>
           </div>
           <div className="flex items-center gap-1 font-sans text-[11px] font-medium text-[#2962FF]">

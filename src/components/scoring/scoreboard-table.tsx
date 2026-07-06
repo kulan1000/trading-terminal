@@ -4,13 +4,16 @@ import { Fragment, useState } from "react";
 import Link from "next/link";
 import type { TraderScore, ScoredSignal } from "@/hooks/use-scoring-data";
 import { TraderDrilldown } from "./trader-drilldown";
+import { displayScore } from "@/lib/rank-traders";
 
-type SortKey = "author" | "signals" | "winRate" | "avgScore" | "consistency";
+type SortKey = "author" | "score" | "signals" | "winRate" | "avgScore" | "consistency";
 
 function sortTraders(list: TraderScore[], key: SortKey, asc: boolean): TraderScore[] {
   return [...list].sort((a, b) => {
-    const va = key === "author" ? a.author.toLowerCase() : a[key];
-    const vb = key === "author" ? b.author.toLowerCase() : b[key];
+    const va = key === "author" ? a.author.toLowerCase()
+      : key === "score" ? displayScore(a.winRate, a.signals) : a[key];
+    const vb = key === "author" ? b.author.toLowerCase()
+      : key === "score" ? displayScore(b.winRate, b.signals) : b[key];
     if (va < vb) return asc ? -1 : 1;
     if (va > vb) return asc ? 1 : -1;
     return 0;
@@ -43,6 +46,7 @@ function WinRatePill({ rate }: { rate: number }) {
 
 const COLS: { key: SortKey; label: string; align: string }[] = [
   { key: "author", label: "Trader", align: "text-left" },
+  { key: "score", label: "Score", align: "text-right" },
   { key: "signals", label: "Signals", align: "text-right" },
   { key: "winRate", label: "Win Rate", align: "text-right" },
   { key: "avgScore", label: "Avg Score", align: "text-right" },
@@ -55,7 +59,7 @@ interface Props {
 }
 
 export function ScoreboardTable({ traders, traderSignals }: Props) {
-  const [sortKey, setSortKey] = useState<SortKey>("winRate");
+  const [sortKey, setSortKey] = useState<SortKey>("score");
   const [sortAsc, setSortAsc] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -114,7 +118,7 @@ export function ScoreboardTable({ traders, traderSignals }: Props) {
                 className={`cursor-pointer px-5 py-2.5 font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-white/40 transition-colors hover:text-white/70 ${c.align}`}
               >
                 {c.label}
-                {sortKey === c.key && <span className="ml-1 text-[#FF9800]">{sortAsc ? "▲" : "▼"}</span>}
+                {sortKey === c.key && <span className="ml-1 text-[#2962FF]">{sortAsc ? "▲" : "▼"}</span>}
               </th>
             ))}
           </tr>
@@ -134,10 +138,15 @@ export function ScoreboardTable({ traders, traderSignals }: Props) {
                   <td className="px-5 py-3">
                     <Link href={`/trader/${encodeURIComponent(t.author)}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="font-sans text-[14px] font-semibold text-white transition-colors hover:text-[#FF9800]">
+                      className="font-sans text-[14px] font-semibold text-white transition-colors hover:text-[#2962FF]">
                       {t.author}
                     </Link>
                     <span className="ml-1.5 text-[10px] text-white/20">{isExpanded ? "▾" : "▸"}</span>
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    <span className="font-mono text-[13px] font-semibold tabular-nums text-white">
+                      {displayScore(t.winRate, t.signals)}
+                    </span>
                   </td>
                   <td className="px-5 py-3 text-right">
                     <span className="font-sans text-[13px] tabular-nums text-white/70">

@@ -37,11 +37,24 @@ export async function GET() {
   try {
   const supabase = getSupabaseAdmin();
 
-  // 1) All scored signals + join to get original message content and signal created_at
-  const { data: scores } = await supabase
-    .from("signal_scores")
-    .select("*, signals!inner(created_at, direction, message_id, discord_messages(content))")
-    .order("scored_at", { ascending: false });
+  // 1) Scored signals from the last 30 days of TRADING activity (the signal's
+  // own timestamp, not scored_at — backfills would otherwise inflate recency),
+  // joined to the original message. Paginated explicitly: PostgREST silently
+  // caps un-ranged selects at 1000 rows, which truncated the leaderboard to
+  // whichever authors happened to be in the newest 1000 scores.
+  const since30d = new Date(Date.now() - 30 * 24 * 3600_000).toISOString();
+  const scores: Record<string, unknown>[] = [];
+  for (let page = 0; page < 10; page++) {
+    const { data: chunk } = await supabase
+      .from("signal_scores")
+      .select("*, signals!inner(created_at, direction, message_id, discord_messages(content))")
+      .gte("signals.created_at", since30d)
+      .order("scored_at", { ascending: false })
+      .range(page * 1000, page * 1000 + 999);
+    if (!chunk?.length) break;
+    scores.push(...chunk);
+    if (chunk.length < 1000) break;
+  }
 
   const allScores = (scores ?? []).map((s: Record<string, unknown>) => {
     const sig = s.signals as { created_at?: string; direction?: string; message_id?: number; discord_messages?: { content?: string } | null } | null;
