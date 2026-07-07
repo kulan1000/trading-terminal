@@ -157,7 +157,7 @@ export function BiasCard({ bias: b, onClick }: Props) {
           <div className="font-mono text-[18px] font-semibold tabular-nums text-white">
             {b.count}
           </div>
-          <div className="mt-0.5 font-sans text-[11px] text-white/50">signals · 24h</div>
+          <div className="mt-0.5 font-sans text-[11px] text-white/50">signals · 6h</div>
         </div>
         <div className="text-center">
           <div className="font-mono text-[18px] font-semibold tabular-nums text-white">
