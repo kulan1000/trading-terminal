@@ -83,7 +83,7 @@ there is no single point of failure.
 
 | Task | Model | Billing | Params |
 |---|---|---|---|
-| Signal classification | `gpt-5.5` | ChatGPT subscription (Codex transport) | `reasoning_effort=low`, strict `json_schema` |
+| Signal classification | `gpt-5.6-sol` | ChatGPT subscription (Codex transport) | `reasoning_effort=low`, strict `json_schema` |
 | AI summaries (daily + bias detail) | `gpt-5-mini` | API (pennies/day) | `reasoning_effort=low` |
 
 - Model + cost constants: `src/lib/constants.ts`. Param compatibility: `src/lib/openai-params.ts`

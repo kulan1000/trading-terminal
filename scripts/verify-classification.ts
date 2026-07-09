@@ -1,5 +1,5 @@
 // Verification: every signal_type × position through the EXACT production
-// path (classifyMessage → gpt-5.5 subscription transport → strict schema →
+// path (classifyMessage → gpt-5.6-sol subscription transport → strict schema →
 // sanitize), with expected-value assertions. Complements the DB evidence —
 // the short-side cases are rare in the wild (community is long-biased), so
 // this proves them deterministically.
@@ -82,7 +82,7 @@ async function main() {
       console.log(`${ok ? "PASS" : "FAIL"} | ${c.label.padEnd(12)} ${Date.now() - t0}ms | "${c.msg.slice(0, 48)}" → ${got}`);
     })
   );
-  console.log(failed === 0 ? "\nALL CLASSIFICATION CHECKS PASS (production path, gpt-5.5)" : `\n${failed} FAILURES`);
+  console.log(failed === 0 ? "\nALL CLASSIFICATION CHECKS PASS (production path, gpt-5.6-sol)" : `\n${failed} FAILURES`);
   process.exit(failed === 0 ? 0 : 1);
 }
 

@@ -1,5 +1,5 @@
 // Smoke test: ONE real classification through the exact production path
-// (classifyMessage → gpt-5.5 → strict json_schema → sanitize).
+// (classifyMessage → gpt-5.6-sol → strict json_schema → sanitize).
 // Run: npx tsx scripts/smoke-classify.ts
 import fs from "node:fs";
 import path from "node:path";

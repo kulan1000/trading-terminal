@@ -77,7 +77,7 @@ function buildTiles(d: PipelineData): Tile[] {
     {
       id: "filter",
       label: "Classifier",
-      value: "gpt-5.5",
+      value: "gpt-5.6-sol",
       sub: "local worker · subscription",
       status: "ok",
     },
@@ -186,7 +186,7 @@ export function HealthDrilldown({
   } else if (openId === "filter") {
     body = (
       <div className="grid grid-cols-2 gap-px md:grid-cols-4" style={{ background: "var(--color-tv-border)" }}>
-        <Stat label="Model" value="gpt-5.5" sub="reasoning effort low" />
+        <Stat label="Model" value="gpt-5.6-sol" sub="reasoning effort low" />
         <Stat label="Transport" value="subscription" sub="Codex backend · SSE" />
         <Stat label="Runs on" value="local worker" sub="LaunchAgent · KeepAlive" />
         <Stat label="Serverless classify" value="off" sub="ingest/scoring only" />

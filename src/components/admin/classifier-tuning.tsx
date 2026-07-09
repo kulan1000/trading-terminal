@@ -34,12 +34,12 @@ const MODELS: Model[] = [
     notes: "Zero-cost gate: noise phrases, emoji-only, non-commodity instruments (ES/NQ/semis/vol/crypto).",
   },
   {
-    id: "gpt-5.5",
-    label: "GPT-5.5 (effort=low)",
+    id: "gpt-5.6-sol",
+    label: "GPT-5.6-Sol (effort=low)",
     cost: 0.02,
     accuracy: 0.94,
     p95: 3.0,
-    notes: "Current since 2026-07-04. Zero asset hallucinations in eval; reads inverse ETFs and macro narratives correctly. Subscription-billed on the worker.",
+    notes: "Current since 2026-07-09 (GA day) — same subscription burn as GPT-5.5. Accuracy/p95 inherited from the 2026-07-04 GPT-5.5 eval; Sol re-eval pending.",
   },
   {
     id: "gpt-5-mini",
@@ -66,7 +66,7 @@ const STAGES: StageDef[] = [
   {
     stage: "classifier",
     desc: "Main extraction: asset · direction · type · confidence (strict JSON schema)",
-    current: "gpt-5.5",
+    current: "gpt-5.6-sol",
   },
   {
     stage: "AI summaries",

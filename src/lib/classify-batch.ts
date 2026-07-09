@@ -11,7 +11,7 @@ import { detectAssetSource, flagForReview, getLearnedFeedback } from "@/lib/clas
 import { CLASSIFIER_MODEL } from "@/lib/constants";
 
 // GPT calls run concurrently (each message is independent) — rate-limit
-// retries are handled inside classifyMessage. Kept at 3: gpt-5.5 calls are
+// retries are handled inside classifyMessage. Kept at 3: classifier calls are
 // ~7k tokens each, so 5 workers can burst past TPM tiers during backfills.
 const GPT_CONCURRENCY = 3;
 

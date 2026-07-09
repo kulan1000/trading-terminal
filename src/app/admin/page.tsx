@@ -214,7 +214,7 @@ export default function AdminPage() {
         openId={sectionOpen}
         setOpenId={setSectionOpen}
         title="Models"
-        summary="3 stages · gpt-5.5 classifier · eval n=16"
+        summary="3 stages · gpt-5.6-sol classifier · eval n=16"
       >
         <ClassifierTuning />
       </Section>

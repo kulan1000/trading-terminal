@@ -49,6 +49,8 @@ const CONFIGS: ModelConfig[] = [
   { label: "gpt-4o-mini (current)", model: "gpt-4o-mini", legacyParams: true },
   { label: "gpt-5.5 effort=none", model: "gpt-5.5", legacyParams: false, reasoningEffort: "none" },
   { label: "gpt-5.5 effort=low", model: "gpt-5.5", legacyParams: false, reasoningEffort: "low" },
+  { label: "gpt-5.6-sol effort=none", model: "gpt-5.6-sol", legacyParams: false, reasoningEffort: "none" },
+  { label: "gpt-5.6-sol effort=low", model: "gpt-5.6-sol", legacyParams: false, reasoningEffort: "low" },
 ];
 
 // ── classification (mirrors src/lib/classify.ts exactly) ────────
