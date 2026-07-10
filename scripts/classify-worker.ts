@@ -15,6 +15,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 
 // ── env (before importing lib modules that read process.env) ────
 const ROOT = path.resolve(__dirname, "..");
@@ -34,20 +35,53 @@ process.env.CLASSIFY_TRANSPORT = process.env.CLASSIFY_TRANSPORT || "codex";
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { processUnclassified } = require("../src/lib/classify-batch");
+const { getSupabaseAdmin } = require("../src/lib/supabase-admin");
 
 const BATCH_SIZE = 60;
 const IDLE_SLEEP_MS = 60_000;
 const RATE_LIMIT_SLEEP_MS = 10 * 60_000;
 const ERROR_SLEEP_MS = 120_000;
 
+// Single-runner lease: only one machine (Air or Mini) may drain the queue.
+// Holder = hostname so a launchd respawn on the same machine re-acquires
+// instantly, while a rival machine waits out the TTL after this one dies.
+const LEASE_NAME = "classify-worker";
+const LEASE_HOLDER = os.hostname();
+const LEASE_TTL_S = 300;
+
+async function holdsLease(): Promise<boolean> {
+  const { data, error } = await getSupabaseAdmin().rpc("acquire_worker_lease", {
+    p_name: LEASE_NAME,
+    p_holder: LEASE_HOLDER,
+    p_ttl_seconds: LEASE_TTL_S,
+  });
+  if (error) throw new Error(`lease rpc failed: ${error.message}`);
+  return data === true;
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const ts = () => new Date().toISOString();
 
 async function main() {
-  console.log(`[${ts()}] classify-worker starting (transport=${process.env.CLASSIFY_TRANSPORT})`);
+  console.log(
+    `[${ts()}] classify-worker starting (transport=${process.env.CLASSIFY_TRANSPORT}, holder=${LEASE_HOLDER})`
+  );
   let round = 0;
+  let standby = false;
   for (;;) {
     try {
+      if (!(await holdsLease())) {
+        if (!standby) {
+          console.log(`[${ts()}] lease held by another runner — standing by`);
+          standby = true;
+        }
+        await sleep(IDLE_SLEEP_MS);
+        continue;
+      }
+      if (standby) {
+        console.log(`[${ts()}] lease acquired — resuming as active runner`);
+        standby = false;
+      }
       const res = await processUnclassified(BATCH_SIZE);
       round++;
       const busy = (res.processed ?? 0) > 0 || (res.failures ?? 0) > 0;
