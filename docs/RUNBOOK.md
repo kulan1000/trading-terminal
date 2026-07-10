@@ -42,7 +42,10 @@ Next.js frontend (Vercel) — market / sentiment / scoring / discord-intel / adm
   browser has an active chatgpt.com session. Worker picks the new family up on
   its next call (launchd respawn).
 - **Rate limits:** whole-batch failures back off 10 min automatically; the
-  subscription window resets on its own.
+  subscription window resets on its own. NOTE: large backlog resets (hundreds
+  of messages) can exhaust the prolite usage window in one burst — the worker
+  then stands by until reset (429 usage_limit_reached, resets_at in the
+  error). Prefer tranching big backfills across windows.
 
 ## The Discord bot (realtime ingestion)
 
@@ -114,6 +117,11 @@ there is no single point of failure.
 - **Price snapshots** cover every instrument during ITS OWN session only —
   closed instruments are skipped per-asset so the scoring grid never fills
   with stale flat bars.
+- **Known v1 limits (accepted):** extended-hours stock entries (16:00–20:00 /
+  4:00–9:30 ET) classify normally but have no snapshot grid, so scoring marks
+  them `unscorable` (the sentiment value is kept); US holidays/half-days are
+  not modeled (a holiday reads as OPEN — mislabels an entry ~10 low-volume
+  days/year); VIX options' special GTH sessions are treated as equity RTH.
 
 ## Scoring
 

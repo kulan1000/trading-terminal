@@ -149,8 +149,8 @@ export const ADVANCED_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
     }),
   },
 
-  // Example 18: Non-commodity instrument (index futures) — NOT a signal,
-  // even in a commodity channel, even if the trader usually trades gold
+  // Example 18: Index futures are their OWN canonical asset — never converted
+  // to a commodity by channel context, never dropped (equities expansion)
   {
     role: "user",
     content:
@@ -161,21 +161,23 @@ export const ADVANCED_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
     content: JSON.stringify({
       signals: [
         {
-          has_signal: false,
-          asset: null,
-          direction: null,
-          signal_type: null,
-          position: null,
-          strength: null,
-          confidence: null,
+          has_signal: true,
+          asset: "ES",
+          direction: "bullish",
+          signal_type: "entry",
+          position: "long",
+          target_price: null,
+          strength: "strong",
+          confidence: 0.85,
           interpretation:
-            "ES is S&P 500 futures — an equity index trade, not Gold/Silver/Oil. No commodity signal regardless of channel or the trader's usual assets.",
+            "Filled long S&P 500 futures at 7163 with intent to average at 7160 — a live index-futures entry, classified under ES (never Gold/Silver/Oil despite the channel).",
         },
       ],
     }),
   },
 
-  // Example 19: Mixed basket exit — extract ONLY the commodity instruments
+  // Example 19: Mixed basket exit — one signal per tracked leg under its own
+  // asset (SOXS is 3x inverse semis: long SOXS = economically short SMH)
   {
     role: "user",
     content:
@@ -191,10 +193,23 @@ export const ADVANCED_EXAMPLES: OpenAI.ChatCompletionMessageParam[] = [
           direction: "bullish",
           signal_type: "exited",
           position: "long",
+          target_price: null,
           strength: "medium",
           confidence: 0.7,
           interpretation:
-            "Taking profits on USO (long oil ETF) = exiting a bullish oil trade. SOXS is a semiconductor ETF — ignored, not a commodity.",
+            "Taking profits on USO (long oil ETF) = exiting a bullish oil trade.",
+        },
+        {
+          has_signal: true,
+          asset: "SMH",
+          direction: "bearish",
+          signal_type: "exited",
+          position: "short",
+          target_price: null,
+          strength: "medium",
+          confidence: 0.7,
+          interpretation:
+            "Taking profits on SOXS (3x inverse semiconductor ETF) = closing an economically short semis position, booked under SMH.",
         },
       ],
     }),

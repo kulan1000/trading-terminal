@@ -70,8 +70,19 @@ export type Asset = (typeof INSTRUMENTS)[number]["ticker"];
 
 export const ALL_ASSETS: readonly Asset[] = INSTRUMENTS.map((i) => i.ticker);
 
+// Hand-listed to keep the literal CommodityAsset union (a .filter() over
+// INSTRUMENTS would widen it) — the assert below fails the process at module
+// load if this list ever drifts from the registry's commodity rows.
 export const COMMODITY_ASSETS = ["Gold", "Silver", "Oil"] as const satisfies readonly Asset[];
 export type CommodityAsset = (typeof COMMODITY_ASSETS)[number];
+
+const registryCommodities = INSTRUMENTS.filter((i) => i.assetClass === "commodity");
+if (
+  registryCommodities.length !== COMMODITY_ASSETS.length ||
+  !registryCommodities.every((i) => (COMMODITY_ASSETS as readonly string[]).includes(i.ticker))
+) {
+  throw new Error("instruments.ts: COMMODITY_ASSETS drifted from the registry's commodity rows");
+}
 
 const BY_TICKER: ReadonlyMap<string, Instrument> = new Map(
   INSTRUMENTS.map((i) => [i.ticker, i])

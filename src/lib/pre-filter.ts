@@ -52,6 +52,9 @@ const EQUITY_ANY = new RegExp(
   [
     "\\b(spy|qqq|iwm|dia|smh|soxl|soxs|tqqq|sqqq|spxl|spxu|upro|sds|uvix|uvxy|vxx|svix|svxy)\\b",
     "\\b(nvda|tsla|aapl|msft|amzn|meta|googl|goog|amd|pltr|coin|mstr|hood)\\b",
+    // company names — the prompt maps these to tickers, so the filter must
+    // not eat them ("BTC and Nvidia setting up too" is an NVDA signal)
+    "\\b(nvidia|tesla|apple|microsoft|amazon|alphabet|google|palantir|coinbase|microstrategy|robinhood)\\b",
     "\\b(nasdaq|s&p|russell|dow|semis?|futures)\\b",
     // lowercase index-futures phrasing: "long nq fill 27150", "es filled 7163"
     "\\b(es|nq|mes|mnq)\\s+(fill(ed)?|long|short|futures?|\\d{3,5})\\b",
@@ -121,8 +124,8 @@ function isCryptoOnly(content: string): boolean {
 const INSTRUMENT_CORE = new RegExp(
   [
     "\\b(gold|silver|oil|crude|wti|brent|xau|xag|guld|olja|gld|slv|gdx|gdxj|uso|uco|bno|sco|nugt|dust|jnug|zsl|agq|pslv|phys|xle|oxy|pms?|gc|si|cl)\\b",
-    "\\b(spy|qqq|iwm|dia|smh|spx|ndx|vix|nvda|tsla|aapl|msft|amzn|meta|googl|amd|pltr|coin|mstr|hood|tqqq|sqqq|soxl|soxs)\\b",
-    "\\b(es|nq|mes|mnq|ym|rty)\\b",
+    "\\b(spy|qqq|iwm|dia|smh|spx|ndx|vix|nvda|tsla|aapl|msft|amzn|meta|googl|amd|pltr|coin|mstr|hood|tqqq|sqqq|soxl|soxs|uvix|uvxy|vxx|svix)\\b",
+    "\\b(es|nq|mes|mnq|ym|mym|rty|m2k)\\b",
   ].join("|"),
   "i"
 );

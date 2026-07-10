@@ -35,8 +35,11 @@ export function isMarketOpen(now = new Date()): boolean {
   return true;
 }
 
-/** CME equity index futures (ES/NQ/YM/RTY) follow the same Globex schedule */
+/** CME equity index futures (ES/NQ/YM/RTY): Globex schedule like COMEX,
+ *  plus the daily equity-futures trading halt 16:15–16:30 ET */
 export function isIndexFuturesOpen(now = new Date()): boolean {
+  const { hour, minute } = toET(now);
+  if (hour === 16 && minute >= 15 && minute < 30) return false;
   return isMarketOpen(now);
 }
 
