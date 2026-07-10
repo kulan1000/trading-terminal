@@ -118,12 +118,20 @@ there is no single point of failure.
   `NEXT_PUBLIC_*` secret to make a button work; anything `NEXT_PUBLIC_` ships in public JS.
   Note: no scheduled job calls `/api/scoring/backfill` today — it's a manual/admin action only.
 
+## Admin console auth
+
+`/admin` is middleware-gated (`src/middleware.ts`): a typed access key at
+`/admin/login` → `POST /api/admin-session` (rate-limited 5/min/IP, constant-time
+compare) → httpOnly cookie carrying SHA-256 of the secret (raw secret never
+reaches the browser). Accepted keys: `ADMIN_SECRET` (if set) or `CLASSIFY_SECRET`.
+Rotating the env secret invalidates all sessions minted from it. Review POST
+endpoints require the same admin secret (Bearer or body field) since 44f4d5a.
+
 ## Before sharing with the Discord group (remaining)
 
-1. Put `/admin` + review POST endpoints behind auth (currently origin-check only).
-2. Consider moving trading tables to a dedicated Supabase project (personal tables share
+1. Consider moving trading tables to a dedicated Supabase project (personal tables share
    this one, though RLS now denies anon access).
-3. Frontend design pass (Caspar).
+2. Frontend design pass (Caspar).
 
 ## Desktop app (macOS)
 

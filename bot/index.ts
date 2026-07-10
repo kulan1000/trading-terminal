@@ -57,7 +57,7 @@ const client = new Client({
   ],
 });
 
-client.once("ready", () => {
+client.once("clientReady", () => {
   console.log(`[BOT] Logged in as ${client.user?.tag}`);
   console.log(`[BOT] Watching FoftyTrades: ${Object.values(WATCHED_CHANNELS).join(", ")}`);
   console.log(`[BOT] Guilds: ${client.guilds.cache.map((g) => g.name).join(", ") || "NONE"}`);
