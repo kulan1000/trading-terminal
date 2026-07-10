@@ -1,9 +1,13 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
-/** Discord channel IDs for FoFtyTrades */
+/** Discord channel IDs for FoFtyTrades. Keys are the canonical channel names
+ *  stored in discord_messages.channel — bot/index.ts maps the same IDs to the
+ *  same names, so both ingestion paths share one channel identity. */
 const CHANNELS: Record<string, string> = {
   "traders-lounge": "1348833494045954098",
   "gold-commodities": "1441803196816167042",
+  "equities-stocks": "1441802560829919305",
+  "sang-daily-updates": "1441855086799224992",
 };
 
 const DISCORD_API = "https://discord.com/api/v10";
