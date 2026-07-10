@@ -31,9 +31,6 @@ const TYPE_LABEL: Record<string, { label: string; cls: string }> = {
   },
 };
 
-function titleCase(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-}
 
 function confColor(direction: string): string {
   if (direction === "bullish") return "text-[#26A69A]";
@@ -169,7 +166,8 @@ export function SummaryCards({ data }: Props) {
                 </span>
                 <span className="flex-1 truncate font-sans text-[13px] text-white/85">
                   <span className="font-medium text-white">{s.author}</span>
-                  <span className="text-white/40"> · {titleCase(s.asset)}</span>
+                  {/* registry tickers already carry display case (Gold, ES, VIX) */}
+                  <span className="text-white/40"> · {s.asset}</span>
                 </span>
                 <span
                   className={`min-w-[48px] text-right font-mono text-[13px] font-semibold tabular-nums ${confColor(s.direction)}`}
