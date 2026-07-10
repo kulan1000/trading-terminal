@@ -11,8 +11,24 @@ import { ExploreTiles } from "@/components/scoring/explore-tiles";
 import { BackfillButton } from "@/components/scoring/backfill-button";
 import { SectionDivider } from "@/components/ui/section-divider";
 
-const ASSETS = ["all", "gold", "silver", "oil"] as const;
+import { assetClassOf, isKnownAsset } from "@/lib/instruments";
+
+// Class-grouped filters — 27 individual tickers would overflow a chip row;
+// traders think in these three buckets (per-ticker drill-down lives in the
+// Discord Intel advanced search)
+const ASSETS = ["all", "commodities", "indices", "stocks"] as const;
 type AssetFilter = (typeof ASSETS)[number];
+
+const CLASS_GROUP: Record<string, Exclude<AssetFilter, "all">> = {
+  commodity: "commodities",
+  index_future: "indices",
+  index: "indices",
+  etf: "indices",
+  equity: "stocks",
+};
+
+const inFilter = (assetName: string, f: AssetFilter) =>
+  f === "all" || (isKnownAsset(assetName) && CLASS_GROUP[assetClassOf(assetName)] === f);
 
 type ModalKey = "leaderboard" | "feed" | null;
 
@@ -35,7 +51,7 @@ export default function ScoringPage() {
       : Object.fromEntries(
           Object.entries(traderSignals).map(([k, v]) => [
             k,
-            v.filter((s) => s.asset.toLowerCase() === asset),
+            v.filter((s) => inFilter(s.asset, asset)),
           ]),
         );
 
@@ -63,10 +79,10 @@ export default function ScoringPage() {
   const filteredRecent =
     asset === "all"
       ? recentScored
-      : recentScored.filter((s) => s.asset.toLowerCase() === asset);
+      : recentScored.filter((s) => inFilter(s.asset, asset));
 
   const filteredPairs =
-    asset === "all" ? tradePairs : tradePairs.filter((p) => p.asset.toLowerCase() === asset);
+    asset === "all" ? tradePairs : tradePairs.filter((p) => inFilter(p.asset, asset));
 
   return (
     <div className="animate-fade-in space-y-5">
