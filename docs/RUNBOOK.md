@@ -1,11 +1,11 @@
 # Trading Terminal — Operations Runbook
 
-Last updated: 2026-07-04
+Last updated: 2026-07-10
 
 ## System map
 
 ```
-Discord FoFtyTrades (#traders-lounge, #gold-commodities)
+Discord FoFtyTrades (#traders-lounge, #gold-commodities, #equities-stocks, #sang-daily-updates)
   ├── Realtime: SilverTerminalBot (discord.js gateway) — LaunchAgent on a Mac
   └── Backup:   REST poll w/ pagination — Supabase pg_cron (*/5) → Vercel /api/ingest
                        ↓
@@ -90,6 +90,30 @@ there is no single point of failure.
   (gpt-5.x rejects `max_tokens`/`temperature`; uses `max_completion_tokens` + `reasoning_effort`).
 - Re-run the model eval anytime: `npx tsx scripts/eval-classifier.ts --limit 20`
   (writes `scripts/eval-result.json`, gitignored — contains real member messages).
+
+## Instrument universe (equities expansion 2026-07-10)
+
+- **Source of truth:** `src/lib/instruments.ts` — 27 instruments across five
+  classes (commodity, index_future, index, etf, equity). The classifier schema
+  enum, sanitize whitelist, prompt asset lists, Yahoo price feed and per-class
+  market-hours routing ALL derive from this registry.
+- **Adding an instrument = two steps:** (1) add the row in `instruments.ts`,
+  (2) widen the `signals_asset_check` DB constraint with the same ticker
+  (migration `widen_signals_asset_check_equities` shows the pattern). Deploy
+  the migration FIRST — new-code upserts against an old constraint fail and
+  the worker retries those messages forever.
+- **Market calendars:** `src/lib/market-hours.ts` — COMEX (Gold/Silver/Oil),
+  index futures (ES/NQ/YM/RTY, same Globex schedule), US equities (RTH
+  9:30–16:00 ET for price snapshots; extended 4:00–20:00 ET for
+  classification validity). The classifier prompt receives a composite
+  per-calendar status line; entry/exit downgrades apply per asset class.
+  US holidays are not modeled (v1).
+- **Crypto is deliberately untracked** — the pre-filter skips crypto-only
+  messages and the prompt returns `has_signal: false` (COIN/MSTR/HOOD equities
+  still count).
+- **Price snapshots** cover every instrument during ITS OWN session only —
+  closed instruments are skipped per-asset so the scoring grid never fills
+  with stale flat bars.
 
 ## Scoring
 

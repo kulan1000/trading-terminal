@@ -19,7 +19,9 @@ function getOpenAI() {
 
 export async function GET(req: NextRequest) {
   const asset = req.nextUrl.searchParams.get("asset") as Asset | null;
-  if (!asset || !ASSETS.includes(asset)) {
+  // Bias detail is a commodity surface — the trio only (full universe lives
+  // in the instrument registry, equities bias comes with the equities UI pass)
+  if (!asset || !(ASSETS as readonly Asset[]).includes(asset)) {
     return NextResponse.json({ error: "Invalid asset" }, { status: 400 });
   }
 

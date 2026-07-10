@@ -1,4 +1,5 @@
 import type { Asset, Direction, Strength, SignalType } from "@/lib/types";
+import { isKnownAsset } from "@/lib/instruments";
 
 export interface ClassifyResult {
   has_signal: boolean;
@@ -12,7 +13,6 @@ export interface ClassifyResult {
   target_price: number | null;
 }
 
-const VALID_ASSETS = new Set(["Gold", "Silver", "Oil"]);
 const VALID_DIRECTIONS = new Set(["bullish", "bearish", "neutral"]);
 const VALID_STRENGTHS = new Set(["strong", "medium", "weak"]);
 const VALID_SIGNAL_TYPES = new Set(["entry", "position", "exited", "opinion", "target"]);
@@ -25,7 +25,7 @@ export function deriveStrength(confidence: number): Strength {
 
 export function sanitizeResult(r: ClassifyResult): ClassifyResult | null {
   if (!r.has_signal) return null;
-  if (!r.asset || !VALID_ASSETS.has(r.asset)) return null;
+  if (!r.asset || !isKnownAsset(r.asset)) return null;
 
   if (!r.direction || !VALID_DIRECTIONS.has(r.direction)) {
     r.direction = "neutral";

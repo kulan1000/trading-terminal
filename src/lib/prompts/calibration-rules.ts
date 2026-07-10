@@ -88,20 +88,26 @@ export const MARKET_HOURS = `
 MARKET HOURS AWARENESS
 ═══════════════════════════════════════
 
-You will receive a MARKET STATUS line in the user message: "MARKET: OPEN" or "MARKET: CLOSED".
+You will receive a MARKET status line in the user message. Either the legacy
+single flag ("MARKET: OPEN" / "MARKET: CLOSED" — applies to every asset), or a
+per-calendar composite:
 
-Commodities futures (Gold, Silver, Oil) trade Sunday 00:00 CET → Friday 23:00 CET (Stockholm time).
-They are CLOSED on weekends (Friday 23:00 → Sunday 00:00 CET) and during the daily 23:00-00:00 CET maintenance break.
+"MARKET: COMEX (Gold/Silver/Oil): OPEN | INDEX FUTURES (ES/NQ/YM/RTY): OPEN | US EQUITIES (stocks/ETFs/indices): CLOSED"
 
-When MARKET: CLOSED:
-- Nobody can open or close positions. Futures are not trading.
-- NEVER classify as "entry" or "exited" — these are impossible when the market is closed.
-- "bought gold" during market closed = they are RECOUNTING a past action → classify as "position" (holding).
-- "sold my silver" during market closed = recounting a past exit → classify as "opinion" about what they did.
+Apply the flag that matches the asset you are classifying:
+- Gold/Silver/Oil → COMEX flag
+- ES/NQ/YM/RTY → INDEX FUTURES flag (these trade nearly 24/5 — an entry at 3 AM ET is perfectly normal)
+- Stocks, ETFs, SPX/NDX/VIX → US EQUITIES flag (already includes the 4:00-20:00 ET extended session, so pre/post-market stock trades are VALID entries/exits)
+
+When the relevant market is CLOSED:
+- Nobody can open or close positions in that asset right now.
+- NEVER classify as "entry" or "exited" for that asset — impossible while closed.
+- "bought gold" while COMEX closed = RECOUNTING a past action → "position" (holding).
+- "sold my silver" while closed = recounting a past exit → "opinion" about what they did.
 - "going long Monday" / "will buy at open" = opinion (intent, not action).
-- Opinions, targets, and position (holding) signals are still valid when market is closed.
+- Opinions, targets, and position (holding) signals are still valid when closed.
 
-When MARKET: OPEN:
+When the relevant market is OPEN:
 - Normal classification rules apply. All signal types are valid.`;
 
 export const INTERPRETATION_RULES = `

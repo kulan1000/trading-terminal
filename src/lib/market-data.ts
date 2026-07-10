@@ -1,9 +1,12 @@
 import type { Asset } from "@/lib/types";
+import type { CommodityAsset } from "@/lib/instruments";
 import { ASSETS } from "@/lib/constants";
 import { fetchYahoo } from "@/lib/data-yahoo";
 
-// Symbol mapping: [Yahoo Finance futures, CEO.ca chart]
-const SYMBOLS: Record<Asset, { yahoo: string; ceo: string }> = {
+// Symbol mapping: [Yahoo Finance futures, CEO.ca chart].
+// The market page is a commodity surface — equities quotes come straight
+// from the registry's yahooSymbol via price-snapshots instead.
+const SYMBOLS: Record<CommodityAsset, { yahoo: string; ceo: string }> = {
   Gold:   { yahoo: "GC=F", ceo: "GCUSD" },
   Silver: { yahoo: "SI=F", ceo: "SIUSD" },
   Oil:    { yahoo: "CL=F", ceo: "CLUSD" },
@@ -43,7 +46,7 @@ interface DailyRef {
 
 const EMPTY_DAILY: DailyRef = { high: 0, low: 0, volume: 0, sparkline: [] };
 
-async function fetchCeoDailyRef(asset: Asset): Promise<DailyRef> {
+async function fetchCeoDailyRef(asset: CommodityAsset): Promise<DailyRef> {
   const symbol = SYMBOLS[asset].ceo;
   const url = `https://new-api.ceo.ca/api/quotes/get_us_chart?symbol=${symbol}&time_period=1m`;
 
@@ -73,7 +76,7 @@ async function fetchCeoDailyRef(asset: Asset): Promise<DailyRef> {
 
 // --- Combined: Yahoo realtime + CEO.ca daily ---
 
-async function fetchQuote(asset: Asset): Promise<MarketQuote | null> {
+async function fetchQuote(asset: CommodityAsset): Promise<MarketQuote | null> {
   const [yahoo, ceoRef] = await Promise.all([
     fetchYahoo(asset, SYMBOLS[asset].yahoo),
     fetchCeoDailyRef(asset),
@@ -104,7 +107,7 @@ async function fetchQuote(asset: Asset): Promise<MarketQuote | null> {
 // the route-level cache — a 10-minute outage blanked every price card even
 // though seconds-old good data existed. Serve the previous good quote instead;
 // zeros only appear if an asset has NEVER fetched successfully.
-const lastGood = new Map<Asset, MarketQuote>();
+const lastGood = new Map<CommodityAsset, MarketQuote>();
 
 export async function getMarketQuotes(): Promise<MarketQuote[]> {
   const results = await Promise.all(ASSETS.map(fetchQuote));
@@ -118,7 +121,7 @@ export async function getMarketQuotes(): Promise<MarketQuote[]> {
   });
 }
 
-const fallbackQuote = (asset: Asset): MarketQuote => ({
+const fallbackQuote = (asset: CommodityAsset): MarketQuote => ({
   asset, price: 0, change: 0, changePercent: 0,
   high: 0, low: 0, volume: 0,
   timestamp: new Date().toISOString(), source: "ceo.ca", sparkline: [], sparklineTs: [],

@@ -1,4 +1,8 @@
-export type Asset = "Gold" | "Silver" | "Oil";
+// Asset = canonical ticker union, derived from the instrument registry
+// (src/lib/instruments.ts). Re-exported here so the many existing
+// `import type { Asset } from "@/lib/types"` sites keep working.
+import type { Asset } from "./instruments";
+export type { Asset };
 export type Direction = "bullish" | "bearish" | "neutral";
 export type Strength = "strong" | "medium" | "weak";
 

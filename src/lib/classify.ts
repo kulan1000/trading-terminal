@@ -5,6 +5,7 @@ import { sanitizeResult } from "@/lib/classify-sanitize";
 import type { ClassifyResult } from "@/lib/classify-sanitize";
 import { cleanDiscordContent } from "@/lib/pre-filter";
 import { CLASSIFIER_MODEL, CLASSIFIER_REASONING_EFFORT } from "@/lib/constants";
+import { ALL_ASSETS } from "@/lib/instruments";
 import { buildChatParams } from "@/lib/openai-params";
 import { codexChatComplete } from "@/lib/codex-transport";
 
@@ -22,7 +23,7 @@ const useCodexTransport = () => process.env.CLASSIFY_TRANSPORT === "codex";
 const SIGNAL_SCHEMA = {
   type: "json_schema",
   json_schema: {
-    name: "commodity_signals",
+    name: "market_signals",
     strict: true,
     schema: {
       type: "object",
@@ -40,7 +41,9 @@ const SIGNAL_SCHEMA = {
             ],
             properties: {
               has_signal: { type: "boolean" },
-              asset: { type: ["string", "null"], enum: ["Gold", "Silver", "Oil", null] },
+              // Enum derives from the instrument registry — the model CANNOT
+              // emit a ticker we don't track.
+              asset: { type: ["string", "null"], enum: [...ALL_ASSETS, null] },
               direction: { type: ["string", "null"], enum: ["bullish", "bearish", "neutral", null] },
               signal_type: { type: ["string", "null"], enum: ["entry", "position", "exited", "opinion", "target", null] },
               position: { type: ["string", "null"], enum: ["long", "short", null] },
@@ -86,13 +89,18 @@ export async function classifyMessage(
   content: string,
   channel?: string,
   contextMessages?: string[],
-  marketOpen?: boolean,
+  // boolean = legacy single-market flag (verify/eval harnesses);
+  // string = composite per-calendar status from marketStatusLine()
+  marketOpen?: boolean | string,
   model: string = CLASSIFIER_MODEL
 ): Promise<ClassifyResult[]> {
   const cleaned = cleanDiscordContent(content);
 
   // Build user message with market status + optional conversation context
-  let userContent = `MARKET: ${marketOpen === false ? "CLOSED" : "OPEN"}\n`;
+  let userContent =
+    typeof marketOpen === "string"
+      ? `MARKET: ${marketOpen}\n`
+      : `MARKET: ${marketOpen === false ? "CLOSED" : "OPEN"}\n`;
   if (contextMessages?.length) {
     userContent += "RECENT CONTEXT (previous messages in channel):\n";
     userContent += contextMessages.map((m) => `- ${cleanDiscordContent(m)}`).join("\n");

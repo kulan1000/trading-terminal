@@ -33,10 +33,19 @@ interface Expect {
 interface Case {
   msg: string;
   channel: string;
-  open: boolean;
-  expect: Expect;
+  // boolean = legacy single flag; string = composite per-calendar status
+  open: boolean | string;
+  // expect: signal assertions; expectNone: message must yield NO signals
+  expect?: Expect;
+  expectNone?: boolean;
   label: string;
 }
+
+// Composite status lines matching marketStatusLine() output
+const EVENING =
+  "COMEX (Gold/Silver/Oil): OPEN | INDEX FUTURES (ES/NQ/YM/RTY): OPEN | US EQUITIES (stocks/ETFs/indices): CLOSED";
+const RTH =
+  "COMEX (Gold/Silver/Oil): OPEN | INDEX FUTURES (ES/NQ/YM/RTY): OPEN | US EQUITIES (stocks/ETFs/indices): OPEN";
 
 const CASES: Case[] = [
   { label: "ENTRY LONG",  msg: "just went long silver here at 62.10", channel: "gold-commodities", open: true,
@@ -55,6 +64,20 @@ const CASES: Case[] = [
     expect: { asset: "Oil", signal_type: "opinion", position: null, direction: "bearish" } },
   { label: "OPINION BULL", msg: "gold setup looks great, expecting a breakout above resistance", channel: "gold-commodities", open: true,
     expect: { asset: "Gold", signal_type: "opinion", position: null, direction: "bullish" } },
+
+  // — equities expansion 2026-07-10 —
+  { label: "ES ENTRY EVE", msg: "got filled long ES 7163, stop under 7150", channel: "equities-stocks", open: EVENING,
+    expect: { asset: "ES", signal_type: "entry", position: "long", direction: "bullish" } },
+  { label: "NVDA CALLS",   msg: "grabbed NVDA 190 calls for the earnings run", channel: "equities-stocks", open: RTH,
+    expect: { asset: "NVDA", signal_type: "entry", position: "long", direction: "bullish" } },
+  { label: "QQQ INVERSE",  msg: "loaded up SQQQ here, tech looks done for the week", channel: "equities-stocks", open: RTH,
+    expect: { asset: "QQQ", signal_type: "entry", position: "short", direction: "bearish" } },
+  { label: "SPY EXIT",     msg: "sold my spy puts for a double, flat now", channel: "equities-stocks", open: RTH,
+    expect: { asset: "SPY", signal_type: "exited", position: "short" } },
+  { label: "SPX OPINION",  msg: "SPX grinding into resistance at 7200, expecting rejection", channel: "traders-lounge", open: RTH,
+    expect: { asset: "SPX", signal_type: "opinion", position: null, direction: "bearish" } },
+  { label: "CRYPTO NONE",  msg: "BTC through 200k by christmas, alts about to rip", channel: "traders-lounge", open: RTH,
+    expectNone: true },
 ];
 
 interface Result {
@@ -68,13 +91,18 @@ async function main() {
     CASES.map(async (c) => {
       const t0 = Date.now();
       const res: Result[] = await classifyMessage(c.msg, c.channel, [], c.open);
-      const hit = res.find(
-        (r) => r.asset === c.expect.asset && r.signal_type === c.expect.signal_type
-      );
-      const ok =
-        !!hit &&
-        hit.position === c.expect.position &&
-        (!c.expect.direction || hit.direction === c.expect.direction);
+      let ok: boolean;
+      if (c.expectNone) {
+        ok = res.length === 0;
+      } else {
+        const hit = res.find(
+          (r) => r.asset === c.expect!.asset && r.signal_type === c.expect!.signal_type
+        );
+        ok =
+          !!hit &&
+          hit.position === c.expect!.position &&
+          (!c.expect!.direction || hit.direction === c.expect!.direction);
+      }
       if (!ok) failed++;
       const got = res.length
         ? res.map((r) => `${r.asset} ${r.direction} ${r.signal_type}${r.position ? "/" + r.position : ""} c=${r.confidence}`).join(" | ")

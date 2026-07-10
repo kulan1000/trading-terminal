@@ -6,7 +6,9 @@ trade signals (entry / position / exited / target / opinion + bias) with
 GPT via a ChatGPT-subscription transport, scores traders on real price
 outcomes, and renders it all as a dark, information-dense terminal.
 
-Assets today: Gold, Silver, Oil (equities expansion in progress).
+Assets: Gold, Silver, Oil + index futures (ES/NQ/YM/RTY), index ETFs
+and large-cap US equities — 27 instruments, registry-driven
+(`src/lib/instruments.ts`).
 
 ## Stack
 

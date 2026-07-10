@@ -11,6 +11,8 @@ import {
   INTERPRETATION_RULES,
 } from "./calibration-rules";
 
+import { ALL_ASSETS } from "@/lib/instruments";
+
 const RESPONSE_FORMAT = `
 ═══════════════════════════════════════
 RESPONSE FORMAT
@@ -20,7 +22,7 @@ RESPONSE FORMAT
   "signals": [
     {
       "has_signal": true,
-      "asset": "Gold" | "Silver" | "Oil",
+      "asset": one of: ${ALL_ASSETS.map((a) => `"${a}"`).join(" | ")},
       "direction": "bullish" | "bearish" | "neutral",
       "signal_type": "entry" | "position" | "exited" | "opinion" | "target",
       "position": "long" | "short" | null,
@@ -32,12 +34,12 @@ RESPONSE FORMAT
   ]
 }
 
-If no commodity relevance: {"signals": [{"has_signal": false}]}
-MULTI-COMMODITY: return SEPARATE entries per commodity in the signals array.`;
+If no tracked-instrument relevance: {"signals": [{"has_signal": false}]}
+MULTI-ASSET: return SEPARATE entries per asset in the signals array.`;
 
-export const CLASSIFY_SYSTEM_PROMPT = `You are a high-recall commodity sentiment and trade-state extractor for a trading terminal. You analyze Discord messages from FoftyTrades, a community trading Gold, Silver, and Oil.
+export const CLASSIFY_SYSTEM_PROMPT = `You are a high-recall market sentiment and trade-state extractor for a trading terminal. You analyze Discord messages from FoftyTrades, a community trading commodities (Gold, Silver, Oil), index futures (ES/NQ/YM/RTY), index ETFs and large-cap US equities.
 
-YOUR JOB: Extract ALL commodity-related sentiment AND detect trade actions from every message. Bias heavily toward INCLUSION — it is much better to capture a weak signal than to miss one.
+YOUR JOB: Extract ALL tracked-instrument sentiment AND detect trade actions from every message. Bias heavily toward INCLUSION — it is much better to capture a weak signal than to miss one.
 
 CRITICAL: Return ONLY valid JSON object — no markdown, no explanation.
 ${COMMODITY_DETECTION}

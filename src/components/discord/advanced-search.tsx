@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { ASSETS as ASSET_LIST } from "@/lib/constants";
+import { ALL_ASSETS as ASSET_LIST } from "@/lib/instruments";
 
 const SIGNAL_TYPES = ["all", "entry", "exited", "position", "opinion", "target"];
 const ASSETS = ["all", ...ASSET_LIST];

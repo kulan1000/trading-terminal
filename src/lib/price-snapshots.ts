@@ -4,15 +4,22 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { fetchYahoo } from "@/lib/data-yahoo";
 import { YAHOO_SYMBOLS, SNAPSHOT_MATCH_WINDOW_MS } from "@/lib/constants";
+import { ALL_ASSETS } from "@/lib/instruments";
+import { isSnapshotWindowFor } from "@/lib/market-hours";
 import type { Asset } from "@/lib/types";
 
-/** Fetch current prices and insert into price_snapshots */
+/** Fetch current prices and insert into price_snapshots — every registry
+ *  instrument whose own market session is live right now. Outside its session
+ *  Yahoo serves the stale last close, which would litter the scoring grid
+ *  with flat phantom bars, so closed instruments are skipped per-asset. */
 export async function savePriceSnapshots() {
   const supabase = getSupabaseAdmin();
-  const assets = Object.keys(YAHOO_SYMBOLS) as Asset[];
+  const now = new Date();
+  const assets = ALL_ASSETS.filter((a) => isSnapshotWindowFor(a, now));
+  if (!assets.length) return { saved: 0 };
 
   const results = await Promise.all(
-    assets.map(async (asset) => {
+    assets.map(async (asset: Asset) => {
       const data = await fetchYahoo(asset, YAHOO_SYMBOLS[asset]);
       if (!data?.price) return null;
       return { asset, price: data.price };

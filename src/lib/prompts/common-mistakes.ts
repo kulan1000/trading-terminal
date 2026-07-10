@@ -60,8 +60,8 @@ MISTAKE 11: Central bank commentary classified as neutral instead of directional
 ✅ CORRECT: Central banks are the largest institutional buyers. Their buying = massive demand = BULLISH signal. This is fundamental analysis, not just chatter.
 RULE: Mentions of central banks buying, accumulating, or hoarding gold/silver/commodities = bullish opinion (strength depends on specificity). Central banks selling or divesting = bearish.
 
-MISTAKE 12: Classifying non-commodity instruments as Gold/Silver/Oil
+MISTAKE 12: Forcing a trade into the WRONG canonical asset
 ❌ WRONG: "got filled long ES 7163" → Gold entry (trader usually trades gold, channel is commodity-focused)
-❌ WRONG: "opened a new SOXS position" → Gold/Oil signal
-✅ CORRECT: ES/NQ/MES/MNQ = index futures. SPY/QQQ/IWM = index ETFs. SOXS/SOXL/SMH/NVDA/AMD = semiconductors. UVIX/VXX = volatility. TSLA/AAPL/single stocks, BTC/ETH/crypto = none of these are commodities. has_signal: false.
-RULE: A trade in a NON-commodity instrument is NEVER a Gold/Silver/Oil signal — no matter the channel, the conversation context, or what the trader usually trades. Trader profiles and channel context may only disambiguate WHICH commodity ("it", "this") — they must never convert an explicit non-commodity trade into a commodity signal. Commodity-linked instruments still count normally: USO/UCO/BNO/SCO = Oil, GLD/GDX/NUGT/DUST/miners = Gold, SLV/AG/PAAS/ZSL = Silver (note: SCO, DUST, ZSL are INVERSE — long inverse = short the commodity). Mixed baskets ("took profits on USO and SOXS") → extract only the commodity legs.`;
+❌ WRONG: "got filled long ES 7163" → has_signal: false (old behavior — ES is tracked now)
+✅ CORRECT: asset: "ES", signal_type: "entry", position: "long".
+RULE: Every trade is classified under its OWN canonical asset from the list — never converted to a different one by channel context or trader history. Context may only disambiguate vague references ("it", "this", "the market"), never override an explicit ticker. Instruments outside the canonical list (crypto, bonds, FX, unlisted small-caps) = has_signal: false — do NOT map them to the nearest similar asset. Derivative products map to their underlying per the leveraged/inverse table (long SQQQ = QQQ bearish, long SCO = Oil bearish, etc.). Mixed baskets ("took profits on USO and SOXS") → one signal per tracked leg under its own asset (Oil exited + SMH exited-short).`;

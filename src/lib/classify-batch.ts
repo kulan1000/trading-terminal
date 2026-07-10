@@ -6,9 +6,10 @@ import { maybeCommodityRelevant } from "@/lib/pre-filter";
 import { getTraderHint, refreshTraderProfile } from "@/lib/trader-profiles";
 import { getAssetPrice } from "@/lib/price-snapshot";
 import { getPriceAtTime } from "@/lib/price-snapshots";
-import { isMarketOpen } from "@/lib/market-hours";
+import { isMarketOpenFor, marketStatusLine } from "@/lib/market-hours";
 import { detectAssetSource, flagForReview, getLearnedFeedback } from "@/lib/classify-review";
 import { CLASSIFIER_MODEL } from "@/lib/constants";
+import type { Asset } from "@/lib/instruments";
 
 // GPT calls run concurrently (each message is independent) — rate-limit
 // retries are handled inside classifyMessage. Kept at 3: classifier calls are
@@ -135,9 +136,11 @@ export async function processUnclassified(limit = 120) {
     }
 
     // Market status at MESSAGE time, not current time — re-classification of
-    // old/backfilled messages must use the correct market state
+    // old/backfilled messages must use the correct market state. Composite
+    // per-calendar line (COMEX / index futures / equities) so the model can
+    // judge entry validity for the asset it lands on.
     const msgTime = msg.timestamp ? new Date(msg.timestamp) : new Date();
-    const marketOpen = isMarketOpen(msgTime);
+    const marketStatus = marketStatusLine(msgTime);
 
     // Inject learned feedback into context if available
     const enrichedContext = learnedFeedback
@@ -146,7 +149,7 @@ export async function processUnclassified(limit = 120) {
 
     let results;
     try {
-      results = await classifyMessage(msg.content, msg.channel, enrichedContext, marketOpen);
+      results = await classifyMessage(msg.content, msg.channel, enrichedContext, marketStatus);
     } catch (err) {
       if (isRetryableError(err)) {
         // Rate limit / network — leave unprocessed, next run picks it up
@@ -163,9 +166,12 @@ export async function processUnclassified(limit = 120) {
     let producedSignal = false;
     for (const result of results) {
       if (result.asset && result.direction && result.confidence != null) {
-        // Hard safety net: block entry/exited when market is closed
+        // Hard safety net: block entry/exited when THIS asset's market is
+        // closed at message time (per-calendar — an evening ES entry is valid
+        // while an evening Gold entry during the COMEX break is not)
         let sigType = result.signal_type ?? "opinion";
-        if (!marketOpen && (sigType === "entry" || sigType === "exited")) {
+        const openForAsset = isMarketOpenFor(result.asset as Asset, msgTime);
+        if (!openForAsset && (sigType === "entry" || sigType === "exited")) {
           sigType = sigType === "entry" ? "position" : "opinion";
           result.position = sigType === "position" ? result.position : null;
         }

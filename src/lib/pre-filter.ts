@@ -1,4 +1,4 @@
-// Pre-filter utilities: Discord content cleaning + fast commodity keyword filter
+// Pre-filter utilities: Discord content cleaning + fast instrument keyword filter
 // Zero API cost — runs before GPT classification
 
 /** Strip Discord custom emojis, role mentions, channel mentions */
@@ -15,7 +15,7 @@ export function cleanDiscordContent(text: string): string {
 
 // ──────────────────────────────────────────────────────
 // Fast local pre-filter (zero API cost)
-// Skips messages that have no possible commodity relevance
+// Skips messages that have no possible signal relevance
 // ──────────────────────────────────────────────────────
 const COMMODITY_KEYWORDS = new RegExp(
   [
@@ -44,14 +44,38 @@ const COMMODITY_KEYWORDS = new RegExp(
   "i"
 );
 
-const COMMODITY_CHANNELS = new Set([
+// Equity/index instruments (registry tickers + leveraged/inverse proxies).
+// Uppercase-only for ambiguous 2-3 letter futures tickers (ES = Spanish "es",
+// YM, RTY...) — plus lowercase trade-phrasing rescues below.
+const EQUITY_UPPER = /\b(ES|NQ|MES|MNQ|YM|MYM|RTY|M2K|SPX|NDX|VIX)\b/;
+const EQUITY_ANY = new RegExp(
+  [
+    "\\b(spy|qqq|iwm|dia|smh|soxl|soxs|tqqq|sqqq|spxl|spxu|upro|sds|uvix|uvxy|vxx|svix|svxy)\\b",
+    "\\b(nvda|tsla|aapl|msft|amzn|meta|googl|goog|amd|pltr|coin|mstr|hood)\\b",
+    "\\b(nasdaq|s&p|russell|dow|semis?|futures)\\b",
+    // lowercase index-futures phrasing: "long nq fill 27150", "es filled 7163"
+    "\\b(es|nq|mes|mnq)\\s+(fill(ed)?|long|short|futures?|\\d{3,5})\\b",
+    "\\b(long|short|filled?)\\s+(es|nq|mes|mnq)\\b",
+  ].join("|"),
+  "i"
+);
+
+function mentionsEquityInstrument(content: string): boolean {
+  return EQUITY_UPPER.test(content) || EQUITY_ANY.test(content);
+}
+
+// Dedicated trade channels: anything that survives the noise floor goes to
+// the classifier — these channels exist to talk trades.
+const TRADE_CHANNELS = new Set([
   "gold-commodities",
   "traders-lounge",
   "main-discussion",
+  "equities-stocks",
+  "sang-daily-updates",
 ]);
 
 // Pure-noise phrases (greetings, reactions, acknowledgements) — skip even in
-// commodity channels since they have no signal content on their own.
+// trade channels since they have no signal content on their own.
 const NOISE_PHRASES = new Set([
   "gm", "gn", "hi", "hey", "hello", "yo", "sup", "wb", "wbu",
   "ty", "thx", "thanks", "tysm", "np", "yw",
@@ -63,55 +87,45 @@ const NOISE_PHRASES = new Set([
 
 const EMOJI_ONLY = /^[\p{Extended_Pictographic}\p{Emoji_Presentation}\s\u200d]+$/u;
 const MENTION_ONLY = /^(@\w+\s*|@user\s*|@role\s*|#channel\s*)+$/i;
-// Greeting + optional audience ("gm everyone", "good morning traders") \u2014 the
+// Greeting + optional audience ("gm everyone", "good morning traders") — the
 // tail is a closed word list so "gm gold looking hot" still passes through.
 const GREETING_ONLY =
   /^(gm|gn|good\s*(morning|night|evening|day)|morning|evening|hello|hey|yo|sup)[\s,!.]*(everyone|all|guys|folks|fam|chat|team|traders|gents|lads)?[\s,!.\u{1F300}-\u{1FAFF}]*$/iu;
 
 // ──────────────────────────────────────────────────────
-// Non-commodity instrument guard
-// The lounge trades index futures, semis, vol and crypto too. A message that
-// mentions ONLY those instruments (no commodity reference) is not worth a GPT
-// call — and historically caused the worst misclassifications (ES/NQ/SOXS
-// trades landing as Gold/Oil entries). The prompt has a matching rule
-// (MISTAKE 12) as the second layer for anything this regex misses.
+// Crypto-only guard
+// Crypto is deliberately NOT tracked. A message that mentions ONLY crypto
+// (no tracked instrument) is not worth a GPT call — the prompt would just
+// return has_signal: false. Crypto-adjacent EQUITIES (COIN/MSTR/HOOD) are
+// tracked and rescue the message.
 // ──────────────────────────────────────────────────────
-// Uppercase-only for ambiguous 2-3 letter tickers (ES, NQ, YM...)
-const NON_COMMODITY_UPPER = /\b(ES|NQ|MES|MNQ|RTY|YM|SPX|NDX|VIX)\b/;
-// Case-insensitive for unambiguous tickers/names
-const NON_COMMODITY_ANY = new RegExp(
-  [
-    "\\b(spy|qqq|iwm|dia|uvix|svix|svxy|vxx|soxs|soxl|smh|tqqq|sqqq|spxu|srty)\\b",
-    "\\b(tsla|nvda|aapl|msft|amzn|meta|googl|amd|pltr|coin|mstr|mstz|hood|sndk|oklo)\\b",
-    "\\b(btc|eth|bitcoin|ethereum|crypto|solana|doge)\\b",
-    // lowercase index-futures phrasing: "long nq fill 27150", "es filled 7163"
-    "\\b(es|nq|mes|mnq)\\s+(fill(ed)?|long|short|futures?|\\d{3,5})\\b",
-    "\\b(long|short|filled?)\\s+(es|nq|mes|mnq)\\b",
-  ].join("|"),
-  "i"
-);
+const CRYPTO_WORDS = /\b(btc|eth|sol|doge|xrp|ada|bitcoin|ethereum|solana|crypto|altcoins?|memecoins?)\b/i;
 
-// Generic trade-action words that appear in ANY trade message ("long NQ",
-// "stop 21450"). They live in COMMODITY_KEYWORDS for other channels' recall,
-// but must not rescue a non-commodity trade from the guard — so we mask them
-// before checking for a genuine commodity reference.
+// Generic trade-action words that appear in ANY trade message ("long BTC",
+// "stop 98k"). They live in COMMODITY_KEYWORDS for other channels' recall,
+// but must not rescue a crypto-only trade from the guard — so we mask them
+// before checking for a genuine tracked-instrument reference.
 const GENERIC_TRADE_WORDS =
   /\b(long|short|bought|sold|buying|selling|position|trades?|trading|entry|exits?|exited|profits?|loss|stop|targets?|calls|puts|options?|bulls?|bullish|bears?|bearish)\b/gi;
 
-/** True if the message is about non-commodity instruments only */
-function isNonCommodityOnly(content: string): boolean {
-  const mentionsOther =
-    NON_COMMODITY_UPPER.test(content) || NON_COMMODITY_ANY.test(content);
-  if (!mentionsOther) return false;
-  // Require an EXPLICIT commodity reference (not just action words) to pass
-  const masked = content.replace(GENERIC_TRADE_WORDS, " ");
-  return !COMMODITY_KEYWORDS.test(masked);
+/** True if the message is about crypto only (no tracked instrument) */
+function isCryptoOnly(content: string): boolean {
+  if (!CRYPTO_WORDS.test(content)) return false;
+  const masked = content.replace(GENERIC_TRADE_WORDS, " ").replace(CRYPTO_WORDS, " ");
+  return !COMMODITY_KEYWORDS.test(masked) && !mentionsEquityInstrument(masked);
 }
 
-// Explicit commodity references (no generic trade verbs) — used to rescue
-// short messages like "long gc", "buy oil", "si long" from the length floor.
-const COMMODITY_CORE =
-  /\b(gold|silver|oil|crude|wti|brent|xau|xag|guld|olja|gld|slv|gdx|gdxj|uso|uco|bno|sco|nugt|dust|jnug|zsl|agq|pslv|phys|xle|oxy|pms?|\bgc\b|\bsi\b|\bcl\b)\b/i;
+// Explicit instrument references (no generic trade verbs) — used to rescue
+// short messages like "long gc", "buy oil", "es 7150", "nvda calls" from the
+// length floor.
+const INSTRUMENT_CORE = new RegExp(
+  [
+    "\\b(gold|silver|oil|crude|wti|brent|xau|xag|guld|olja|gld|slv|gdx|gdxj|uso|uco|bno|sco|nugt|dust|jnug|zsl|agq|pslv|phys|xle|oxy|pms?|gc|si|cl)\\b",
+    "\\b(spy|qqq|iwm|dia|smh|spx|ndx|vix|nvda|tsla|aapl|msft|amzn|meta|googl|amd|pltr|coin|mstr|hood|tqqq|sqqq|soxl|soxs)\\b",
+    "\\b(es|nq|mes|mnq|ym|rty)\\b",
+  ].join("|"),
+  "i"
+);
 
 // Bare trade-action shorthand — a whole message that IS a trade action
 // ("out", "BUY!", "tp hit", "stopped out", "done ✅"). These are how traders
@@ -127,8 +141,8 @@ export type PrefilterReason =
   | "mention-only"
   | "greeting-only"
   | "too-short"
-  | "non-commodity-instrument"
-  | "no-commodity-keyword";
+  | "crypto-only"
+  | "no-instrument-keyword";
 
 export interface PrefilterVerdict {
   pass: boolean;
@@ -146,29 +160,29 @@ export function prefilterVerdict(content: string, channel?: string): PrefilterVe
   if (MENTION_ONLY.test(trimmed)) return { pass: false, reason: "mention-only" };
   if (GREETING_ONLY.test(trimmed)) return { pass: false, reason: "greeting-only" };
 
-  // Length floor — but an explicit commodity reference ("long gc", "buy oil")
+  // Length floor — but an explicit instrument reference ("long gc", "es 7150")
   // or a bare trade action ("out", "BUY!", "tp hit") rescues shorthand the
   // floor used to kill. Exits especially arrive as one-word messages.
   if (
     trimmed.length < 8 &&
-    !COMMODITY_CORE.test(trimmed) &&
+    !INSTRUMENT_CORE.test(trimmed) &&
     !TRADE_SHORTHAND.test(trimmed)
   )
     return { pass: false, reason: "too-short" };
 
-  // Pure non-commodity instrument talk (ES/NQ/semis/vol/crypto) — skip,
-  // even in commodity channels
-  if (isNonCommodityOnly(trimmed)) return { pass: false, reason: "non-commodity-instrument" };
+  // Pure crypto talk — not tracked, skip even in trade channels
+  if (isCryptoOnly(trimmed)) return { pass: false, reason: "crypto-only" };
 
-  // Commodity channels: pass anything that survived the noise floor
-  if (channel && COMMODITY_CHANNELS.has(channel)) return { pass: true };
+  // Trade channels: pass anything that survived the noise floor
+  if (channel && TRADE_CHANNELS.has(channel)) return { pass: true };
 
-  // Other channels: require a commodity keyword
-  if (COMMODITY_KEYWORDS.test(content)) return { pass: true };
-  return { pass: false, reason: "no-commodity-keyword" };
+  // Other channels: require a tracked-instrument keyword
+  if (COMMODITY_KEYWORDS.test(content) || mentionsEquityInstrument(content))
+    return { pass: true };
+  return { pass: false, reason: "no-instrument-keyword" };
 }
 
-/** Returns true if message MIGHT contain a commodity signal (fast, cheap) */
+/** Returns true if message MIGHT contain a tradeable signal (fast, cheap) */
 export function maybeCommodityRelevant(content: string, channel?: string): boolean {
   return prefilterVerdict(content, channel).pass;
 }
