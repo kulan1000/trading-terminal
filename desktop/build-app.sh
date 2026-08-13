@@ -24,6 +24,7 @@ if [ -x "\$CHROME" ]; then
     --app="\$URL" \\
     --no-first-run \\
     --no-default-browser-check \\
+    --disable-search-engine-choice-screen \\
     --window-size=1500,950 >/dev/null 2>&1
 else
   exec /usr/bin/open "\$URL"

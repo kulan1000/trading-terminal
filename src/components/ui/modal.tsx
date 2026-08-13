@@ -19,7 +19,7 @@ interface ModalProps {
  * modal-in animation curve, ESC closes.
  *
  * Used by all Scoring v2 drill-downs (Leaderboard, Live Feed, Trade
- * Pairs, Asset Accuracy, GPT Reviews) so every drill-down has the
+ * Pairs and Asset Accuracy) so every drill-down has the
  * same visual language as the market chart modal.
  */
 export function Modal({
