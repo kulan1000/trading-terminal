@@ -23,7 +23,7 @@ export interface PipelineResult {
     processed: number;
     signals: number;
     skipped?: number;
-
+    flagged?: number;
     openai_calls?: number;
   };
   prices: { saved?: number; skipped?: string };
@@ -65,7 +65,7 @@ export async function runPipeline(_trigger: "manual" | "cron"): Promise<Pipeline
       marketOpen,
       skipped: `run ${(liveRun[0] as { id: number }).id} already in progress`,
       ingest: { ingested: 0 },
-      classify: { processed: 0, signals: 0, skipped: 0, openai_calls: 0 },
+      classify: { processed: 0, signals: 0, skipped: 0, flagged: 0, openai_calls: 0 },
       prices: { skipped: "run in progress" },
       scoring: { skipped: "run in progress" },
       pairing: { skipped: "run in progress" },
@@ -96,7 +96,7 @@ export async function runPipeline(_trigger: "manual" | "cron"): Promise<Pipeline
     const classify =
       process.env.CLASSIFY_IN_PIPELINE === "1"
         ? await processUnclassified()
-        : { processed: 0, signals: 0, skipped: 0, openai_calls: 0 };
+        : { processed: 0, signals: 0, skipped: 0, flagged: 0, openai_calls: 0 };
 
     const prices = marketOpen
       ? await savePriceSnapshots()

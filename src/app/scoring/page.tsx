@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useScoringData } from "@/hooks/use-scoring-data";
-
+import { useReviews } from "@/hooks/use-reviews";
 import { ScoringStats } from "@/components/scoring/scoring-stats";
 import { Podium } from "@/components/scoring/podium";
 import { LeaderboardTeaser } from "@/components/scoring/leaderboard-teaser";
@@ -40,7 +40,7 @@ export default function ScoringPage() {
     tradePairs,
     loading,
   } = useScoringData();
-
+  const { reviews } = useReviews();
   const [asset, setAsset] = useState<AssetFilter>("all");
   const [modal, setModal] = useState<ModalKey>(null);
 
@@ -170,13 +170,13 @@ export default function ScoringPage() {
             />
           </div>
 
-          {/* Tier 4: autonomous scoring analytics */}
-          <SectionDivider label="Explore" meta="trade pairs · accuracy" />
+          {/* Tier 4: 3 explore tiles — pairs / accuracy / reviews */}
+          <SectionDivider label="Explore" meta="trade pairs · accuracy · reviews" />
           <ExploreTiles
             scoreboard={filteredScoreboard}
             traderSignals={filteredSignals}
             tradePairs={filteredPairs}
-
+            reviewCount={reviews.length}
           />
         </>
       )}

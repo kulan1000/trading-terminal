@@ -7,6 +7,7 @@ import { getTraderHint, refreshTraderProfile } from "@/lib/trader-profiles";
 import { getAssetPrice } from "@/lib/price-snapshot";
 import { getPriceAtTime } from "@/lib/price-snapshots";
 import { isMarketOpenFor, marketStatusLine } from "@/lib/market-hours";
+import { detectAssetSource, flagForReview, getLearnedFeedback } from "@/lib/classify-review";
 import { CLASSIFIER_MODEL } from "@/lib/constants";
 import type { Asset } from "@/lib/instruments";
 
@@ -70,14 +71,16 @@ export async function processUnclassified(limit = 120) {
     .limit(limit);
 
   if (!messages?.length)
-    return { processed: 0, signals: 0, skipped: 0, failures: 0, openai_calls: 0 };
+    return { processed: 0, signals: 0, skipped: 0, flagged: 0, failures: 0, openai_calls: 0 };
   let signalCount = 0;
   let skipped = 0;
-
+  let flagged = 0;
   let openaiCalls = 0;
   let failures = 0;
   const touchedAuthors = new Set<string>();
 
+  // Load learned feedback rules (from human corrections) once per batch
+  const learnedFeedback = await getLearnedFeedback();
 
   // STEP 1: Fast local pre-filter — mark irrelevant messages processed in one update
   const relevant: PendingMessage[] = [];
@@ -139,9 +142,14 @@ export async function processUnclassified(limit = 120) {
     const msgTime = msg.timestamp ? new Date(msg.timestamp) : new Date();
     const marketStatus = marketStatusLine(msgTime);
 
+    // Inject learned feedback into context if available
+    const enrichedContext = learnedFeedback
+      ? [...contextMessages, learnedFeedback]
+      : contextMessages;
+
     let results;
     try {
-      results = await classifyMessage(msg.content, msg.channel, contextMessages, marketStatus);
+      results = await classifyMessage(msg.content, msg.channel, enrichedContext, marketStatus);
     } catch (err) {
       if (isRetryableError(err)) {
         // Rate limit / network — leave unprocessed, next run picks it up
@@ -172,7 +180,7 @@ export async function processUnclassified(limit = 120) {
           ? await priceAtMessageTime(result.asset, msgTime)
           : null;
 
-        const { error: upsertErr } = await supabase.from("signals").upsert(
+        const { data: inserted, error: upsertErr } = await supabase.from("signals").upsert(
           {
             message_id: msg.id,
             asset: result.asset,
@@ -191,7 +199,7 @@ export async function processUnclassified(limit = 120) {
             ...(msg.timestamp ? { created_at: msg.timestamp } : {}),
           },
           { onConflict: "message_id,asset,signal_type" }
-        );
+        ).select("id").single();
 
         if (upsertErr) {
           // DB failure — leave the message unprocessed so it retries
@@ -200,6 +208,29 @@ export async function processUnclassified(limit = 120) {
           return;
         }
 
+        // Flag uncertain asset classifications for human review
+        const assetSource = detectAssetSource(
+          msg.content, result.asset, msg.channel, contextMessages,
+        );
+        if (assetSource !== "explicit" && inserted?.id) {
+          // Best-effort audit trail — a review-queue hiccup must never make
+          // the batch re-classify (and re-bill) an already-saved signal.
+          try {
+            await flagForReview({
+              signalId: inserted.id,
+              messageId: msg.id,
+              result: { ...result, signal_type: sigType },
+              originalMessage: msg.content,
+              contextMessages: contextMessages.slice(0, 8),
+              channel: msg.channel,
+              author: msg.author,
+              assetSource,
+            });
+            flagged++;
+          } catch (err) {
+            console.error(`[CLASSIFY] flagForReview failed for signal ${inserted.id}:`, err);
+          }
+        }
 
         signalCount++;
         producedSignal = true;
@@ -225,7 +256,7 @@ export async function processUnclassified(limit = 120) {
     processed: messages.length - failures,
     signals: signalCount,
     skipped,
-
+    flagged,
     failures,
     openai_calls: openaiCalls,
   };
